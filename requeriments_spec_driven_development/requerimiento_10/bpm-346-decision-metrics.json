@@ -1,0 +1,47 @@
+{
+  "m": {
+    "decisions": [
+      {
+        "code": "CONFORME",
+        "left": 730,
+        "top": 412,
+        "width": 200,
+        "height": 140
+      },
+      {
+        "code": "DECISION-001",
+        "left": 104,
+        "top": -402,
+        "width": 210,
+        "height": 140
+      }
+    ],
+    "outputs": [
+      {
+        "code": "MEZCLA_NOK",
+        "left": 620,
+        "top": 624,
+        "right": 800,
+        "bottom": 750
+      },
+      {
+        "code": "MEZCLA_OK",
+        "left": 858,
+        "top": 624,
+        "right": 1040,
+        "bottom": 744
+      }
+    ],
+    "labels": [
+      "No",
+      "Sí"
+    ],
+    "edges": 17
+  },
+  "scroll": {
+    "left": 0,
+    "top": 1377,
+    "scrollWidth": 1772,
+    "scrollHeight": 2068
+  }
+}

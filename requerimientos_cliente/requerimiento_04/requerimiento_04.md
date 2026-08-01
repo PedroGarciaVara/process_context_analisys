@@ -1,0 +1,5 @@
+- reordenar la estructura de archivos del proyecto, para que siga una estructura "clean_arquitecture"
+- renombrar el directorio 'app' por uc_bib_solv
+- crear directorios webapp_dash y webapp_java
+- todo el codigo actual de frontend que es Dash debe de estar dentro del directorio webapp_dash
+- dentro de webapp_java, implementar la migracion del frontend a java siguiendo las instrucciones de /home/pedro/proyectos visual studio code/UC_BIB_Solve/requerimientos_cliente/requerimiento_04/instrucciones_migracion.md.  objetivo crear webapp standard html/css/jv en el framework Dataiku.

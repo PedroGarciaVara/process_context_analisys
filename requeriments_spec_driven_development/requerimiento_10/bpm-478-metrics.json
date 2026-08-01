@@ -1,0 +1,37 @@
+{
+  "url": "http://127.0.0.1:8050/index.html#/modelado-procesos?version_id=478df933-7729-4bed-adb6-8d1b2f97ae4c",
+  "normal": {
+    "overflowX": "auto",
+    "overflowY": "auto",
+    "clientWidth": 1188,
+    "clientHeight": 630,
+    "scrollWidth": 1345,
+    "scrollHeight": 876,
+    "before": {
+      "left": 0,
+      "top": 0
+    },
+    "after": {
+      "left": 157,
+      "top": 246
+    }
+  },
+  "fullscreen": {
+    "overflowX": "auto",
+    "overflowY": "auto",
+    "clientWidth": 1326,
+    "clientHeight": 691,
+    "scrollWidth": 1345,
+    "scrollHeight": 876,
+    "before": {
+      "left": 0,
+      "top": 185
+    },
+    "after": {
+      "left": 19,
+      "top": 185
+    }
+  },
+  "cardCount": 8,
+  "overlaps": []
+}

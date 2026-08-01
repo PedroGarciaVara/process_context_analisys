@@ -1,0 +1,49 @@
+.table-shell {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.table-shell th,
+.table-shell td {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table-shell thead th {
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.table-shell tbody tr:hover {
+  background: rgba(26, 54, 93, 0.03);
+}
+
+.table-shell tbody tr.is-selected {
+  background: rgba(26, 54, 93, 0.06);
+}
+
+.table-shell td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--muted);
+}
