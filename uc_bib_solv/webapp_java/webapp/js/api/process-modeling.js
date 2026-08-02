@@ -16,5 +16,12 @@ export const updateNode = (nodeId, data) => call(`/nodes/${encodeURIComponent(no
 export const deleteNode = (nodeId) => call(`/nodes/${encodeURIComponent(nodeId)}`, { method: "DELETE" });
 export const getNodeMetadata = (nodeId) => call(`/nodes/${encodeURIComponent(nodeId)}/metadata`);
 export const updateNodeMetadata = (nodeId, metadata) => call(`/nodes/${encodeURIComponent(nodeId)}/metadata`, { method: "PATCH", body: JSON.stringify({ metadata }) });
+export const getStructuredContext = (versionId, params = {}) => {
+  const query = new URLSearchParams(params);
+  const suffix = query.toString() ? `?${query}` : "";
+  return call(`/versions/${encodeURIComponent(versionId)}/context${suffix}`);
+};
+export const createContextRecord = (nodeId, record) => call(`/nodes/${encodeURIComponent(nodeId)}/context-records`, { method: "POST", body: JSON.stringify(record) });
+export const calculateKpi = (payload) => call("/kpis", { method: "POST", body: JSON.stringify(payload) });
 export const createTransition = (versionId, data) => call(`/versions/${encodeURIComponent(versionId)}/transitions`, { method: "POST", body: JSON.stringify(data) });
 export const validateVersion = (versionId) => call(`/versions/${encodeURIComponent(versionId)}/validate`, { method: "POST", body: "{}" });

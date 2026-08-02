@@ -164,6 +164,38 @@ test("muestra y persiste los metadatos JSON de la operación seleccionada", asyn
   expect(JSON.parse(originalMetadata)).toMatchObject({ schema_version: "1.0" });
 });
 
+test("muestra el contexto funcional enriquecido en modo lectura", async ({ page }) => {
+  const version = {
+    process: { process_id: "read-process", process_code: "READ", name: "Proceso lectura" },
+    version: { version_id: "read-version", version_number: 1, status: "draft" },
+    nodes: [{
+      node_id: "read-node", node_code: "DOSIFICACION", node_type: "operation", name: "Dosificación",
+      description: "Dosifica el producto químico en la bolsa.",
+      metadata: { context_type: "node", family: "industrial_process_fixture", data: {
+        objective: "Alcanzar el peso objetivo.", inputs: ["Bigbag"], outputs: ["Bolsa dosificada"],
+        parameters: ["vmax", "K"], quality_controls: ["Lectura de producto"],
+        arbitrary_nested: { thresholds: { min: 1, max: 5 }, modes: ["auto", "manual"] },
+        arbitrary_list: [{ key: "value", values: [1, 2, 3] }],
+        declarative_contract: "KPI bajo demanda", operation_machine_assignments: [{ machine_ref: "BA01" }],
+      } },
+    }],
+    transitions: [],
+  };
+  await page.route("**/api/bootstrap", (route) => route.fulfill({ json: { app_name: "test" } }));
+  await page.route("**/api/operational/catalog", (route) => route.fulfill({ json: { defaults: {} } }));
+  await page.route("**/api/process-modeling/processes", (route) => route.fulfill({ json: { status: "ok", data: [{ ...version.process, versions: [version.version] }] } }));
+  await page.route("**/api/process-modeling/versions/read-version", (route) => route.fulfill({ json: { status: "ok", data: version } }));
+  await page.route("**/api/process-modeling/versions/read-version/context**", (route) => route.fulfill({ json: { status: "ok", data: { records: [{ record_type: "declaration", payload: { data: { declarative_contract: "KPI bajo demanda", context_arbitrary: { source: "JSONB", tags: ["traceable", "live"] } } } }] } } }));
+
+  await page.goto("/index.html#/modelado-procesos?version_id=read-version");
+  await page.locator("[data-node-id='read-node']").click();
+  const panel = page.locator("#pm-metadata-panel");
+  for (const text of ["Descripción funcional", "Dosifica el producto químico", "Objetivo", "Entradas", "Salidas", "Parámetros", "Controles", "Contratos y asignaciones", "BA01", "Clave: arbitrary_nested", "thresholds", "Clave: arbitrary_list", "Clave: context_arbitrary", "traceable"]) {
+    await expect(panel).toContainText(text);
+  }
+  await expect(panel.locator("#pm-metadata-json")).toHaveCount(0);
+});
+
 test("carga un proceso TEST existente desde el catálogo real", async ({ page }, testInfo) => {
   const catalogResponse = page.waitForResponse((response) => response.url().endsWith("/api/process-modeling/processes") && response.request().method() === "GET");
   await page.goto("/index.html#/modelado-procesos");

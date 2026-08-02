@@ -6,6 +6,7 @@ from uuid import UUID
 from app.domain.process_modeling.entities import ProcessDefinition, ProcessNode, ProcessTransition, ProcessVersion
 from app.domain.process_modeling.exceptions import NotDraftError, NotFoundError, ProcessModelingError
 from app.domain.process_modeling.validators import validate_graph, validate_hierarchy
+from app.domain.process_modeling.context import ContextDetail, ContextRecord, calculate_kpi
 from app.persistence.pm_process_repo import NodeRepository, ProcessRepository, TransitionRepository, VersionRepository
 
 
@@ -263,8 +264,45 @@ def update_node_metadata(node_id, data):
     metadata = data.get("metadata", data)
     if not isinstance(metadata, dict):
         raise ProcessModelingError("Los metadatos deben ser un objeto JSON", "metadata_object_required")
+    if any(key in metadata for key in ("context_type", "family", "schema_version", "data", "source", "provenance")):
+        metadata = ContextDetail.from_payload(metadata, str(node_id)).to_dict()
     result = nodes.upsert_metadata(node_id, metadata)
     return _jsonable({"node_id": str(node_id), "metadata": result["metadata"], "updated_at": result["updated_at"]})
+
+
+def create_context_record(node_id, data):
+    node = nodes.get(node_id)
+    if not node:
+        raise NotFoundError("Nodo no encontrado")
+    record = ContextRecord.from_payload(data).to_dict()
+    result = nodes.create_context_record(str(node_id), str(node["version_id"]), record)
+    return _jsonable(result)
+
+
+def get_context(version_id, node_id=None, family=None, record_type=None):
+    payload = get_version(version_id)
+    records = nodes.list_context_records(node_id=node_id, version_id=version_id, record_type=record_type)
+    if family:
+        records = [item for item in records if (item.get("payload") or {}).get("family") == family or (item.get("payload") or {}).get("data", {}).get("family") == family]
+    methodology = []
+    for name in ("promt.md", "agents.md"):
+        path = __import__("pathlib").Path(__file__).resolve().parents[4] / name
+        if path.exists():
+            methodology.append({"name": name, "version": "repository", "source": {"path": name}, "content": path.read_text(encoding="utf-8")})
+    return _jsonable({
+        "process": payload.get("process"), "version": payload.get("version"),
+        "nodes": payload.get("nodes", []), "transitions": payload.get("transitions", []),
+        "details": [{"node_id": item.get("node_id"), "metadata": item.get("metadata") or {}} for item in payload.get("nodes", []) if not node_id or str(item.get("node_id")) == str(node_id)],
+        "records": records, "methodology": methodology,
+        "filters": {"version_id": str(version_id), "node_id": node_id, "family": family, "record_type": record_type},
+        "provenance": {"source": "UC_BIB_Solve", "representation": "structured_context"},
+    })
+
+
+def calculate_context_kpi(data):
+    if not isinstance(data, dict):
+        raise ProcessModelingError("El payload KPI debe ser un objeto JSON", "invalid_kpi_payload")
+    return calculate_kpi(data.get("values") or [], version=str(data.get("version") or ""), source=data.get("source"))
 
 
 def delete_transition(transition_id):

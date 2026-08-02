@@ -1,4 +1,4 @@
-import { createProcess, createVersion, createNode, updateNode, deleteNode, updateNodeMetadata, createTransition, getProcess, getVersion, listProcesses, validateVersion } from "../api/process-modeling.js";
+import { createProcess, createVersion, createNode, updateNode, deleteNode, updateNodeMetadata, getStructuredContext, createTransition, getProcess, getVersion, listProcesses, validateVersion } from "../api/process-modeling.js";
 import { renderGraph } from "../components/process-modeling/graph.js";
 import { createProcessModelingState } from "../core/process-modeling-state.js";
 
@@ -119,14 +119,137 @@ function updateNodeSelection() {
 
 function selectNode(nodeId) {
   state.selectedNodeId = nodeId || "";
+  state.selectedNodeContextRecords = [];
   updateNodeSelection();
   renderMetadataPanel();
+  if (state.selectedNodeId && versionId()) void loadNodeContextRecords(state.selectedNodeId, versionId());
 }
 
 function metadataText(value) {
   if (Array.isArray(value)) return value.length ? `<ul>${value.map((item) => `<li>${esc(typeof item === "string" ? item : JSON.stringify(item))}</li>`).join("")}</ul>` : '<p class="pm-metadata-muted">Sin información</p>';
   if (value && typeof value === "object") return `<pre>${esc(JSON.stringify(value, null, 2))}</pre>`;
-  return value ? `<p>${esc(value)}</p>` : '<p class="pm-metadata-muted">Sin información</p>';
+  return value !== undefined && value !== null && value !== "" ? `<p>${esc(value)}</p>` : '<p class="pm-metadata-muted">Sin información</p>';
+}
+
+const metadataAliases = {
+  description: ["description", "operation_description", "detailed_description"],
+  summary: ["summary"],
+  objective: ["objective", "purpose", "mission"],
+  controls: ["controls", "quality_controls"],
+  contracts: ["contracts", "declarative_contract"],
+  assignments: ["assignments", "operation_machine_assignments"],
+};
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function sameJson(left, right) {
+  try {
+    return JSON.stringify(left) === JSON.stringify(right);
+  } catch (_error) {
+    return left === right;
+  }
+}
+
+function mergeMetadataValue(existing, incoming) {
+  if (existing === undefined) return incoming;
+  if (incoming === undefined || sameJson(existing, incoming)) return existing;
+  if (isRecord(existing) && isRecord(incoming)) {
+    return Object.keys(incoming).reduce((merged, key) => {
+      merged[key] = mergeMetadataValue(merged[key], incoming[key]);
+      return merged;
+    }, { ...existing });
+  }
+  if (Array.isArray(existing) && Array.isArray(incoming)) {
+    return [...existing, ...incoming.filter((item) => !existing.some((known) => sameJson(known, item)))];
+  }
+  if (Array.isArray(existing)) return existing.some((item) => sameJson(item, incoming)) ? existing : [...existing, incoming];
+  if (Array.isArray(incoming)) return [existing, ...incoming.filter((item) => !sameJson(existing, item))];
+  return [existing, incoming];
+}
+
+function addMetadataSource(target, source) {
+  if (!isRecord(source)) return target;
+  Object.keys(source).forEach((key) => {
+    target[key] = mergeMetadataValue(target[key], source[key]);
+  });
+  return target;
+}
+
+function contextRecordDetails(records = []) {
+  return records.reduce((merged, record) => {
+    if (!isRecord(record)) return merged;
+    const payload = isRecord(record.payload) ? record.payload : {};
+    addMetadataSource(merged, payload);
+    if (isRecord(payload.data)) addMetadataSource(merged, payload.data);
+    return merged;
+  }, {});
+}
+
+function readableMetadata(node, records = []) {
+  const merged = {};
+  if (isRecord(node?.description)) addMetadataSource(merged, node.description);
+  else if (node?.description !== undefined && node?.description !== null && node?.description !== "") merged.description = node.description;
+
+  const metadata = isRecord(node?.metadata) ? node.metadata : {};
+  if (isRecord(metadata)) addMetadataSource(merged, metadata);
+  if (isRecord(metadata.data)) addMetadataSource(merged, metadata.data);
+  addMetadataSource(merged, contextRecordDetails(records));
+  return merged;
+}
+
+async function loadNodeContextRecords(nodeId, selectedVersionId) {
+  try {
+    const response = await getStructuredContext(selectedVersionId, { node_id: nodeId });
+    if (String(state.selectedNodeId) !== String(nodeId) || String(versionId()) !== String(selectedVersionId)) return;
+    state.selectedNodeContextRecords = response?.data?.records || [];
+    renderMetadataPanel();
+  } catch (_error) {
+    // The version payload already contains the JSONB projection. Context records
+    // enrich it when the endpoint is available, but must not blank the panel if
+    // an older deployment does not expose that optional read projection.
+  }
+}
+
+export function buildMetadataSections(node, records = []) {
+  const detail = readableMetadata(node, records);
+  const consumed = new Set();
+  const known = (canonical) => {
+    const keys = metadataAliases[canonical] || [canonical];
+    const values = keys.filter((key) => detail[key] !== undefined && detail[key] !== null && detail[key] !== "");
+    values.forEach((key) => consumed.add(key));
+    return values.reduce((value, key) => mergeMetadataValue(value, detail[key]), undefined);
+  };
+  const description = known("description");
+  const summary = known("summary");
+  const objective = known("objective");
+  const controls = known("controls");
+  const contracts = known("contracts");
+  const assignments = known("assignments");
+  const hasContracts = contracts !== undefined && contracts !== null && contracts !== "";
+  const hasAssignments = assignments !== undefined && assignments !== null && assignments !== "";
+  const contractValues = [contracts, assignments]
+    .filter((value) => value !== undefined && value !== null && value !== "")
+    .flatMap((value) => Array.isArray(value) ? value : [value]);
+  const contractsAndAssignments = hasContracts && hasAssignments
+    ? contractValues
+    : (hasContracts ? contracts : (hasAssignments ? assignments : undefined));
+  const sections = [
+    ["Descripción funcional", description],
+    ["Resumen", sameJson(summary, description) ? undefined : summary],
+    ["Objetivo", objective],
+    ["Entradas", detail.inputs],
+    ["Salidas", detail.outputs],
+    ["Parámetros", detail.parameters],
+    ["Controles", controls],
+    ["Contratos y asignaciones", contractsAndAssignments],
+  ];
+  ["inputs", "outputs", "parameters"].forEach((key) => { if (detail[key] !== undefined) consumed.add(key); });
+  const extraSections = Object.keys(detail)
+    .filter((key) => !consumed.has(key) && (key !== "data" || !isRecord(detail[key])))
+    .map((key) => [`Clave: ${key}`, detail[key]]);
+  return sections.concat(extraSections);
 }
 
 function renderMetadataPanel(editing = false) {
@@ -142,8 +265,9 @@ function renderMetadataPanel(editing = false) {
     target.innerHTML = `<div class="pm-metadata-head"><div><p class="pm-eyebrow">Metadatos JSON</p><h2>${esc(node.node_code)}</h2><p>${esc(node.name)}</p></div></div><form id="pm-metadata-form" class="pm-metadata-form"><label for="pm-metadata-json">Documento libre del elemento</label><textarea id="pm-metadata-json" name="metadata_json" rows="24" required>${esc(JSON.stringify(metadata, null, 2))}</textarea><p class="pm-help-text">Campos sugeridos: purpose, detailed_description, method_of_operation, inputs, outputs, materials, equipment, personnel, parameters, quality_controls, acceptance_criteria, safety_notes, failure_modes, references y open_questions.</p><div class="pm-metadata-actions"><button type="button" class="pm-secondary" data-pm-action="cancel-metadata-edit">Cancelar</button><button type="submit" class="pm-primary" data-pm-action="save-metadata">Guardar metadatos</button></div></form>`;
     return;
   }
-  const field = (label, key) => `<section class="pm-metadata-section"><h3>${label}</h3>${metadataText(metadata[key])}</section>`;
-  target.innerHTML = `<div class="pm-metadata-head"><div><p class="pm-eyebrow">${esc(node.node_type)}</p><h2>${esc(node.node_code)}</h2><p>${esc(node.name)}</p></div><button type="button" class="pm-secondary pm-metadata-edit" data-pm-action="edit-metadata">Editar</button></div><div class="pm-metadata-scroll">${field("Resumen", "summary")}${field("Objetivo", "purpose")}${field("Descripción detallada", "detailed_description")}${field("Método de funcionamiento", "method_of_operation")}${field("Entradas", "inputs")}${field("Salidas", "outputs")}${field("Materiales", "materials")}${field("Equipos", "equipment")}${field("Personal", "personnel")}${field("Parámetros", "parameters")}${field("Controles de calidad", "quality_controls")}${field("Criterios de aceptación", "acceptance_criteria")}${field("Seguridad", "safety_notes")}${field("Modos de fallo", "failure_modes")}${field("Referencias", "references")}${field("Preguntas abiertas", "open_questions")}</div>`;
+  const field = (label, value) => value === undefined ? "" : `<section class="pm-metadata-section"><h3>${label}</h3>${metadataText(value)}</section>`;
+  const sections = buildMetadataSections(node, state.selectedNodeContextRecords);
+  target.innerHTML = `<div class="pm-metadata-head"><div><p class="pm-eyebrow">${esc(node.node_type)}</p><h2>${esc(node.node_code)}</h2><p>${esc(node.name)}</p></div><button type="button" class="pm-secondary pm-metadata-edit" data-pm-action="edit-metadata">Editar</button></div><div class="pm-metadata-scroll">${sections.map(([label, value]) => field(esc(label), value)).join("")}</div>`;
 }
 
 async function saveMetadataFromForm(form) {

@@ -14,12 +14,13 @@ const esc = (value) => String(value ?? "").replace(/[&<>\"']/g, (char) => ({ "&"
 
 function nodeSemanticText(node) {
   const properties = node?.properties || {};
+  const detail = node?.metadata?.data || node?.metadata || {};
   const stock = properties.stock || {};
   const outputRole = node?.output_role || properties.output_role;
   if (node?.node_type === "stock") return `Capacidad ${stock.capacity ?? "—"} · Inicial ${stock.initial_quantity ?? "—"} ${stock.unit || ""}`.trim();
   if (node?.node_type === "output") return `Salida: ${outputRole === "waste" ? "waste" : "normal"}`;
   if (node?.node_type === "decision") return "Ramas Sí / No";
-  return node?.description || "Sin descripción";
+  return node?.description || detail.description || detail.operation_description || detail.detailed_description || detail.summary || "Sin descripción";
 }
 
 function transitionsForDiagram(nodes, transitions) {

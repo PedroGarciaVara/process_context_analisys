@@ -16,6 +16,7 @@ const ROUTES = new Set([
   "analisis_causas_v2",
   "analisis_causas_v02",
   "modelado-procesos",
+  "contexto",
 ]);
 
 export function createRouter(bus) {

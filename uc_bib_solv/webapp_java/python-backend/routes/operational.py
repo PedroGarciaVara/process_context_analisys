@@ -31,7 +31,10 @@ def _json_payload() -> dict:
 
 @bp.get("/api/operational/catalog")
 def operational_catalog():
-    return ok(get_operational_catalog())
+    try:
+        return ok(get_operational_catalog(request.args.get("version_id")))
+    except ValueError as exc:
+        return error(str(exc), status_code=400)
 
 
 @bp.get("/api/operational/page/<page>")

@@ -45,6 +45,16 @@ def stable_id(label: str) -> str:
     return str(uuid5(NAMESPACE, label))
 
 
+def operation_description(code: str, name: str) -> str:
+    """Return the semantic description persisted and rendered for an operation."""
+    return f"{code}: {name}. Descripción operativa del proceso de prueba."
+
+
+def node_description(node_type: str, code: str, name: str) -> str | None:
+    """Return the BPM column value for nodes whose description is meaningful."""
+    return operation_description(code, name) if node_type == "operation" else None
+
+
 def find_process(process_repo: ProcessRepository, code: str) -> dict | None:
     return next((item for item in process_repo.list() if item.get("process_code") == code), None)
 
@@ -139,7 +149,11 @@ def ensure_transition(transition_repo: TransitionRepository, version: dict, sour
 
 def patch_parent_node_via_api(node_id: str, child_process_id: str) -> dict:
     """Use the existing HTTP contract for the parent semantic conversion."""
-    body = json.dumps({"node_type": "subprocess", "child_process_id": child_process_id}).encode("utf-8")
+    body = json.dumps({
+        "node_type": "subprocess",
+        "child_process_id": child_process_id,
+        "description": operation_description("OP1", "Operación 1"),
+    }).encode("utf-8")
     request = urllib.request.Request(
         f"http://127.0.0.1:{os.environ.get('WEBAPP_JAVA_PORT', '8051')}/api/process-modeling/nodes/{node_id}",
         data=body,
@@ -165,7 +179,8 @@ def ensure_simple_child(processes, versions, nodes, transitions, code: str, name
         created[node_code] = ensure_node(nodes, version, {
             "node_id": stable_id(f"{code}:node:{node_code}"),
             "node_code": node_code, "node_type": node_type, "name": node_name,
-            "description": None, "properties": {},
+            "description": node_description(node_type, node_code, node_name),
+            "properties": {},
         })
     ensure_transition(transitions, version, created["INPUT"], created["OP"], "sequence")
     ensure_transition(transitions, version, created["OP"], created["OUTPUT"], "sequence")
@@ -182,7 +197,7 @@ def ensure_simple_flow(version_repo: VersionRepository, node_repo: NodeRepositor
             "node_code": code,
             "node_type": node_type,
             "name": name,
-            "description": None,
+            "description": node_description(node_type, code, name),
             "properties": {},
             **extra,
         })
@@ -243,7 +258,7 @@ def main() -> int:
             "node_code": code,
             "node_type": node_type,
             "name": name,
-            "description": None,
+            "description": node_description(node_type, code, name),
             "properties": extra.get("properties", {"stock": extra["stock"]} if "stock" in extra else {}),
             **{key: value for key, value in extra.items() if key != "stock"},
         }
@@ -259,6 +274,7 @@ def main() -> int:
     child_nodes["OP1.1"] = nodes.update(child_nodes["OP1.1"]["node_id"], {
         "node_type": "subprocess",
         "child_process_id": str(op1_1_child["process_id"]),
+        "description": operation_description("OP1.1", "Operación 1.1"),
     }) or child_nodes["OP1.1"]
     ensure_simple_flow(versions, nodes, transitions, op1_1_child, "OP1.1")
 
@@ -274,12 +290,16 @@ def main() -> int:
                 "node_code": code,
                 "node_type": "subprocess",
                 "name": name,
-                "description": None,
+                "description": operation_description(code, name),
                 "child_process_id": str(child_process["process_id"]),
                 "properties": {},
             })
         else:
-            nodes.update(parent_node_item["node_id"], {"node_type": "subprocess", "child_process_id": str(child_process["process_id"])})
+            nodes.update(parent_node_item["node_id"], {
+                "node_type": "subprocess",
+                "child_process_id": str(child_process["process_id"]),
+                "description": operation_description(code, name),
+            })
             if preferred_code != code:
                 remove_generated_duplicate_parent_node(parent_version["version_id"], code, preferred_code)
     ensure_simple_flow(versions, nodes, transitions, op2_child, "OP2")
@@ -298,13 +318,25 @@ def main() -> int:
     parent_payload = versions.get(PARENT_VERSION_ID)
     for node in parent_payload["nodes"]:
         if node["node_code"] == f"{PARENT_CODE}_OP2":
-            nodes.update(node["node_id"], {"node_type": "subprocess", "child_process_id": str(op2_child["process_id"])})
+            nodes.update(node["node_id"], {
+                "node_type": "subprocess",
+                "child_process_id": str(op2_child["process_id"]),
+                "description": operation_description("OP2", "Operación 2"),
+            })
         if node["node_code"] == f"{PARENT_CODE}_OP3":
-            nodes.update(node["node_id"], {"node_type": "subprocess", "child_process_id": str(op3_child["process_id"])})
+            nodes.update(node["node_id"], {
+                "node_type": "subprocess",
+                "child_process_id": str(op3_child["process_id"]),
+                "description": operation_description("OP3", "Operación 3"),
+            })
     child_payload = versions.get(child_version["version_id"])
     nested_node = next((node for node in child_payload["nodes"] if node["node_code"] == "OP1.1"), None)
     if nested_node:
-        nodes.update(nested_node["node_id"], {"node_type": "subprocess", "child_process_id": str(nested_child["process_id"])})
+        nodes.update(nested_node["node_id"], {
+            "node_type": "subprocess",
+            "child_process_id": str(nested_child["process_id"]),
+            "description": operation_description("OP1.1", "Operación 1.1"),
+        })
 
     result = {
         "parent_process_id": str(parent["process_id"]),

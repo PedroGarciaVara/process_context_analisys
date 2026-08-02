@@ -6,6 +6,7 @@ import { renderCausaDetalleV02 } from "./causa_detalle_v02.js";
 import { renderArbolesV02 } from "./arboles_v02.js";
 import { renderAnalisisCausasV02Shell } from "./analisis_causas_v02.js";
 import { renderProcessModeling } from "./process-modeling.js";
+import { renderContexto } from "./contexto.js";
 
 const VIEW_RENDERERS = {
   inicio: renderInicio,
@@ -22,6 +23,7 @@ const VIEW_RENDERERS = {
   arboles_v02: renderArbolesV02,
   analisis_causas_v02: renderAnalisisCausasV02Shell,
   "modelado-procesos": renderProcessModeling,
+  contexto: renderContexto,
 };
 
 export function renderView(route, state, bus) {
@@ -49,6 +51,7 @@ export function getRouteLabel(route) {
     analisis_causas_v2: "Analisis causas",
     analisis_causas_v02: "Analisis causas",
     "modelado-procesos": "Modelado de procesos",
+    contexto: "Contexto estructurado",
   };
   return labels[route] || "Inicio";
 }

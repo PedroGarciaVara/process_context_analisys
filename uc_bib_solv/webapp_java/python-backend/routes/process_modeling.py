@@ -93,6 +93,23 @@ def update_node_metadata(node_id):
     return _call(service.update_node_metadata, node_id, _payload())
 
 
+@bp.get("/api/process-modeling/versions/<version_id>/context")
+def get_context(version_id):
+    return _call(service.get_context, version_id, request.args.get("node_id"), request.args.get("family"), request.args.get("record_type"))
+
+
+@bp.post("/api/process-modeling/nodes/<node_id>/context-records")
+def create_context_record(node_id):
+    response = _call(service.create_context_record, node_id, _payload())
+    response.status_code = 201 if response.status_code == 200 else response.status_code
+    return response
+
+
+@bp.post("/api/process-modeling/kpis")
+def calculate_kpi():
+    return _call(service.calculate_context_kpi, _payload())
+
+
 @bp.post("/api/process-modeling/versions/<version_id>/transitions")
 def create_transition(version_id):
     response = _call(service.create_transition, version_id, _payload())

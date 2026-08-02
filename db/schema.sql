@@ -295,3 +295,29 @@ CREATE TABLE IF NOT EXISTS pm_process_node_metadata (
 );
 
 CREATE INDEX IF NOT EXISTS idx_pm_node_metadata_node ON pm_process_node_metadata(node_id);
+
+-- General context records. The record_type separates current declarations,
+-- execution facts and evidence without creating a table per process/family.
+-- Deployment is performed by the data-model deployment phase.
+CREATE TABLE IF NOT EXISTS pm_context_record (
+    record_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    version_id UUID REFERENCES pm_process_version(version_id) ON DELETE CASCADE,
+    node_id UUID REFERENCES pm_process_node(node_id) ON DELETE CASCADE,
+    record_type TEXT NOT NULL CHECK (record_type IN ('declaration', 'fact', 'evidence')),
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    source JSONB NOT NULL DEFAULT '{}'::jsonb,
+    provenance JSONB NOT NULL DEFAULT '{}'::jsonb,
+    execution_id TEXT,
+    supports JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT pm_context_record_payload_chk CHECK (jsonb_typeof(payload) = 'object'),
+    CONSTRAINT pm_context_record_source_chk CHECK (jsonb_typeof(source) = 'object'),
+    CONSTRAINT pm_context_record_provenance_chk CHECK (jsonb_typeof(provenance) = 'object'),
+    CONSTRAINT pm_context_record_supports_chk CHECK (supports IS NULL OR jsonb_typeof(supports) = 'object'),
+    CONSTRAINT pm_context_record_owner_chk CHECK (version_id IS NOT NULL OR node_id IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pm_context_record_version ON pm_context_record(version_id);
+CREATE INDEX IF NOT EXISTS idx_pm_context_record_node ON pm_context_record(node_id);
+CREATE INDEX IF NOT EXISTS idx_pm_context_record_type ON pm_context_record(record_type);

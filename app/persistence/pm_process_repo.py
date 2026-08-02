@@ -12,6 +12,15 @@ def _uuid(value: str) -> str:
 
 def _node_record(row):
     result = dict(row)
+    metadata = dict(result.get("metadata") or {})
+    metadata_data = metadata.get("data") if isinstance(metadata.get("data"), dict) else {}
+    # Preserve one stable API field for legacy metadata-only fixtures.
+    result["description"] = (
+        result.get("description")
+        or metadata.get("operation_description")
+        or metadata_data.get("operation_description")
+        or metadata_data.get("detailed_description")
+    )
     properties = dict(result.get("properties") or {})
     if result.get("stock_capacity") is not None:
         properties["stock"] = {
@@ -22,7 +31,7 @@ def _node_record(row):
     result["properties"] = properties
     if result.get("node_type") == "output":
         result["output_role"] = result.get("output_role") or "normal"
-    result["metadata"] = result.get("metadata") or {}
+    result["metadata"] = metadata
     return result
 
 
@@ -103,6 +112,21 @@ class VersionRepository:
             result["nodes"] = [_node_record(item) for item in cur.fetchall()]
             cur.execute("SELECT * FROM pm_process_transition WHERE version_id = %s ORDER BY source_node_id, target_node_id, transition_id", (_uuid(version_id),))
             result["transitions"] = [dict(item) for item in cur.fetchall()]
+            # The canonical legacy model has no operation table.  Seeded
+            # generic operations therefore expose their contract identity and
+            # M:N machine IDs as a stable API projection from node properties.
+            result["canonical_relations"] = [
+                {
+                    "node_id": node["node_id"],
+                    "node_code": node["node_code"],
+                    "process_id": (node.get("properties") or {}).get("canonical_ids", {}).get("proceso_id"),
+                    "contract_id": (node.get("properties") or {}).get("canonical_ids", {}).get("contrato_id"),
+                    "machine_ids": (node.get("properties") or {}).get("canonical_ids", {}).get("maquina_ids", []),
+                }
+                for node in result["nodes"]
+                if node.get("node_type") == "operation"
+                and (node.get("properties") or {}).get("canonical_ids", {}).get("contrato_id") is not None
+            ]
             return result
 
     def create(self, process_id, data):
@@ -182,6 +206,32 @@ class NodeRepository:
                           RETURNING metadata, updated_at""", (_uuid(node_id), json.dumps(metadata)))
             row = cur.fetchone()
             return {"metadata": dict(row["metadata"] or {}), "updated_at": row["updated_at"]}
+
+    def list_context_records(self, node_id=None, version_id=None, record_type=None):
+        clauses, values = [], []
+        if node_id:
+            clauses.append("node_id = %s")
+            values.append(_uuid(node_id))
+        if version_id:
+            clauses.append("version_id = %s")
+            values.append(_uuid(version_id))
+        if record_type:
+            clauses.append("record_type = %s")
+            values.append(record_type)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with db_cursor() as cur:
+            cur.execute(f"SELECT * FROM pm_context_record {where} ORDER BY created_at, record_id", values)
+            return [dict(row) for row in cur.fetchall()]
+
+    def create_context_record(self, node_id, version_id, record):
+        with db_cursor() as cur:
+            cur.execute("""INSERT INTO pm_context_record
+                (node_id, version_id, record_type, payload, source, provenance, execution_id, supports)
+                VALUES (%s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s::jsonb)
+                RETURNING *""", (node_id, version_id, record["record_type"], json.dumps(record["payload"]),
+                                  json.dumps(record["source"]), json.dumps(record["provenance"]),
+                                  record.get("execution_id"), json.dumps(record.get("supports")) if record.get("supports") is not None else None))
+            return dict(cur.fetchone())
 
 
 class TransitionRepository:

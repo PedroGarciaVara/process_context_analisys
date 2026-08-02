@@ -22,6 +22,17 @@ Este rol debe ejecutarse mediante delegacion aislada del orquestador para implem
 
 El orquestador no debe absorber la implementacion tecnica sustantiva en el hilo principal si existe este rol como responsable de la fase.
 
+La invocacion debe fijar explicitamente el modelo y el esfuerzo de razonamiento:
+
+```bash
+codex exec --model gpt-5.6-luna -c model_reasoning_effort=medium -C <repo> ...
+```
+
+Estas opciones son obligatorias para este agente. Si `gpt-5.6-luna` no esta disponible,
+o si no puede aplicarse `model_reasoning_effort=medium`, detener la fase y reportar la
+contingencia al orquestador; no usar otro modelo ni otro nivel de razonamiento de forma
+silenciosa.
+
 ## Reglas
 
 - No saltarse tareas ni cambiar alcance sin elevarlo.

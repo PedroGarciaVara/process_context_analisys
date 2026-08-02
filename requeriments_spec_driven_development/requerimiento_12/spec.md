@@ -281,6 +281,7 @@ Estas preguntas no bloquean la validación de este spec porque el contrato gener
 | 2026-08-01 | KPI/métricas se calculan bajo demanda mediante endpoints y no se persisten. | Aclaración humana |
 | 2026-08-01 | Se reutilizan módulos existentes de frontend, backend, dominio y persistencia; no se crean carpetas especializadas por proceso. | Continuidad arquitectónica |
 | 2026-08-01 | El programador humano valida explícitamente el `spec.md`; el estado pasa a `spec_validada` y queda habilitada la planificación. | Validación humana Gate 1 |
+| 2026-08-01 | El programador humano aprueba explícitamente `task_plan.md`; Gate 2 queda aprobado y la implementación puede comenzar mediante `execute-agent`. | Validación humana Gate 2 |
 
 ## 13. Estado de salida
 

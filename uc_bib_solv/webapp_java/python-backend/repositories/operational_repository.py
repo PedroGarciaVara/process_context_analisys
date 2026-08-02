@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from uuid import UUID
 
 from app.persistence import contrato_repo, maquina_repo, proceso_repo
 from app.persistence.db import db_cursor
@@ -517,8 +518,63 @@ def delete_machine(machine_id: str) -> dict:
     }
 
 
-def get_operational_catalog() -> dict:
-    return _build_catalog()
+def _bpm_identity(version_id: str | None) -> dict | None:
+    """Return the generic BPM-to-operational identity for an exact version."""
+    if not version_id:
+        return None
+    try:
+        version_uuid = str(UUID(str(version_id)))
+    except (TypeError, ValueError):
+        raise ValueError("version_id must be a valid UUID")
+    with db_cursor() as cur:
+        cur.execute(
+            """SELECT v.version_id, v.process_id AS bpm_process_id,
+                      v.version_number, p.process_code, p.name, p.description
+                 FROM pm_process_version v
+                 JOIN pm_process_definition p ON p.process_id = v.process_id
+                WHERE v.version_id = %s""",
+            (version_uuid,),
+        )
+        version = cur.fetchone()
+        if not version:
+            raise ValueError("BPM version not found")
+        cur.execute(
+            """SELECT node_id, node_code, node_type, properties
+                 FROM pm_process_node
+                WHERE version_id = %s AND node_type = 'operation'
+                ORDER BY node_code, node_id""",
+            (version_uuid,),
+        )
+        relations = []
+        for row in cur.fetchall():
+            ids = dict((row["properties"] or {}).get("canonical_ids") or {})
+            if ids.get("contrato_id") is None:
+                continue
+            cur.execute(
+                """SELECT c.id AS contract_id, c.proceso_id AS process_id,
+                          ARRAY_REMOVE(ARRAY_AGG(cm.maquina_id ORDER BY cm.maquina_id), NULL) AS machine_ids
+                     FROM contrato c
+                     LEFT JOIN contrato_maquina cm ON cm.contrato_id = c.id
+                    WHERE c.id = %s
+                    GROUP BY c.id, c.proceso_id""",
+                (int(ids["contrato_id"]),),
+            )
+            canonical = cur.fetchone()
+            relations.append({
+                "node_id": str(row["node_id"]),
+                "node_code": row["node_code"],
+                "process_id": ids.get("proceso_id"),
+                "contract_id": ids.get("contrato_id"),
+                "machine_ids": list((canonical or {}).get("machine_ids") or []),
+            })
+    return {"version": dict(version), "relations": relations}
+
+
+def get_operational_catalog(version_id: str | None = None) -> dict:
+    payload = _build_catalog()
+    if version_id:
+        payload["bpm"] = _bpm_identity(version_id)
+    return payload
 
 
 def get_operational_page_payload(page: str, params: dict[str, str] | None = None) -> dict:

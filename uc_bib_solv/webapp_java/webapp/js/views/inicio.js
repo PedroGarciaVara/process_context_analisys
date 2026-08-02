@@ -29,6 +29,7 @@ const MAIN_MENU = [
   { route: "arboles_v02", label: "Arbol", icon: "account_tree" },
   { route: "analisis_causas_v02", label: "Analisis causas", icon: "monitoring" },
   { route: "modelado-procesos", label: "Modelado procesos", icon: "account_tree" },
+  { route: "contexto", label: "Contexto estructurado", icon: "hub" },
 ];
 
 const RECENT_INVESTIGATIONS = [
