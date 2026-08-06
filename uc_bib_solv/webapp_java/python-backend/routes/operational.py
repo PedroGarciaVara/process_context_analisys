@@ -20,6 +20,7 @@ from repositories.operational_repository import (
     update_process,
 )
 from utils.http import error, ok
+from app.domain.machine_modeling.exceptions import MachineModelError
 
 
 bp = Blueprint("operational", __name__)
@@ -142,9 +143,16 @@ def operational_machines():
         {
             "status": "ok",
             "data": list_machines(
-                request.args.get("process_id") or request.args.get("processId"),
+                request.args.get("processId") or request.args.get("legacy_process_id") or (
+                    request.args.get("process_id") if request.args.get("process_id", "").isdigit() else None
+                ),
                 request.args.get("contract_id") or request.args.get("contractId"),
+                request.args.get("operation_id") or request.args.get("operationId"),
+                request.args.get("process_version_id") or request.args.get("processVersionId"),
                 request.args.get("status"),
+                request.args.get("bpm_process_id") or (
+                    request.args.get("process_id") if not request.args.get("process_id", "").isdigit() else None
+                ),
             ),
         }
     )
@@ -154,6 +162,8 @@ def operational_machines():
 def operational_machine_create():
     try:
         return ok({"status": "ok", "data": create_machine(_json_payload())}, status_code=201)
+    except MachineModelError as exc:
+        return error(str(exc), status_code=400, code=exc.code)
     except ValueError as exc:
         return error(str(exc), status_code=400)
 
@@ -162,13 +172,72 @@ def operational_machine_create():
 def operational_machine_update(machine_id: str):
     try:
         return ok({"status": "ok", "data": update_machine(machine_id, _json_payload())})
+    except MachineModelError as exc:
+        return error(str(exc), status_code=400, code=exc.code)
     except ValueError as exc:
         return error(str(exc), status_code=400)
+    except Exception:
+        return error("No se pudo actualizar la máquina", status_code=409, code="persistence_error")
 
 
 @bp.delete("/api/operational/machines/<machine_id>")
 def operational_machine_delete(machine_id: str):
     try:
         return ok({"status": "ok", "data": delete_machine(machine_id)})
+    except ValueError as exc:
+        return error(str(exc), status_code=400)
+
+
+@bp.get("/api/operational/machines/<machine_id>/context")
+def operational_machine_context(machine_id: str):
+    try:
+        from repositories.machine_model_repository import get_machine_context
+
+        return ok({"status": "ok", "data": get_machine_context(
+            machine_id,
+            request.args.get("operation_id") or request.args.get("operationId"),
+            request.args.get("process_version_id") or request.args.get("processVersionId"),
+        )})
+    except ValueError as exc:
+        return error(str(exc), status_code=400)
+
+
+@bp.patch("/api/operational/operations/<operation_id>/stages")
+def operational_operation_stages_update(operation_id: str):
+    try:
+        from services.process_modeling_service import update_operation_stages
+        from app.domain.process_modeling.exceptions import NotFoundError, ProcessModelingError
+
+        return ok({"status": "ok", "data": update_operation_stages(operation_id, _json_payload())})
+    except NotFoundError as exc:
+        return error(str(exc), status_code=404, code=exc.code)
+    except ProcessModelingError as exc:
+        return error(str(exc), status_code=400, code=exc.code)
+    except ValueError as exc:
+        return error(str(exc), status_code=400, code=getattr(exc, "code", "invalid_input"))
+    except Exception:
+        return error("No se pudo actualizar las etapas", status_code=409, code="persistence_error")
+
+
+@bp.get("/api/operational/machines/<machine_id>/configurations")
+def operational_machine_configurations(machine_id: str):
+    try:
+        from repositories.machine_model_repository import list_configurations
+
+        return ok({"status": "ok", "data": list_configurations(int(machine_id))})
+    except ValueError as exc:
+        return error(str(exc), status_code=400)
+
+
+@bp.post("/api/operational/machines/<machine_id>/configurations")
+def operational_machine_configuration_create(machine_id: str):
+    try:
+        from repositories.machine_model_repository import create_configuration
+        from app.domain.machine_modeling.validators import validate_configuration_payload
+
+        payload = dict(_json_payload())
+        payload["machine_id"] = int(machine_id)
+        validated = validate_configuration_payload(payload)
+        return ok({"status": "ok", "data": create_configuration(validated)}, status_code=201)
     except ValueError as exc:
         return error(str(exc), status_code=400)

@@ -66,6 +66,12 @@ function buildTree(graph, depths) {
       if (leftBranch !== rightBranch) return rightBranch - leftBranch;
       const leftDepth = depths[String(left.source_node_id)] ?? 0;
       const rightDepth = depths[String(right.source_node_id)] ?? 0;
+      // A branch target is rendered at the first branch level (see
+      // computeDepths). Its visual parent must therefore be the shallowest
+      // branch source; choosing a later converging branch would place the
+      // target in an earlier layer under a distant parent and can overlap
+      // the main flow in that layer.
+      if (leftBranch && rightBranch && leftDepth !== rightDepth) return leftDepth - rightDepth;
       if (leftDepth !== rightDepth) return rightDepth - leftDepth;
       return String(left.transition_id || "").localeCompare(String(right.transition_id || ""));
     })[0];
@@ -96,19 +102,23 @@ function computeLayerTops(depths, dimensions) {
   return { layerHeights, layerTops };
 }
 
-function computeSubtreeWidths(nodeId, tree, dimensions, memo) {
+function computeSubtreeWidths(nodeId, tree, dimensions, columnWidths, memo) {
   if (memo[nodeId]) return memo[nodeId];
-  const ownWidth = dimensions[nodeId]?.width || 190;
+  // `placeTree` renders the shared width of a vertical column. Reserve that
+  // same effective width while sizing the parent subtree; otherwise a wider
+  // descendant can consume the branch gap after placement and overlap a
+  // sibling that converges into the same layer.
+  const ownWidth = columnWidths[nodeId] || dimensions[nodeId]?.width || 190;
   const children = tree.children[nodeId] || [];
   if (!children.length) {
     memo[nodeId] = ownWidth;
     return memo[nodeId];
   }
   if (children.length === 1) {
-    memo[nodeId] = Math.max(ownWidth, computeSubtreeWidths(children[0], tree, dimensions, memo));
+    memo[nodeId] = Math.max(ownWidth, computeSubtreeWidths(children[0], tree, dimensions, columnWidths, memo));
     return memo[nodeId];
   }
-  const total = children.reduce((sum, childId, index) => sum + computeSubtreeWidths(childId, tree, dimensions, memo) + (index ? DEFAULT_LAYOUT_METRICS.branchGap : 0), 0);
+  const total = children.reduce((sum, childId, index) => sum + computeSubtreeWidths(childId, tree, dimensions, columnWidths, memo) + (index ? DEFAULT_LAYOUT_METRICS.branchGap : 0), 0);
   memo[nodeId] = Math.max(ownWidth, total);
   return memo[nodeId];
 }
@@ -286,8 +296,8 @@ export function computeProcessLayout(version, dimensions, transitions) {
     if (depthDelta) return depthDelta;
     return left.localeCompare(right);
   });
-  roots.forEach((rootId) => computeSubtreeWidths(rootId, tree, dimensions, subtreeWidths));
   const columnWidths = computeVerticalColumnWidths(roots, tree, dimensions);
+  roots.forEach((rootId) => computeSubtreeWidths(rootId, tree, dimensions, columnWidths, subtreeWidths));
   const totalWidth = roots.reduce((sum, rootId, index) => sum + subtreeWidths[rootId] + (index ? DEFAULT_LAYOUT_METRICS.laneGap : 0), 0);
   const positions = {};
   let cursor = DEFAULT_LAYOUT_METRICS.canvasPadding + totalWidth / 2 * -1;

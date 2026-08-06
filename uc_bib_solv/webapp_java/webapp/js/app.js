@@ -21,7 +21,8 @@ const bus = createEventBus();
 const router = createRouter(bus);
 let operationalLoadToken = 0;
 
-function applyCatalogDefaults(catalog) {
+function applyCatalogDefaults(catalog, allowDefaults = true) {
+  if (!allowDefaults) return;
   const defaults = catalog?.defaults || {};
   if (!AppState.currentProcess && defaults.processId) {
     AppState.currentProcess = defaults.processId;
@@ -98,7 +99,9 @@ async function boot() {
     const nextCatalog = await fetchOperationalCatalog().catch(() => null);
     if (nextCatalog) {
       AppState.catalog = nextCatalog;
-      applyCatalogDefaults(nextCatalog);
+      // A refresh must preserve an intentional unscoped selection (for
+      // example, immediately after creating a machine without a contract).
+      applyCatalogDefaults(nextCatalog, false);
     }
     await refreshCurrentPage();
   };

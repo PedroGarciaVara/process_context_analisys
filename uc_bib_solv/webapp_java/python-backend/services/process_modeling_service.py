@@ -8,6 +8,7 @@ from app.domain.process_modeling.exceptions import NotDraftError, NotFoundError,
 from app.domain.process_modeling.validators import validate_graph, validate_hierarchy
 from app.domain.process_modeling.context import ContextDetail, ContextRecord, calculate_kpi
 from app.persistence.pm_process_repo import NodeRepository, ProcessRepository, TransitionRepository, VersionRepository
+from app.domain.machine_modeling.validators import canonical_stages
 
 
 processes = ProcessRepository()
@@ -187,6 +188,8 @@ def validate_version_payload(payload):
 def create_node(version_id, data):
     _draft(version_id)
     node_data = {key: value for key, value in data.items() if key in {"node_id", "node_code", "node_type", "name", "description", "child_process_id", "output_role", "properties"}}
+    if "etapas" in data:
+        node_data.setdefault("properties", {})["etapas"] = canonical_stages(data["etapas"], envelope=True)
     if "stock" in data:
         node_data.setdefault("properties", {})["stock"] = data["stock"]
     entity = ProcessNode(version_id=version_id, **node_data)
@@ -230,6 +233,9 @@ def update_node(node_id, data):
     _draft(node["version_id"])
     merged = dict(node)
     merged.update(data)
+    if "etapas" in data:
+        merged["properties"] = dict(node.get("properties") or {})
+        merged["properties"]["etapas"] = canonical_stages(data["etapas"], envelope=True)
     entity = ProcessNode(**{key: merged[key] for key in ("node_id", "version_id", "node_code", "node_type", "name", "description", "child_process_id", "output_role", "properties")})
     if entity.child_process_id and not processes.get(entity.child_process_id):
         raise NotFoundError("Proceso hijo no encontrado")
@@ -237,6 +243,39 @@ def update_node(node_id, data):
     if any(item.get("node_id") != node_id and item.get("node_code") == entity.node_code for item in version_nodes):
         raise ProcessModelingError("El código de nodo ya existe en la versión", "duplicate_node_code")
     return _jsonable(nodes.update(node_id, entity.to_dict()))
+
+
+def get_operation(operation_id):
+    node = nodes.get(operation_id)
+    if not node:
+        raise NotFoundError("Operación no encontrada")
+    if node.get("node_type") != "operation":
+        raise ProcessModelingError("El nodo no es una operación BPM", "invalid_operation_type")
+    return _jsonable({
+        "operation_id": str(node["node_id"]),
+        "process_version_id": str(node["version_id"]),
+        "etapas": canonical_stages((node.get("properties") or {}).get("etapas"), envelope=False),
+        "schema_version": 1,
+        "name": node.get("name"),
+        "node_code": node.get("node_code"),
+        "properties": node.get("properties") or {},
+    })
+
+
+def update_operation_stages(operation_id, data):
+    node = nodes.get(operation_id)
+    if not node:
+        raise NotFoundError("Operación no encontrada")
+    if node.get("node_type") != "operation":
+        raise ProcessModelingError("El nodo no es una operación BPM", "invalid_operation_type")
+    if "process_version_id" in data and str(data["process_version_id"]) != str(node["version_id"]):
+        raise ProcessModelingError("La operación no pertenece a process_version_id", "operation_version_mismatch")
+    if "etapas" not in data:
+        raise ProcessModelingError("etapas es obligatorio para actualizar la operación", "stages_required")
+    result = nodes.update_stages(operation_id, data["etapas"])
+    if not result:
+        raise NotDraftError()
+    return get_operation(operation_id)
 
 
 def delete_node(node_id):

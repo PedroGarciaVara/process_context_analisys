@@ -155,6 +155,16 @@ class Req12FixtureSeedContractTests(unittest.TestCase):
         self.assertIn("request.args.get(\"version_id\")", route)
         self.assertIn('"relations"', repo)
 
+    def test_machine_model_migration_reads_canonical_ids_and_keeps_contract_separate(self):
+        migration = (Path(__file__).parents[2] / "scripts" / "migrate_req12_machine_model.py").read_text(encoding="utf-8")
+        self.assertIn("properties.canonical_ids", migration)
+        self.assertIn("--from-bpm-version", migration)
+        self.assertIn("machine_operation_configuration", migration)
+        self.assertIn("operation_id", migration)
+        self.assertIn("process_version_id", migration)
+        self.assertIn("JOIN contrato_maquina", migration)
+        self.assertNotIn("operation_id = contract_id", migration)
+
 
 if __name__ == "__main__":
     unittest.main()

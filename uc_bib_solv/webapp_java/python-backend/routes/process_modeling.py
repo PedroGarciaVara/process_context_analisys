@@ -78,6 +78,16 @@ def update_node(node_id):
     return _call(service.update_node, node_id, _payload())
 
 
+@bp.get("/api/process-modeling/operations/<operation_id>")
+def get_operation(operation_id):
+    return _call(service.get_operation, operation_id)
+
+
+@bp.patch("/api/process-modeling/operations/<operation_id>/stages")
+def update_operation_stages(operation_id):
+    return _call(service.update_operation_stages, operation_id, _payload())
+
+
 @bp.delete("/api/process-modeling/nodes/<node_id>")
 def delete_node(node_id):
     return _call(service.delete_node, node_id)

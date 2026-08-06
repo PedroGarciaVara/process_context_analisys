@@ -23,7 +23,9 @@ export function createEventBus() {
     },
     emit(event, payload) {
       const handlers = listeners.get(event) || [];
-      handlers.forEach((handler) => handler(payload));
+      // CRUD flows can await the reload that follows a successful write.
+      // Existing callers may continue to ignore the returned promise.
+      return Promise.all(handlers.map((handler) => Promise.resolve(handler(payload))));
     },
   };
 }

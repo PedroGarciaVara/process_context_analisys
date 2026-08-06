@@ -4,6 +4,7 @@ import json
 from uuid import UUID
 
 from app.persistence.db import db_cursor
+from app.domain.machine_modeling.validators import canonical_stages
 
 
 def _uuid(value: str) -> str:
@@ -22,6 +23,19 @@ def _node_record(row):
         or metadata_data.get("detailed_description")
     )
     properties = dict(result.get("properties") or {})
+    if result.get("node_type") == "operation":
+        persisted_stages = properties.get("etapas")
+        if persisted_stages is None:
+            persisted_stages = {"schema_version": 1, "etapas": []}
+        try:
+            stages_envelope = canonical_stages(persisted_stages, envelope=True)
+        except ValueError:
+            # Existing non-stage properties remain readable; malformed stage
+            # data is surfaced as an empty compatible projection until corrected via API.
+            stages_envelope = {"schema_version": 1, "etapas": []}
+        properties["etapas"] = stages_envelope
+        result["etapas"] = stages_envelope["etapas"]
+        result["stages_schema_version"] = stages_envelope["schema_version"]
     if result.get("stock_capacity") is not None:
         properties["stock"] = {
             "capacity": result["stock_capacity"],
@@ -33,6 +47,12 @@ def _node_record(row):
         result["output_role"] = result.get("output_role") or "normal"
     result["metadata"] = metadata
     return result
+
+
+def _merge_stage_properties(properties: dict, stages):
+    merged = dict(properties or {})
+    merged["etapas"] = canonical_stages(stages, envelope=True)
+    return merged
 
 
 def _node_values(data):
@@ -173,6 +193,8 @@ class NodeRepository:
     def update(self, node_id, data):
         fields = {key: data[key] for key in ("node_code", "node_type", "name", "description", "child_process_id", "output_role", "properties") if key in data}
         if "properties" in fields:
+            if "etapas" in fields["properties"]:
+                fields["properties"] = _merge_stage_properties(fields["properties"], fields["properties"]["etapas"])
             stock = (fields["properties"] or {}).get("stock") if fields.get("node_type", data.get("node_type")) == "stock" else None
             fields.update({"stock_capacity": stock.get("capacity") if stock else None, "stock_initial_quantity": stock.get("initial_quantity") if stock else None, "stock_unit": stock.get("unit") if stock else None})
         if not fields:
@@ -182,6 +204,22 @@ class NodeRepository:
         with db_cursor() as cur:
             cur.execute(f"""UPDATE pm_process_node n SET {assignments}, updated_at = NOW()
                 FROM pm_process_version v WHERE n.node_id = %s AND n.version_id = v.version_id AND v.status = 'draft' RETURNING n.*""", values)
+            row = cur.fetchone()
+            return _node_record(row) if row else None
+
+    def update_stages(self, node_id, stages):
+        """Update only properties.etapas and preserve every other property."""
+        with db_cursor() as cur:
+            envelope = canonical_stages(stages, envelope=True)
+            cur.execute(
+                """UPDATE pm_process_node n SET properties = jsonb_set(
+                    COALESCE(n.properties, '{}'::jsonb), '{etapas}', %s::jsonb, true),
+                    updated_at = NOW()
+                    FROM pm_process_version v
+                    WHERE n.node_id = %s AND n.version_id = v.version_id AND v.status = 'draft'
+                    RETURNING n.*""",
+                (json.dumps(envelope), _uuid(node_id)),
+            )
             row = cur.fetchone()
             return _node_record(row) if row else None
 

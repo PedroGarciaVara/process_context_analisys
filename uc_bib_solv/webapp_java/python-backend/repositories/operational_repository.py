@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 from uuid import UUID
+from psycopg2.extras import Json
 
 from app.persistence import contrato_repo, maquina_repo, proceso_repo
 from app.persistence.db import db_cursor
+from app.domain.machine_modeling.validators import canonical_stages, validate_stages
 
 
 PAGE_METADATA = {
@@ -92,6 +94,42 @@ def _links_by_machine() -> dict[int, list[int]]:
     return mapping
 
 
+def _operations_by_machine() -> dict[int, list[dict]]:
+    """Return BPM operation identities linked by the canonical configuration table."""
+    with db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT moc.machine_id, moc.operation_id, moc.process_version_id,
+                   moc.process_id, moc.contract_id, c.proceso_id AS legacy_process_id,
+                   n.node_code, n.name, n.description,
+                   n.properties->'etapas' AS stage_payload,
+                   v.version_number, p.name AS process_name
+              FROM machine_operation_configuration moc
+              LEFT JOIN contrato c ON c.id = moc.contract_id
+              JOIN pm_process_node n ON n.node_id = moc.operation_id
+              JOIN pm_process_version v ON v.version_id = moc.process_version_id
+              JOIN pm_process_definition p ON p.process_id = moc.process_id
+             WHERE n.node_type = 'operation'
+             ORDER BY moc.machine_id, p.name, v.version_number, n.node_code, moc.operation_id
+            """
+        )
+        grouped: dict[int, list[dict]] = {}
+        for row in cur.fetchall():
+            item = dict(row)
+            item["operation_id"] = str(item["operation_id"])
+            item["process_version_id"] = str(item["process_version_id"])
+            item["process_id"] = str(item["process_id"])
+            item["contract_id"] = int(item["contract_id"]) if item["contract_id"] is not None else None
+            item["legacy_process_id"] = int(item["legacy_process_id"]) if item["legacy_process_id"] is not None else None
+            stage_payload = item.pop("stage_payload", None)
+            if isinstance(stage_payload, dict):
+                stage_payload = stage_payload.get("etapas", [])
+            item["etapas"] = validate_stages(stage_payload or [])
+            item["etapas_schema_version"] = 1
+            grouped.setdefault(int(item["machine_id"]), []).append(item)
+        return grouped
+
+
 def _process_records() -> list[dict]:
     processes = [dict(item) for item in proceso_repo.get_all()]
     contracts = [dict(item) for item in contrato_repo.get_all()]
@@ -175,7 +213,12 @@ def _machine_status(contract_ids: list[int], contracts_by_id: dict[int, dict]) -
     return "ready"
 
 
-def _decorate_machine(machine: dict, preferred_contract_id: int | None = None) -> dict:
+def _decorate_machine(
+    machine: dict,
+    preferred_contract_id: int | None = None,
+    operation_id: str | None = None,
+    process_version_id: str | None = None,
+) -> dict:
     processes_by_id = {int(item["id"]): item for item in _process_records()}
     contracts_by_id = {int(item["id"]): item for item in _contract_records()}
     links = _links_by_machine().get(int(machine["id"]), [])
@@ -187,8 +230,25 @@ def _decorate_machine(machine: dict, preferred_contract_id: int | None = None) -
 
     contract = contracts_by_id.get(selected_contract_id) if selected_contract_id is not None else None
     process = processes_by_id.get(int(contract["processId"])) if contract else None
+    operations = _operations_by_machine().get(int(machine["id"]), [])
+    scoped_operation = next(
+        (
+            item for item in operations
+            if (not operation_id or item["operation_id"] == str(operation_id))
+            and (not process_version_id or item["process_version_id"] == str(process_version_id))
+        ),
+        None,
+    )
+    # A BPM configuration is the authoritative scope when an operation filter
+    # is active.  contrato_maquina remains a compatibility relation, but its
+    # sorted first row must not replace the configuration's contract identity.
+    if scoped_operation and scoped_operation["contract_id"] is not None:
+        selected_contract_id = scoped_operation["contract_id"]
+        contract = contracts_by_id.get(selected_contract_id)
+        process = processes_by_id.get(int(contract["processId"])) if contract else None
     return {
         "id": int(machine["id"]),
+        "machineTypeId": int(machine["maquinas_tipo_id"]) if machine.get("maquinas_tipo_id") is not None else None,
         "contractId": int(contract["id"]) if contract else None,
         "processId": int(process["id"]) if process else None,
         "name": machine.get("nombre") or f"Maquina {machine['id']}",
@@ -197,12 +257,52 @@ def _decorate_machine(machine: dict, preferred_contract_id: int | None = None) -
         "processName": process.get("name") if process else "Unscoped",
         "contractName": contract.get("name") if contract else "Unscoped",
         "contractIds": links,
+        "operations": operations,
+        "operationIds": [item["operation_id"] for item in operations],
+        "processVersionIds": [item["process_version_id"] for item in operations],
+        "selectedOperationId": scoped_operation["operation_id"] if scoped_operation else None,
+        "selectedProcessVersionId": scoped_operation["process_version_id"] if scoped_operation else None,
+        "selectedBpmProcessId": scoped_operation["process_id"] if scoped_operation else None,
+        "selectedOperationContractId": scoped_operation["contract_id"] if scoped_operation else None,
+        "operationRelations": [
+            {
+                "operation_id": item["operation_id"],
+                "process_version_id": item["process_version_id"],
+                "process_id": item["process_id"],
+                "contract_id": item["contract_id"],
+                "legacy_process_id": item["legacy_process_id"],
+                "etapas": validate_stages(item.get("etapas") or []),
+                "etapas_schema_version": item.get("etapas_schema_version", 1),
+            }
+            for item in operations
+        ],
     }
 
 
 def _machine_records() -> list[dict]:
     machines = [dict(item) for item in maquina_repo.get_all()]
     return [_decorate_machine(machine) for machine in machines]
+
+
+def _save_operation_stages(payload: dict) -> None:
+    if "etapas" not in payload:
+        return
+    operation_id = payload.get("operation_id") or payload.get("operationId")
+    version_id = payload.get("process_version_id") or payload.get("processVersionId")
+    if not operation_id or not version_id:
+        raise ValueError("operation_id y process_version_id son obligatorios para guardar etapas.")
+    stages = validate_stages(payload.get("etapas"))
+    with db_cursor() as cur:
+        cur.execute(
+            """UPDATE pm_process_node
+                  SET properties = jsonb_set(COALESCE(properties, '{}'::jsonb), '{etapas}', %s::jsonb, true),
+                      updated_at = NOW()
+                WHERE node_id=%s AND version_id=%s AND node_type='operation'
+                RETURNING node_id""",
+            (Json(canonical_stages(stages, envelope=True)), str(operation_id), str(version_id)),
+        )
+        if not cur.fetchone():
+            raise ValueError("La operación BPM no existe o no pertenece a la versión indicada.")
 
 
 def _filter_processes(status: str | None = None) -> list[dict]:
@@ -224,14 +324,55 @@ def _filter_contracts(process_id: int | None = None, status: str | None = None) 
 def _filter_machines(
     process_id: int | None = None,
     contract_id: int | None = None,
+    operation_id: str | None = None,
+    process_version_id: str | None = None,
     status: str | None = None,
+    bpm_process_id: str | None = None,
 ) -> list[dict]:
+    operation_scope = None
+    if operation_id:
+        with db_cursor() as cur:
+            cur.execute(
+                """
+                SELECT moc.process_id, c.proceso_id AS legacy_process_id
+                  FROM machine_operation_configuration moc
+                  LEFT JOIN contrato c ON c.id = moc.contract_id
+                 WHERE moc.operation_id = %s
+                   AND (%s IS NULL OR moc.process_version_id = %s)
+                 LIMIT 1
+                """,
+                (operation_id, process_version_id, process_version_id),
+            )
+            operation_scope = cur.fetchone()
+        if not operation_scope:
+            raise ValueError("La operación BPM no existe o no tiene una configuración canónica.")
+        if bpm_process_id and str(operation_scope["process_id"]) != str(bpm_process_id):
+            raise ValueError("process_id BPM no coincide con la operación seleccionada.")
+        if process_id and operation_scope["legacy_process_id"] is not None and int(process_id) != int(operation_scope["legacy_process_id"]):
+            raise ValueError("processId legacy no coincide con la operación BPM seleccionada.")
     machines = [dict(item) for item in maquina_repo.get_all()]
-    records = [_decorate_machine(machine, preferred_contract_id=int(contract_id) if contract_id else None) for machine in machines]
+    records = [
+        _decorate_machine(
+            machine,
+            preferred_contract_id=int(contract_id) if contract_id else None,
+            operation_id=operation_id,
+            process_version_id=process_version_id,
+        )
+        for machine in machines
+    ]
     if process_id:
         records = [item for item in records if item["processId"] == int(process_id)]
     if contract_id:
         records = [item for item in records if item["contractId"] == int(contract_id)]
+    if operation_id:
+        records = [
+            item for item in records
+            if any(
+                operation["operation_id"] == str(operation_id)
+                and (not process_version_id or operation["process_version_id"] == str(process_version_id))
+                for operation in item["operations"]
+            )
+        ]
     if status and status != "all":
         records = [item for item in records if item["status"] == status]
     return records
@@ -273,8 +414,16 @@ def _decorate_page_payload(page: str, payload: dict, params: dict[str, str] | No
     if page not in pages:
         raise ValueError(f"Unsupported operational page: {page}")
 
-    process_id = params.get("process_id") or params.get("processId") or None
+    process_id = params.get("processId") or params.get("legacy_process_id") or None
+    raw_process_id = params.get("process_id")
+    if process_id is None and raw_process_id and _coerce_optional_int(raw_process_id) is not None:
+        process_id = raw_process_id
+    bpm_process_id = params.get("bpm_process_id") or (
+        raw_process_id if raw_process_id and _coerce_optional_int(raw_process_id) is None else None
+    )
     contract_id = params.get("contract_id") or params.get("contractId") or None
+    operation_id = params.get("operation_id") or params.get("operationId") or None
+    process_version_id = params.get("process_version_id") or params.get("processVersionId") or None
     machine_id = params.get("machine_id") or params.get("machineId") or None
     status = params.get("status") or params.get("filter") or "all"
     process_id_int = _coerce_optional_int(process_id)
@@ -328,9 +477,11 @@ def _decorate_page_payload(page: str, payload: dict, params: dict[str, str] | No
 
     if page == "maquinas":
         result["data"] = {
-            "rows": _filter_machines(process_id_int, contract_id_int, status),
+            "rows": _filter_machines(process_id_int, contract_id_int, operation_id, process_version_id, status, bpm_process_id),
             "selected_process_id": process_id_int,
             "selected_contract_id": contract_id_int,
+            "selected_operation_id": operation_id,
+            "selected_process_version_id": process_version_id,
             "selected_machine_id": machine_id_int,
             "status": status,
             "filters": pages[page]["status_filters"],
@@ -352,11 +503,14 @@ def list_contracts(process_id: str | None = None, status: str | None = None) -> 
 def list_machines(
     process_id: str | None = None,
     contract_id: str | None = None,
+    operation_id: str | None = None,
+    process_version_id: str | None = None,
     status: str | None = None,
+    bpm_process_id: str | None = None,
 ) -> list[dict]:
     process_id_int = _coerce_optional_int(process_id)
     contract_id_int = _coerce_optional_int(contract_id)
-    return _filter_machines(process_id_int, contract_id_int, status)
+    return _filter_machines(process_id_int, contract_id_int, operation_id, process_version_id, status, bpm_process_id)
 
 
 def create_process(payload: dict) -> dict:
@@ -475,7 +629,15 @@ def create_machine(payload: dict) -> dict:
     name = str(payload.get("name") or "").strip()
     contract_id = payload.get("contractId") or payload.get("contract_id")
     process_id = payload.get("processId") or payload.get("process_id")
-    created = maquina_repo.create(name)
+    machine_type = dict(payload.get("machine_type") or {})
+    machine_type_id = payload.get("machine_type_id") or payload.get("machineTypeId")
+    if machine_type_id in (None, ""):
+        type_name = str(machine_type.get("name") or "").strip()
+        if not type_name:
+            raise ValueError("El nombre del tipo de máquina es obligatorio.")
+        machine_type_id = _save_machine_type(machine_type)
+    machine_fields = _machine_write_fields(payload)
+    created = maquina_repo.create(name, int(machine_type_id), **machine_fields)
     if contract_id not in (None, ""):
         contract = contrato_repo.get_by_id(int(contract_id))
         if not contract:
@@ -483,6 +645,9 @@ def create_machine(payload: dict) -> dict:
         if process_id not in (None, "") and int(process_id) != int(contract["proceso_id"]):
             raise ValueError("processId must match contract scope")
         contrato_repo.add_maquina(int(contract_id), int(created["id"]))
+        with db_cursor() as cur:
+            cur.execute("UPDATE maquina SET contract_id=%s WHERE id=%s", (int(contract_id), int(created["id"])))
+    _save_operation_stages(payload)
     return _decorate_machine(created, preferred_contract_id=int(contract_id) if contract_id not in (None, "") else None)
 
 
@@ -493,12 +658,19 @@ def update_machine(machine_id: str, payload: dict) -> dict:
         raise ValueError("Máquina no encontrada.")
 
     target_name = str(payload.get("name") or current["nombre"] or "").strip()
-    maquina_repo.update(machine_id_int, target_name)
+    machine_type_id = payload.get("machine_type_id") or payload.get("machineTypeId") or current.get("maquinas_tipo_id")
+    machine_type = payload.get("machine_type")
+    if machine_type:
+        machine_type_id = _save_machine_type(dict(machine_type), machine_type_id)
+    if machine_type_id in (None, ""):
+        raise ValueError("El tipo de máquina es obligatorio.")
+    maquina_repo.update(machine_id_int, target_name, int(machine_type_id), **_machine_write_fields(payload, current))
 
     if "contractId" in payload or "contract_id" in payload:
         contract_id = payload.get("contractId") or payload.get("contract_id")
         with db_cursor() as cur:
             cur.execute("DELETE FROM contrato_maquina WHERE maquina_id=%s", (machine_id_int,))
+            cur.execute("UPDATE maquina SET contract_id=%s WHERE id=%s", (contract_id or None, machine_id_int))
         if contract_id not in (None, ""):
             contract = contrato_repo.get_by_id(int(contract_id))
             if not contract:
@@ -507,7 +679,81 @@ def update_machine(machine_id: str, payload: dict) -> dict:
             if process_id not in (None, "") and int(process_id) != int(contract["proceso_id"]):
                 raise ValueError("processId must match contract scope")
             contrato_repo.add_maquina(int(contract_id), machine_id_int)
-    return _decorate_machine(maquina_repo.get_by_id(machine_id_int))
+    _save_operation_stages(payload)
+    return _decorate_machine(
+        maquina_repo.get_by_id(machine_id_int),
+        preferred_contract_id=int(contract_id) if "contract_id" in locals() and contract_id not in (None, "") else None,
+    )
+
+
+def _json_value(payload: dict, key: str, current: dict | None = None):
+    value = payload.get(key, current.get(key) if current else None)
+    if value in (None, ""):
+        return None
+    if isinstance(value, str):
+        import json
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{key} debe ser JSON válido.") from exc
+    if not isinstance(value, (dict, list)):
+        raise ValueError(f"{key} debe ser un objeto o una lista.")
+    return value
+
+
+def _machine_write_fields(payload: dict, current: dict | None = None) -> dict:
+    status = payload.get("operational_status", current.get("operational_status", "unknown") if current else "unknown")
+    allowed = {"ready", "running", "stopped", "degraded", "unavailable", "unknown"}
+    if status not in allowed:
+        raise ValueError("Estado operativo no permitido.")
+    fields = {"operational_status": status, "specific_description": payload.get("specific_description", current.get("specific_description") if current else None)}
+    for key in ("specific_characteristics", "specific_parameters", "specific_operating_ranges", "specific_limitations", "specific_instructions", "differences_from_machine_type"):
+        fields[key] = _json_value(payload, key, current)
+    return fields
+
+
+def _save_machine_type(payload: dict, machine_type_id: int | str | None = None) -> int:
+    name = str(payload.get("name") or payload.get("nombre") or "").strip()
+    principle = str(payload.get("operating_principle") or "").strip()
+    description = str(payload.get("general_technical_description") or payload.get("description") or "").strip()
+    if not name or not principle or not description:
+        raise ValueError("El tipo requiere nombre, principio de funcionamiento y descripción técnica general.")
+    values = {
+        "technology_description": payload.get("technology_description"),
+        "nominal_capacity": _json_value(payload, "nominal_capacity"),
+        "operating_principle": principle,
+        "elements_zones_positions": _json_value(payload, "elements_zones_positions") or [],
+        "control_systems": _json_value(payload, "control_systems") or [],
+        "common_technical_characteristics": _json_value(payload, "common_technical_characteristics") or [],
+        "common_limitations": _json_value(payload, "common_limitations") or [],
+        "general_technical_description": description,
+    }
+    with db_cursor() as cur:
+        if machine_type_id not in (None, ""):
+            cur.execute("SELECT id FROM maquinas_tipo WHERE id=%s", (int(machine_type_id),))
+            if not cur.fetchone():
+                raise ValueError("Tipo de máquina no encontrado.")
+            cur.execute(
+                """UPDATE maquinas_tipo SET nombre=%s, technology_description=%s, nominal_capacity=%s,
+                   operating_principle=%s, elements_zones_positions=%s, control_systems=%s,
+                   common_technical_characteristics=%s, common_limitations=%s,
+                   general_technical_description=%s WHERE id=%s RETURNING id""",
+                (name, values["technology_description"], Json(values["nominal_capacity"]) if values["nominal_capacity"] is not None else None,
+                 values["operating_principle"], Json(values["elements_zones_positions"]), Json(values["control_systems"]),
+                 Json(values["common_technical_characteristics"]), Json(values["common_limitations"]), values["general_technical_description"], int(machine_type_id)),
+            )
+        else:
+            cur.execute(
+                """INSERT INTO maquinas_tipo
+                   (nombre, technology_description, nominal_capacity, operating_principle,
+                    elements_zones_positions, control_systems, common_technical_characteristics,
+                    common_limitations, general_technical_description)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+                (name, values["technology_description"], Json(values["nominal_capacity"]) if values["nominal_capacity"] is not None else None,
+                 values["operating_principle"], Json(values["elements_zones_positions"]), Json(values["control_systems"]),
+                 Json(values["common_technical_characteristics"]), Json(values["common_limitations"]), values["general_technical_description"]),
+            )
+        return int(cur.fetchone()["id"])
 
 
 def delete_machine(machine_id: str) -> dict:

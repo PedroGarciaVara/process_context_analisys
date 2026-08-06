@@ -4,7 +4,7 @@
 
 - Requirement ID: `requerimiento_12`
 - Spec File: `./requeriments_spec_driven_development/requerimiento_12/spec.md`
-- Status: `en_correccion`
+- Status: `implementado_pendiente_validacion`
 - Allowed Status Values:
   - `pending_human_validation`
   - `approved`

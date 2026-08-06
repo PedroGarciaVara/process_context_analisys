@@ -57,3 +57,24 @@ export function updateMachine(machineId, payload) {
 export function deleteMachine(machineId) {
   return requestJson(`/api/operational/machines/${machineId}`, { method: "DELETE" });
 }
+
+export function fetchMachineContext(machineId, params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== "") query.set(key, String(value));
+  });
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return requestJson(`/api/operational/machines/${machineId}/context${suffix}`);
+}
+
+export function updateOperationStages(operationId, processVersionId, etapas) {
+  return requestJson(`/api/operational/operations/${operationId}/stages`, jsonOptions("PATCH", {
+    operation_id: operationId,
+    process_version_id: processVersionId,
+    etapas,
+  }));
+}
+
+export function createMachineOperationConfiguration(machineId, payload) {
+  return requestJson(`/api/operational/machines/${machineId}/configurations`, jsonOptions("POST", payload));
+}

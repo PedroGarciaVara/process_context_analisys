@@ -48,6 +48,8 @@ def create_app() -> Flask:
                 "/api/operational/contracts/<contract_id>",
                 "/api/operational/machines",
                 "/api/operational/machines/<machine_id>",
+                "/api/operational/machines/<machine_id>/context",
+                "/api/operational/machines/<machine_id>/configurations",
                 "/api/causas",
                 "/api/causas/detail",
                 "/api/causas/<causa_id>",

@@ -11,6 +11,7 @@ export const AppState = {
   },
   currentProcess: null,
   currentContract: null,
+  currentOperation: null,
   currentMachine: null,
   currentCause: null,
   tree: {
@@ -28,11 +29,22 @@ export function setRoute(route) {
 export function setCurrentProcess(processId) {
   AppState.currentProcess = processId;
   AppState.currentContract = null;
+  AppState.currentOperation = null;
   AppState.currentMachine = null;
 }
 
 export function setCurrentContract(contractId) {
   AppState.currentContract = contractId;
+  AppState.currentOperation = null;
+  AppState.currentMachine = null;
+}
+
+export function setCurrentOperation(operationKey, processId = null) {
+  AppState.currentOperation = operationKey || null;
+  if (operationKey) {
+    AppState.currentProcess = processId || null;
+  }
+  AppState.currentContract = null;
   AppState.currentMachine = null;
 }
 
@@ -43,6 +55,7 @@ export function setCurrentMachine(machineId) {
 export function resetSelection() {
   AppState.currentProcess = null;
   AppState.currentContract = null;
+  AppState.currentOperation = null;
   AppState.currentMachine = null;
 }
 

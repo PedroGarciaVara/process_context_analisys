@@ -51,10 +51,10 @@ Este archivo mantiene un registro de los requerimientos identificados y procesad
   Estado transitado por `no_conforme` y se encuentra en `en_correccion`. NC-001, NC-002, NC-003 y NC-004 tienen causa raíz `implementation` y reentrada `execute-agent`; las correcciones técnicas pasan la validación Playwright focalizada, pero ninguna NC está cerrada hasta Gate 3 humano.
   Elaborado en modo degradado autorizado por indisponibilidad del `requirements-agent`; pendiente validación humana y elaboración posterior de `spec.md`.
 
-- **requerimiento_12**: Iniciado 2026-07-30. Estado: `en_correccion`.
+- **requerimiento_12**: Iniciado 2026-07-30. Estado: `implementado_pendiente_validacion`.
   Descripción: sistema generalista de contexto estructurado para más de 1000 procesos, preservando BPM, causalidad, plantillas, metodología y consignas existentes; MACBU/BU se utiliza únicamente como fixture de cobertura y gap discovery.
   AMD-001 y AMD-002 integradas. El `spec.md` fue validado explícitamente por el programador humano el 2026-08-01 y `task_plan.md` fue aprobado para ejecución. Implementación completada por `execute-agent`; pendiente Gate 3.
-  NC-001, NC-002, NC-003 y NC-004 quedan `resolved` por confirmación explícita del programador humano el 2026-08-02; NC-005 se mantiene `resolved` con cierre humano del 2026-08-01. Se abre NC-006 el 2026-08-02 con causa raíz `implementation` y reentrada `execute-agent` para revisar/corregir identidad, atributos y relaciones verificables del elemento canónico máquina con proceso, operación, contrato, BPM y contexto. Debe mantenerse el modelo generalista y no se permiten tablas, entidades, rutas o repositorios BU/MACBU. NC-006 permanece `open`, no se inventa evidencia runtime, Gate 3 sigue pendiente y el requerimiento continúa en `en_correccion`; no se marca `done`.
+  NC-001, NC-002, NC-003 y NC-004 quedan `resolved` por confirmación explícita del programador humano el 2026-08-02; NC-005 se mantiene `resolved` con cierre humano del 2026-08-01. NC-006 permanece `open` con causa raíz `implementation`; AMD-02-003 fue ejecutada por `execute-agent` con evidencia técnica, y queda pendiente la validación humana de Gate 3. Debe mantenerse el modelo generalista y no se permiten tablas, entidades, rutas o repositorios BU/MACBU. El requerimiento queda en `implementado_pendiente_validacion`; no se marca `done` ni se cierra NC-006 automáticamente.
 
 ## Instrucciones para el Orchestrator
 - Al escanear ./requerimientos_cliente, compara los archivos encontrados con esta lista.

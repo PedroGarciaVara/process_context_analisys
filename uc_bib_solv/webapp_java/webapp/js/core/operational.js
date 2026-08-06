@@ -45,6 +45,33 @@ export function getMachines(state) {
   return getOperationalData(state).maquinas || [];
 }
 
+export function getOperations(state) {
+  const byKey = new Map();
+  getMachines(state).forEach((machine) => {
+    (machine.operations || []).forEach((operation) => {
+      const key = `${operation.operation_id}|${operation.process_version_id}`;
+      if (!byKey.has(key)) {
+        byKey.set(key, {
+          id: key,
+          operationId: operation.operation_id,
+          processVersionId: operation.process_version_id,
+          // The machine page selects the legacy numeric process. Keep the BPM
+          // UUID separately so it can be sent as the canonical operation scope.
+          processId: operation.legacy_process_id ?? operation.processId ?? null,
+          bpmProcessId: operation.process_id,
+          name: operation.name || operation.node_code || operation.operation_id,
+          nodeCode: operation.node_code,
+          processName: operation.process_name,
+          versionNumber: operation.version_number,
+          etapas: operation.etapas || [],
+          schemaVersion: operation.etapas_schema_version || 1,
+        });
+      }
+    });
+  });
+  return [...byKey.values()];
+}
+
 export function getSummary(state) {
   return getCatalog(state).summary || EMPTY_CATALOG.summary;
 }
@@ -96,10 +123,16 @@ export function filterContracts(state, processId = null, status = "all") {
   });
 }
 
-export function filterMachines(state, processId = null, contractId = null, status = "all") {
+export function filterMachines(state, processId = null, operationKey = null, status = "all") {
   return getMachines(state).filter((item) => {
     if (processId && String(item.processId) !== String(processId)) return false;
-    if (contractId && String(item.contractId) !== String(contractId)) return false;
+    if (operationKey) {
+      const [operationId, processVersionId] = String(operationKey).split("|");
+      if (!(item.operations || []).some((operation) => (
+        String(operation.operation_id) === operationId
+        && String(operation.process_version_id) === processVersionId
+      ))) return false;
+    }
     if (status && status !== "all" && item.status !== status) return false;
     return true;
   });
@@ -192,8 +225,14 @@ export function buildOperationalPageParams(state, route) {
   }
 
   if (route === "maquinas") {
-    if (state.currentProcess) params.process_id = state.currentProcess;
-    if (state.currentContract) params.contract_id = state.currentContract;
+    if (state.currentProcess) params.processId = state.currentProcess;
+    if (state.currentOperation) {
+      const [operationId, processVersionId] = String(state.currentOperation).split("|");
+      params.operation_id = operationId;
+      params.process_version_id = processVersionId;
+      const operation = getOperations(state).find((item) => item.id === state.currentOperation);
+      if (operation?.bpmProcessId) params.process_id = operation.bpmProcessId;
+    }
     params.status = state.filters?.machineStatus || "all";
     return params;
   }

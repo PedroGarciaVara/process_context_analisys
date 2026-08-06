@@ -62,6 +62,62 @@ ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS maquinas_tipo_id INT REFE
 ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS parent_maquina_id INT REFERENCES maquina(id) ON DELETE RESTRICT;
 ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS activo BOOLEAN NOT NULL DEFAULT TRUE;
 
+-- Req12 machine model: these columns extend the legacy tables without
+-- changing the meaning of registro_maquina, parent_maquina_id, activo or
+-- contrato_maquina.
+ALTER TABLE IF EXISTS maquinas_tipo ADD COLUMN IF NOT EXISTS technology_description TEXT;
+ALTER TABLE IF EXISTS maquinas_tipo ADD COLUMN IF NOT EXISTS nominal_capacity JSONB;
+ALTER TABLE IF EXISTS maquinas_tipo ADD COLUMN IF NOT EXISTS operating_principle TEXT;
+ALTER TABLE IF EXISTS maquinas_tipo ADD COLUMN IF NOT EXISTS elements_zones_positions JSONB;
+ALTER TABLE IF EXISTS maquinas_tipo ADD COLUMN IF NOT EXISTS control_systems JSONB;
+ALTER TABLE IF EXISTS maquinas_tipo ADD COLUMN IF NOT EXISTS common_technical_characteristics JSONB;
+ALTER TABLE IF EXISTS maquinas_tipo ADD COLUMN IF NOT EXISTS common_limitations JSONB;
+ALTER TABLE IF EXISTS maquinas_tipo ADD COLUMN IF NOT EXISTS general_technical_description TEXT;
+
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS operational_status TEXT NOT NULL DEFAULT 'unknown';
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS specific_description TEXT;
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS specific_characteristics JSONB;
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS specific_parameters JSONB;
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS specific_operating_ranges JSONB;
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS specific_limitations JSONB;
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS specific_instructions JSONB;
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS differences_from_machine_type JSONB;
+
+DO $$
+BEGIN
+    ALTER TABLE maquina DROP CONSTRAINT IF EXISTS maquina_operational_status_check;
+    ALTER TABLE maquina ADD CONSTRAINT maquina_operational_status_check
+        CHECK (operational_status IN ('ready', 'running', 'stopped', 'degraded', 'unavailable', 'unknown'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER TABLE maquinas_tipo DROP CONSTRAINT IF EXISTS maquinas_tipo_json_shape_check;
+    ALTER TABLE maquinas_tipo ADD CONSTRAINT maquinas_tipo_json_shape_check CHECK (
+        (nominal_capacity IS NULL OR jsonb_typeof(nominal_capacity) = 'object') AND
+        (elements_zones_positions IS NULL OR jsonb_typeof(elements_zones_positions) = 'array') AND
+        (control_systems IS NULL OR jsonb_typeof(control_systems) = 'array') AND
+        (common_technical_characteristics IS NULL OR jsonb_typeof(common_technical_characteristics) IN ('object', 'array')) AND
+        (common_limitations IS NULL OR jsonb_typeof(common_limitations) IN ('object', 'array'))
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER TABLE maquina DROP CONSTRAINT IF EXISTS maquina_json_shape_check;
+    ALTER TABLE maquina ADD CONSTRAINT maquina_json_shape_check CHECK (
+        (specific_characteristics IS NULL OR jsonb_typeof(specific_characteristics) IN ('object', 'array')) AND
+        (specific_parameters IS NULL OR jsonb_typeof(specific_parameters) = 'array') AND
+        (specific_operating_ranges IS NULL OR jsonb_typeof(specific_operating_ranges) = 'array') AND
+        (specific_limitations IS NULL OR jsonb_typeof(specific_limitations) IN ('object', 'array')) AND
+        (specific_instructions IS NULL OR jsonb_typeof(specific_instructions) = 'array') AND
+        (differences_from_machine_type IS NULL OR jsonb_typeof(differences_from_machine_type) IN ('object', 'array'))
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 CREATE TABLE IF NOT EXISTS contrato (
     id SERIAL PRIMARY KEY,
     proceso_id INT NOT NULL REFERENCES proceso(id) ON DELETE CASCADE,
@@ -77,6 +133,10 @@ CREATE TABLE IF NOT EXISTS contrato_maquina (
     maquina_id INT NOT NULL REFERENCES maquina(id) ON DELETE CASCADE,
     PRIMARY KEY (contrato_id, maquina_id)
 );
+
+-- The referenced table is created above; keeping this ALTER after contrato
+-- makes a clean installation and an upgrade follow the same dependency order.
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS contract_id INT REFERENCES contrato(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS causa (
     id SERIAL PRIMARY KEY,
@@ -250,6 +310,80 @@ CREATE TABLE IF NOT EXISTS pm_process_node (
         (node_type <> 'stock' AND stock_capacity IS NULL AND stock_initial_quantity IS NULL AND stock_unit IS NULL)
     )
 );
+
+-- AMD-02-003: operation stages are an additive, versioned JSONB envelope.
+-- The application validates the two-level tree; no parallel table/column is
+-- introduced and existing node properties remain the source of truth.
+CREATE INDEX IF NOT EXISTS idx_pm_process_node_operation_stages
+    ON pm_process_node USING GIN ((properties -> 'etapas'));
+
+-- Dedicated relation/configuration for a machine participating in one BPM
+-- operation. The trigger below enforces node_type and version/process
+-- consistency because a CHECK constraint cannot query pm_process_node.
+CREATE TABLE IF NOT EXISTS machine_operation_configuration (
+    id BIGSERIAL PRIMARY KEY,
+    machine_id INT NOT NULL REFERENCES maquina(id) ON DELETE CASCADE,
+    operation_id UUID NOT NULL REFERENCES pm_process_node(node_id) ON DELETE RESTRICT,
+    process_version_id UUID NOT NULL REFERENCES pm_process_version(version_id) ON DELETE RESTRICT,
+    process_id UUID NOT NULL REFERENCES pm_process_definition(process_id) ON DELETE RESTRICT,
+    contract_id INT REFERENCES contrato(id) ON DELETE SET NULL,
+    specific_description TEXT,
+    additional_inputs JSONB NOT NULL DEFAULT '[]'::jsonb,
+    specific_controls JSONB NOT NULL DEFAULT '[]'::jsonb,
+    available_measurements JSONB NOT NULL DEFAULT '[]'::jsonb,
+    specific_safety_rules JSONB NOT NULL DEFAULT '[]'::jsonb,
+    validation_status TEXT NOT NULL DEFAULT 'draft',
+    valid_from TIMESTAMPTZ,
+    valid_to TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT machine_operation_configuration_unq UNIQUE (machine_id, process_version_id, operation_id),
+    CONSTRAINT machine_operation_configuration_status_chk CHECK (validation_status IN ('draft', 'validated', 'rejected')),
+    CONSTRAINT machine_operation_configuration_validity_chk CHECK (valid_to IS NULL OR valid_from IS NULL OR valid_to >= valid_from),
+    CONSTRAINT machine_operation_configuration_json_chk CHECK (
+        jsonb_typeof(additional_inputs) = 'array' AND
+        jsonb_typeof(specific_controls) = 'array' AND
+        jsonb_typeof(available_measurements) = 'array' AND
+        jsonb_typeof(specific_safety_rules) = 'array'
+    )
+);
+
+CREATE OR REPLACE FUNCTION validate_machine_operation_configuration_identity()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    node_version UUID;
+    node_type TEXT;
+    version_process UUID;
+BEGIN
+    SELECT n.version_id, n.node_type, v.process_id
+      INTO node_version, node_type, version_process
+      FROM pm_process_node n
+      JOIN pm_process_version v ON v.version_id = n.version_id
+     WHERE n.node_id = NEW.operation_id;
+    IF node_version IS NULL THEN
+        RAISE EXCEPTION 'operation_id no existe en pm_process_node';
+    END IF;
+    IF node_type <> 'operation' THEN
+        RAISE EXCEPTION 'operation_id debe referenciar un nodo BPM operation';
+    END IF;
+    IF node_version <> NEW.process_version_id OR version_process <> NEW.process_id THEN
+        RAISE EXCEPTION 'operation_id no pertenece a process_version_id/process_id';
+    END IF;
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS machine_operation_configuration_identity_trg ON machine_operation_configuration;
+CREATE TRIGGER machine_operation_configuration_identity_trg
+    BEFORE INSERT OR UPDATE ON machine_operation_configuration
+    FOR EACH ROW EXECUTE FUNCTION validate_machine_operation_configuration_identity();
+
+CREATE INDEX IF NOT EXISTS idx_machine_operation_configuration_machine ON machine_operation_configuration(machine_id);
+CREATE INDEX IF NOT EXISTS idx_machine_operation_configuration_operation ON machine_operation_configuration(operation_id, process_version_id);
+CREATE INDEX IF NOT EXISTS idx_machine_operation_configuration_contract ON machine_operation_configuration(contract_id);
 
 ALTER TABLE pm_process_node ADD COLUMN IF NOT EXISTS output_role TEXT;
 ALTER TABLE pm_process_node ADD COLUMN IF NOT EXISTS stock_capacity INTEGER;

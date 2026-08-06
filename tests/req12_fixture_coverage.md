@@ -16,6 +16,76 @@
 No se crea ninguna tabla, entidad, repositorio, ruta o bounded context dedicado a BU/MACBU.
 Los nombres del fixture no forman invariantes del producto.
 
+## Evidencia del fixture ML — cobertura y persistencia
+
+El contrato offline reproducible se obtiene con:
+
+```text
+python3 scripts/seed_req12_ml_fixture.py --contract
+```
+
+La proyección generalista prevista contiene 12 nodos BPM, 17 transiciones,
+26 referencias de recursos, 7 nodos de operación y 12 gaps explícitos. La
+rutina de carga reutiliza exclusivamente `pm_process_definition`,
+`pm_process_version`, `pm_process_node`, `pm_process_transition`,
+`pm_process_node_metadata`, `pm_context_record`, `proceso`, `maquina`,
+`contrato`, `contrato_maquina` y `machine_operation_configuration`.
+
+### Persistido como metadata o proyección
+
+- Identidad y grafo BPM del proceso/versionado.
+- Envelope por nodo `family/schema_version/data/source/provenance`, con
+  parámetros, controles, equipos y referencias canónicas.
+- Recursos genéricos y relación operación–máquina mediante IDs canónicos.
+- Declaraciones, un hecho de carga del fixture y una evidencia de cobertura;
+  no representan telemetría industrial real.
+
+### No persistido o no disponible como hecho operativo
+
+`ML-N-001` lotes y trazabilidad; `ML-N-002` retención manual BU de Línea 4;
+`ML-N-003` configuración operacional fraccionada; `ML-N-004` histórico de
+ajustes PLC; `ML-N-005` temperatura/defecto de cero; `ML-N-006` curvas de
+respiros; `ML-N-007` aceleración/retención en silla; `ML-LOAD-001` conectores
+PLC/MES/PI-AVEVA; `ML-N-008` equipos posteriores a HA como nodos independientes;
+`ML-N-009` recetas, proporciones, tolerancias y lotes; `ML-N-010` fórmulas,
+curvas, muestras y resultados calculados; `ML-N-011` alertas/hechos de
+intervención manual. Los puntos declarativos permanecen en JSONB o labels;
+no se convierten en tablas ni modelos ML específicos.
+
+La carga real y la segunda ejecución deben verificarse con:
+
+```text
+python3 scripts/seed_req12_ml_fixture.py --dry-run --json
+python3 scripts/seed_req12_ml_fixture.py --json
+python3 scripts/seed_req12_ml_fixture.py --json
+```
+
+En esta sesión PostgreSQL no fue accesible; por tanto no se afirma ningún
+conteo runtime ni idempotencia efectiva. La evidencia offline y los tests de
+contrato sí quedaron ejecutados; la validación de BD/API/UI queda pendiente.
+
+### Repetición de carga ML — ejecución 2026-08-06
+
+Se repitió la secuencia solicitada contra la configuración vigente de
+`.env.local` (`PGHOST=/var/run/postgresql`, `PGDATABASE=solve_ishikawa`,
+`PGUSER=pedro`):
+
+```text
+python3 scripts/seed_req12_ml_fixture.py --contract --json  OK
+python3 -m unittest tests.unit.test_req12_ml_fixture tests.unit.test_req12_fixture_seed tests.unit.test_req12_context tests.unit.test_process_modeling_api tests.unit.test_process_modeling_service tests.unit.test_process_modeling_validation  35 OK
+python3 scripts/seed_req12_ml_fixture.py --dry-run --json  exit 2
+python3 scripts/seed_req12_ml_fixture.py --json             exit 2
+python3 scripts/seed_req12_ml_fixture.py --json             exit 2
+```
+
+Las tres ejecuciones PostgreSQL abortaron antes de iniciar la transacción con
+`Operation not permitted` sobre `/var/run/postgresql/.s.PGSQL.5432`; no existe
+evidencia runtime de carga, conteos, inspección de nodos/transiciones,
+metadatos, recursos, contexto o relaciones operación-máquina en esta sesión.
+El resultado de idempotencia queda `no verificable por bloqueo de entorno`, no
+`OK`. La evidencia offline conserva la expectativa reproducible de 12 nodos,
+17 transiciones, 26 recursos, 7 operaciones y 12 gaps.
+
 ## Evidencia de NC-001 — reentrada correctiva 2026-08-01
 
 ### Evidencia estática y de contrato verificada en esta ejecución

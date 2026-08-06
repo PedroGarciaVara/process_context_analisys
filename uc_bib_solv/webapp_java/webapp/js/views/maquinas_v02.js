@@ -5,12 +5,13 @@ import {
   findProcess,
   getContracts,
   getMachines,
+  getOperations,
   getProcesses,
   getSummary,
 } from "../core/operational.js";
-import { AppState, setCurrentContract, setCurrentMachine, setCurrentProcess } from "../core/state.js";
+import { AppState, setCurrentContract, setCurrentMachine, setCurrentOperation, setCurrentProcess } from "../core/state.js";
 import { createElement, escapeHtml, toHashRoute } from "../core/utils.js";
-import { createMachine, deleteMachine, updateMachine } from "../api/operational.js";
+import { createMachine, fetchMachineContext, updateMachine } from "../api/operational.js";
 
 const MENU_ITEMS = [
   { route: "inicio", label: "Inicio", icon: "home" },
@@ -66,7 +67,7 @@ function getVisibleMachines(state) {
   return filterMachines(
     state,
     state.currentProcess || null,
-    state.currentContract || null,
+    state.currentOperation || null,
     state.filters.machineStatus || "all",
   );
 }
@@ -101,12 +102,118 @@ function buildSideMenu(state) {
   }).join("");
 }
 
+function structuredText(value) {
+  if (value === null || value === undefined || value === "") return "";
+  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
+function stageDraftFromMachine(activeMachine) {
+  const selected = activeMachine?.operations?.find((item) => item.operation_id === activeMachine.selectedOperationId)
+    || activeMachine?.operations?.[0];
+  return (selected?.etapas || []).map((stage, index) => ({
+    id: stage.id || `stage-${index + 1}`,
+    nombre: stage.nombre || "",
+    orden: index + 1,
+    subetapas: (stage.subetapas || []).map((child, childIndex) => ({
+      id: child.id || `stage-${index + 1}-substage-${childIndex + 1}`,
+      nombre: child.nombre || "",
+      orden: childIndex + 1,
+      subetapas: [],
+    })),
+  }));
+}
+
+function stageEditorMarkup(stages) {
+  if (!stages.length) return '<p class="text-[12px] text-on-surface-variant" data-stage-empty>Sin etapas definidas.</p>';
+  return stages.map((stage, index) => `
+    <div class="rounded-lg border border-outline-variant p-sm space-y-sm" data-stage-index="${index}">
+      <div class="flex gap-sm items-center">
+        <input class="flex-1 border border-outline rounded p-sm bg-surface-container-low" data-stage-name value="${escapeHtml(stage.nombre)}" aria-label="Nombre etapa ${index + 1}">
+        <button type="button" class="px-sm py-xs border border-outline rounded" data-stage-move="up" aria-label="Subir etapa">↑</button>
+        <button type="button" class="px-sm py-xs border border-outline rounded" data-stage-move="down" aria-label="Bajar etapa">↓</button>
+        <button type="button" class="px-sm py-xs border border-outline rounded" data-stage-add-substage>Añadir subetapa</button>
+        <button type="button" class="px-sm py-xs text-red-700 border border-red-200 rounded" data-stage-delete>Eliminar</button>
+      </div>
+      <div class="ml-lg space-y-xs" data-substages>
+        ${stage.subetapas.map((child, childIndex) => `<div class="flex gap-sm items-center" data-substage-index="${childIndex}"><span class="text-[11px] text-on-surface-variant">↳</span><input class="flex-1 border border-outline rounded p-sm bg-surface-container-low" data-substage-name value="${escapeHtml(child.nombre)}" aria-label="Nombre subetapa ${index + 1}.${childIndex + 1}"><button type="button" class="px-sm py-xs border border-outline rounded" data-substage-move="up" aria-label="Subir subetapa">↑</button><button type="button" class="px-sm py-xs border border-outline rounded" data-substage-move="down" aria-label="Bajar subetapa">↓</button><button type="button" class="px-sm py-xs text-red-700" data-substage-delete>Eliminar</button></div>`).join("")}
+      </div>
+    </div>`).join("");
+}
+
+function stagePathsMarkup(activeMachine) {
+  const operation = activeMachine?.operations?.find((item) => item.operation_id === activeMachine.selectedOperationId) || activeMachine?.operations?.[0];
+  const stages = operation?.etapas || [];
+  if (!stages.length) return '<p class="text-[12px] text-on-surface-variant">Sin etapas definidas.</p>';
+  return stages.flatMap((stage) => (stage.subetapas?.length ? stage.subetapas.map((child) => `<div class="text-[12px] text-primary">${escapeHtml(stage.nombre)} › ${escapeHtml(child.nombre)}</div>`) : [`<div class="text-[12px] text-primary">${escapeHtml(stage.nombre)}</div>`])).join("");
+}
+
+function buildMachineManagementModal(activeMachine, state) {
+  const context = activeMachine?.machineContext || {};
+  const type = context.machine_type || {};
+  const machine = context.machine || activeMachine || {};
+  const contracts = getContracts(state);
+  const stageDraft = stageDraftFromMachine(activeMachine);
+  const hasOperation = Boolean(activeMachine?.selectedOperationId || activeMachine?.operations?.length);
+  const field = (id, label, value = "", inputType = "text", extra = "") => `
+    <label class="block space-y-xs">
+      <span class="font-label-md text-label-md text-secondary">${label}</span>
+      ${inputType === "textarea"
+        ? `<textarea id="${id}" class="w-full min-h-20 border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" ${extra}>${escapeHtml(value)}</textarea>`
+        : `<input id="${id}" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="${inputType}" value="${escapeHtml(value)}" ${extra}>`}
+    </label>`;
+  return `
+    <div id="machine-v02-modal" class="hidden fixed inset-0 z-[100] items-center justify-center bg-black/40 p-lg" role="dialog" aria-modal="true" aria-labelledby="machine-v02-modal-title">
+      <div class="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-xl bg-surface-container-lowest shadow-2xl border border-outline-variant">
+        <div class="flex items-start justify-between gap-lg p-lg border-b border-outline-variant">
+          <div><p class="font-label-md text-label-md text-primary uppercase tracking-widest">Gestión de máquina</p><h2 id="machine-v02-modal-title" class="font-headline-md text-headline-md text-primary">${activeMachine ? "Editar máquina" : "Nueva máquina"}</h2><p class="text-[12px] text-on-surface-variant mt-xs">El contrato y la operación BPM se mantienen como contexto separado.</p></div>
+          <button type="button" class="p-sm rounded-full hover:bg-surface-container" aria-label="Cerrar gestión de máquina" data-action="machine-modal-close">✕</button>
+        </div>
+        <div class="flex gap-sm px-lg pt-md border-b border-outline-variant" role="tablist" aria-label="Nivel de máquina">
+          <button type="button" id="machine-v02-tab-type" class="px-md py-sm border-b-2 border-primary text-primary font-label-md" role="tab" aria-selected="true" data-machine-tab="type">Máquina genérica</button>
+          <button type="button" id="machine-v02-tab-machine" class="px-md py-sm border-b-2 border-transparent text-on-surface-variant font-label-md" role="tab" aria-selected="false" data-machine-tab="machine">Máquina específica</button>
+        </div>
+        <div class="p-lg">
+          <section id="machine-v02-panel-type" role="tabpanel" data-machine-panel="type" class="grid grid-cols-1 md:grid-cols-2 gap-md">
+            ${field("machine-v02-type-name", "Nombre tipo", type.name || type.nombre || "")}
+            ${field("machine-v02-type-technology", "Descripción técnica / tecnología", type.technology_description || "")}
+            ${field("machine-v02-type-principle", "Principio de funcionamiento", type.operating_principle || "", "textarea", "required")}
+            ${field("machine-v02-type-general-description", "Descripción técnica general", type.general_technical_description || "", "textarea", "required")}
+            ${field("machine-v02-type-capacity", "Capacidad nominal (JSON)", structuredText(type.nominal_capacity), "textarea")}
+            ${field("machine-v02-type-controls", "Sistemas de control (JSON)", structuredText(type.control_systems), "textarea")}
+            ${field("machine-v02-type-limitations", "Limitaciones comunes (JSON)", structuredText(type.common_limitations), "textarea")}
+            ${field("machine-v02-type-characteristics", "Campos soportados / características comunes (JSON)", structuredText(type.common_technical_characteristics), "textarea")}
+          </section>
+          <section id="machine-v02-panel-machine" role="tabpanel" data-machine-panel="machine" class="hidden grid grid-cols-1 md:grid-cols-2 gap-md">
+            ${field("machine-v02-name-field", "Nombre", machine.nombre || machine.name || "", "text", "required")}
+            <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Estado operativo</span><select id="machine-v02-status-field" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm"><option value="unknown">Desconocido</option>${["ready", "running", "stopped", "degraded", "unavailable"].map((value) => `<option value="${value}"${String(machine.operational_status || "unknown") === value ? " selected" : ""}>${value}</option>`).join("")}</select></label>
+            ${field("machine-v02-specific-description", "Descripción específica", machine.specific_description || "", "textarea")}
+            ${field("machine-v02-specific-characteristics", "Características (JSON)", structuredText(machine.specific_characteristics), "textarea")}
+            ${field("machine-v02-specific-parameters", "Parámetros (JSON)", structuredText(machine.specific_parameters), "textarea")}
+            ${field("machine-v02-specific-ranges", "Rangos (JSON)", structuredText(machine.specific_operating_ranges), "textarea")}
+            ${field("machine-v02-specific-limitations", "Limitaciones (JSON)", structuredText(machine.specific_limitations), "textarea")}
+            ${field("machine-v02-specific-instructions", "Instrucciones (JSON)", structuredText(machine.specific_instructions), "textarea")}
+            ${field("machine-v02-specific-differences", "Diferencias frente al tipo (JSON/texto)", structuredText(machine.differences_from_machine_type), "textarea")}
+            <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Contrato (contexto separado)</span><select id="machine-v02-contract-field" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm"><option value="">Sin contrato</option>${contracts.map((item) => `<option value="${escapeHtml(item.id)}"${String(machine.contract_id || machine.contractId || "") === String(item.id) ? " selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</select></label>
+            <div class="md:col-span-2 rounded-lg border border-primary/20 bg-primary/5 p-md space-y-sm" data-stage-editor>
+              <div class="flex items-center justify-between gap-sm"><div><h3 class="font-label-md text-primary">Etapas</h3><p class="text-[11px] text-on-surface-variant">${hasOperation ? "Añade etapas y subetapas directas de la operación BPM." : "Selecciona una operación BPM para editar etapas."}</p></div><button type="button" class="px-sm py-xs bg-primary text-on-primary rounded" data-stage-add ${hasOperation ? "" : "disabled"}>+ Añadir etapa</button></div>
+              <div class="space-y-sm" id="machine-v02-stages-list">${stageEditorMarkup(stageDraft)}</div>
+            </div>
+          </section>
+          <div id="machine-v02-alert" class="hidden rounded-lg border px-md py-sm text-[12px] mt-lg" aria-live="polite"></div>
+          <div class="flex justify-end gap-sm mt-lg pt-md border-t border-outline-variant">
+            <button type="button" class="px-md py-sm border border-outline-variant text-on-surface-variant rounded-lg font-label-md" data-action="machine-modal-cancel">Cancelar</button>
+            <button type="button" class="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md" data-action="machine-save">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
 function buildRightPanel(activeMachine, state) {
   const status = String(activeMachine?.status || "hold").toLowerCase();
   const process = activeMachine ? findProcess(state, activeMachine.processId) : null;
   const contract = activeMachine ? findContract(state, activeMachine.contractId) : null;
   const score = healthScore(status);
-  const contracts = getContracts(state);
 
   return `
     <aside class="w-[420px] shrink-0 border-l border-outline-variant bg-surface-container-lowest overflow-y-auto">
@@ -165,40 +272,42 @@ function buildRightPanel(activeMachine, state) {
             <p class="text-[11px] text-on-surface-variant">Fin estimado: ${status === "ready" ? "45 min" : status === "warning" ? "90 min" : "2 h"}</p>
           </div>
         </div>
+        <div>
+          <h4 class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm">Identidades canónicas</h4>
+          <div class="space-y-sm p-md rounded-lg border border-primary/20 bg-primary/5">
+            <div class="flex justify-between gap-md font-body-sm text-body-sm">
+              <span class="text-on-surface-variant">operation_id</span>
+              <span class="font-mono-sm text-primary text-right break-all">${escapeHtml(activeMachine?.selectedOperationId || "—")}</span>
+            </div>
+            <div class="flex justify-between gap-md font-body-sm text-body-sm">
+              <span class="text-on-surface-variant">process_version_id</span>
+              <span class="font-mono-sm text-primary text-right break-all">${escapeHtml(activeMachine?.selectedProcessVersionId || "—")}</span>
+            </div>
+            <div class="flex justify-between gap-md font-body-sm text-body-sm">
+              <span class="text-on-surface-variant">process_id BPM</span>
+              <span class="font-mono-sm text-primary text-right break-all">${escapeHtml(activeMachine?.selectedBpmProcessId || "—")}</span>
+            </div>
+            <div class="flex justify-between gap-md font-body-sm text-body-sm">
+              <span class="text-on-surface-variant">contract_id</span>
+              <span class="font-mono-sm text-primary text-right">${escapeHtml(activeMachine?.selectedOperationContractId ?? activeMachine?.contractId ?? "—")}</span>
+            </div>
+          </div>
+        </div>
+        <div id="machine-v02-context-blocks" class="space-y-sm" aria-live="polite">
+          <p class="text-[12px] text-on-surface-variant">Selecciona una máquina para cargar el contexto canónico.</p>
+        </div>
+        <div class="border-t border-outline-variant pt-lg"><h4 class="font-label-md text-on-surface-variant uppercase mb-sm">Etapas de la operación</h4><div id="machine-v02-stage-detail" class="space-y-xs">${stagePathsMarkup(activeMachine)}</div></div>
         <div class="space-y-sm pt-md">
-          <button type="button" class="w-full py-md bg-primary text-on-primary font-label-md text-label-md rounded-lg flex items-center justify-center gap-md hover:opacity-90" data-action="machine-open-tree" ${activeMachine ? "" : "disabled"}>
-            <span class="material-symbols-outlined">account_tree</span>
-            Abrir arbol de investigacion
-          </button>
           <button type="button" class="w-full py-md border border-outline-variant text-on-surface font-label-md text-label-md rounded-lg flex items-center justify-center gap-md hover:bg-surface-container" data-action="machine-open-contract" ${activeMachine ? "" : "disabled"}>
             <span class="material-symbols-outlined">description</span>
             Abrir contexto de contrato
           </button>
         </div>
         <div class="border-t border-outline-variant pt-lg space-y-md">
-          <div>
-            <h4 class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm">Gestion de maquina</h4>
-            <p class="text-[12px] text-on-surface-variant">Paridad con Dash: crear, actualizar y eliminar maquinas manteniendo el alcance del contrato.</p>
-          </div>
-          <div id="machine-v02-alert" class="hidden rounded-lg border px-md py-sm text-[12px]"></div>
-          <label class="block space-y-xs">
-            <span class="font-label-md text-label-md text-secondary">Nombre</span>
-            <input id="machine-v02-name-field" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="text" placeholder="Nombre de maquina" value="${escapeHtml(activeMachine?.name || "")}">
-          </label>
-          <label class="block space-y-xs">
-            <span class="font-label-md text-label-md text-secondary">Contrato</span>
-            <select id="machine-v02-contract-field" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
-              <option value="">Sin contrato</option>
-              ${contracts.map((item) => `<option value="${escapeHtml(item.id)}"${String(activeMachine?.contractId || "") === String(item.id) ? " selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}
-            </select>
-          </label>
-          <div class="grid grid-cols-3 gap-sm">
-            <button type="button" class="px-md py-sm bg-primary text-on-primary text-label-md font-label-md rounded hover:opacity-90" data-action="machine-create">Crear</button>
-            <button type="button" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container" data-action="machine-update" ${activeMachine ? "" : "disabled"}>Actualizar</button>
-            <button type="button" class="px-md py-sm border border-red-200 text-red-700 text-label-md font-label-md rounded hover:bg-red-50" data-action="machine-delete" ${activeMachine ? "" : "disabled"}>Eliminar</button>
-          </div>
+          <button type="button" class="w-full py-md bg-primary text-on-primary rounded-lg font-label-md" data-action="machine-modal-open">Gestionar máquina</button>
         </div>
       </div>
+      ${buildMachineManagementModal(activeMachine, state)}
     </aside>
   `;
 }
@@ -206,6 +315,11 @@ function buildRightPanel(activeMachine, state) {
 function buildMainContent(state) {
   const processes = getProcesses(state);
   const contracts = getContracts(state).filter((item) => !state.currentProcess || item.processId === state.currentProcess);
+  // BPM process UUIDs are a separate canonical identity from the legacy
+  // operational process selector; do not match them by text or numeric ID.
+  const operations = getOperations(state).filter(
+    (item) => !state.currentProcess || String(item.processId) === String(state.currentProcess),
+  );
   const rows = getVisibleMachines(state);
   const activeMachine = getActiveMachine(state, rows);
   const summary = getSummary(state);
@@ -259,7 +373,7 @@ function buildMainContent(state) {
               <div>
                 <h1 class="font-display-lg text-display-lg text-on-background">Maquinas</h1>
                 <p class="font-body-md text-body-md text-secondary max-w-3xl">
-                  Revisa la capa operativa de maquinas, filtra por proceso y contrato, y mantiene el detalle del activo visible a la derecha mientras decides el siguiente paso del RCA.
+                  Revisa la capa operativa de maquinas, filtra por operación BPM y proceso, y mantiene el detalle del activo visible a la derecha mientras decides el siguiente paso del RCA.
                 </p>
               </div>
               <span class="px-sm py-xs bg-primary-container text-on-primary text-[11px] font-bold rounded uppercase">
@@ -281,9 +395,9 @@ function buildMainContent(state) {
                 </select>
               </div>
               <div class="space-y-xs">
-                <label class="font-label-md text-label-md text-secondary" for="machine-v02-contract">Contrato</label>
-                <select id="machine-v02-contract" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
-                  ${buildOptions(contracts, state.currentContract, "Todos los contratos")}
+                <label class="font-label-md text-label-md text-secondary" for="machine-v02-operation">Operación BPM</label>
+                <select id="machine-v02-operation" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
+                  ${buildOptions(operations, state.currentOperation, "Todas las operaciones BPM")}
                 </select>
               </div>
               <div class="flex gap-sm flex-wrap">
@@ -340,7 +454,6 @@ function buildMainContent(state) {
                     <td class="px-lg py-md">${statusBadge(item.status)}</td>
                     <td class="px-lg py-md">
                       <div class="flex justify-end gap-sm">
-                        <button type="button" class="px-md py-sm bg-primary text-on-primary text-label-md font-label-md rounded hover:opacity-90" data-action="machine-tree" data-machine-id="${escapeHtml(item.id)}">Abrir arbol</button>
                         <button type="button" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container" data-action="machine-select" data-machine-id="${escapeHtml(item.id)}">Detalle</button>
                       </div>
                     </td>
@@ -416,10 +529,11 @@ export function renderMaquinasV02(state, bus) {
         });
       }
 
-      const contractSelect = mountRoot.querySelector("#machine-v02-contract");
-      if (contractSelect) {
-        contractSelect.addEventListener("change", () => {
-          setCurrentContract(contractSelect.value || null);
+      const operationSelect = mountRoot.querySelector("#machine-v02-operation");
+      if (operationSelect) {
+        operationSelect.addEventListener("change", () => {
+          const operation = getOperations(AppState).find((item) => item.id === operationSelect.value);
+          setCurrentOperation(operationSelect.value || null, operation?.processId || null);
           if (eventBus) eventBus.emit("state:change");
         });
       }
@@ -441,28 +555,6 @@ export function renderMaquinasV02(state, bus) {
           if (eventBus) eventBus.emit("state:change");
         });
       });
-
-      mountRoot.querySelectorAll("[data-action='machine-tree']").forEach((node) => {
-        node.addEventListener("click", (event) => {
-          event.preventDefault();
-          const machineId = node.getAttribute("data-machine-id");
-          const machine = machineId ? findMachine(currentState, machineId) : null;
-          if (machine) {
-            setCurrentProcess(machine.processId);
-            setCurrentContract(machine.contractId);
-            setCurrentMachine(machine.id);
-          }
-          goToRoute("arboles_v02");
-        });
-      });
-
-      const openTree = mountRoot.querySelector("[data-action='machine-open-tree']");
-      if (openTree) {
-        openTree.addEventListener("click", (event) => {
-          event.preventDefault();
-          goToRoute("arboles_v02");
-        });
-      }
 
       const openContract = mountRoot.querySelector("[data-action='machine-open-contract']");
       if (openContract) {
@@ -486,14 +578,147 @@ export function renderMaquinasV02(state, bus) {
         });
       }
 
-      const alertNode = mountRoot.querySelector("#machine-v02-alert");
-      const nameInput = mountRoot.querySelector("#machine-v02-name-field");
-      const contractField = mountRoot.querySelector("#machine-v02-contract-field");
-      const setAlert = (message, tone = "neutral") => {
-        if (!alertNode) return;
+      const refreshCatalog = async () => {
+        if (eventBus) await eventBus.emit("catalog:refresh");
+      };
+      const currentMachine = () => {
+        const rows = getVisibleMachines(AppState);
+        return getActiveMachine(AppState, rows);
+      };
+      const contextBlocks = mountRoot.querySelector("#machine-v02-context-blocks");
+      const renderContext = (context) => {
+        if (!contextBlocks) return;
+        const block = (title, value) => `<section class="rounded-lg border border-outline-variant bg-surface-container-low p-sm"><h4 class="font-label-md text-label-md text-primary uppercase mb-xs">${title}</h4><p class="text-[12px] text-on-surface-variant whitespace-pre-wrap">${escapeHtml(value || "Sin datos")}</p></section>`;
+        const operation = context?.operation;
+        const type = context?.machine_type;
+        const machine = context?.machine;
+        const configurations = context?.machine_operation_configurations || [];
+        const configuration = AppState.currentOperation
+          ? configurations.find((item) => {
+            const [operationId, processVersionId] = String(AppState.currentOperation).split("|");
+            return String(item.operation_id) === operationId
+              && String(item.process_version_id) === processVersionId;
+          })
+          : configurations[0];
+        contextBlocks.innerHTML = [
+          block("Operación BPM", operation ? `${operation.name || "Sin nombre"} · operation_id ${operation.operation_id} · versión ${operation.process_version_id}\nprocess_id ${operation.process_id || "—"}` : "Sin configuración de operación"),
+          block("Tipo de máquina", type?.name ? `${type.name} · machine_type_id ${type.id || "—"}\n${type.general_technical_description || ""}` : "Sin tipo de máquina"),
+          block("Máquina específica", machine ? `${machine.nombre || machine.name || "Sin nombre"} · machine_id ${machine.machine_id || machine.id || "—"}\nEstado: ${machine.operational_status || "unknown"}` : "Sin detalle de máquina"),
+          block("Configuración máquina–operación", configuration ? `${configuration.specific_description || "Sin descripción"}\ncontract_id: ${configuration.contract_id || "—"}\nValidación: ${configuration.validation_status || "draft"}` : "No existe configuración para esta operación"),
+        ].join("");
+      };
+      const loadContext = async () => {
+        const machine = currentMachine();
+        if (!contextBlocks || !machine) return;
+        contextBlocks.innerHTML = '<p class="text-[12px] text-on-surface-variant">Cargando contexto…</p>';
+        try {
+          const contextParams = {};
+          if (AppState.currentOperation) {
+            const [operationId, processVersionId] = String(AppState.currentOperation).split("|");
+            contextParams.operation_id = operationId;
+            contextParams.process_version_id = processVersionId;
+          }
+          const response = await fetchMachineContext(machine.id, contextParams);
+          renderContext(response?.data);
+        } catch (error) {
+          contextBlocks.innerHTML = `<p class="rounded-lg border border-red-200 bg-red-50 p-sm text-[12px] text-red-700">No se pudo cargar el contexto: ${escapeHtml(error.message)}</p>`;
+        }
+      };
+      loadContext();
+
+      const managementModal = mountRoot.querySelector("#machine-v02-modal");
+      const activeMachine = currentMachine();
+      const populateManagementModal = (context) => {
+        if (!managementModal || !context) return;
+        if (activeMachine) activeMachine.machineContext = context;
+        const type = context.machine_type || {};
+        const machine = context.machine || {};
+        const setValue = (id, value) => {
+          const node = managementModal.querySelector(`#${id}`);
+          if (node && value !== null && value !== undefined) node.value = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+        };
+        setValue("machine-v02-type-name", type.name || type.nombre);
+        setValue("machine-v02-type-technology", type.technology_description);
+        setValue("machine-v02-type-principle", type.operating_principle);
+        setValue("machine-v02-type-general-description", type.general_technical_description);
+        setValue("machine-v02-type-capacity", type.nominal_capacity);
+        setValue("machine-v02-type-controls", type.control_systems);
+        setValue("machine-v02-type-limitations", type.common_limitations);
+        setValue("machine-v02-type-characteristics", type.common_technical_characteristics);
+        setValue("machine-v02-name-field", machine.nombre || machine.name);
+        setValue("machine-v02-status-field", machine.operational_status || "unknown");
+        setValue("machine-v02-specific-description", machine.specific_description);
+        setValue("machine-v02-specific-characteristics", machine.specific_characteristics);
+        setValue("machine-v02-specific-parameters", machine.specific_parameters);
+        setValue("machine-v02-specific-ranges", machine.specific_operating_ranges);
+        setValue("machine-v02-specific-limitations", machine.specific_limitations);
+        setValue("machine-v02-specific-instructions", machine.specific_instructions);
+        setValue("machine-v02-specific-differences", machine.differences_from_machine_type);
+      };
+      let stageDraft = stageDraftFromMachine(activeMachine);
+      const stageList = managementModal?.querySelector("#machine-v02-stages-list");
+      const renderStages = () => {
+        if (stageList) stageList.innerHTML = stageEditorMarkup(stageDraft);
+      };
+      managementModal?.querySelector("[data-stage-add]")?.addEventListener("click", () => {
+        stageDraft.push({ id: `stage-${Date.now()}`, nombre: "", orden: stageDraft.length + 1, subetapas: [] });
+        renderStages();
+      });
+      stageList?.addEventListener("input", (event) => {
+        const stageNode = event.target.closest("[data-stage-index]");
+        if (!stageNode) return;
+        const stageIndex = Number(stageNode.dataset.stageIndex);
+        if (event.target.matches("[data-stage-name]")) stageDraft[stageIndex].nombre = event.target.value;
+        if (event.target.matches("[data-substage-name]")) {
+          const childIndex = Number(event.target.closest("[data-substage-index]").dataset.substageIndex);
+          stageDraft[stageIndex].subetapas[childIndex].nombre = event.target.value;
+        }
+      });
+      stageList?.addEventListener("click", (event) => {
+        const stageNode = event.target.closest("[data-stage-index]");
+        if (!stageNode) return;
+        const stageIndex = Number(stageNode.dataset.stageIndex);
+        let changed = false;
+        if (event.target.closest("[data-stage-delete]")) {
+          if (stageDraft[stageIndex].subetapas.length && !window.confirm("La etapa tiene subetapas. ¿Eliminar todos sus descendientes?")) return;
+          stageDraft.splice(stageIndex, 1);
+          changed = true;
+        }
+        const stageMove = event.target.closest("[data-stage-move]")?.dataset.stageMove;
+        if (stageMove) {
+          const target = stageMove === "up" ? stageIndex - 1 : stageIndex + 1;
+          if (target >= 0 && target < stageDraft.length) {
+            [stageDraft[stageIndex], stageDraft[target]] = [stageDraft[target], stageDraft[stageIndex]];
+            changed = true;
+          }
+        }
+        if (event.target.closest("[data-stage-add-substage]")) {
+          stageDraft[stageIndex].subetapas.push({ id: `${stageDraft[stageIndex].id}-substage-${stageDraft[stageIndex].subetapas.length + 1}`, nombre: "", orden: stageDraft[stageIndex].subetapas.length + 1, subetapas: [] });
+          changed = true;
+        }
+        const substageNode = event.target.closest("[data-substage-index]");
+        const childIndex = substageNode ? Number(substageNode.dataset.substageIndex) : -1;
+        if (event.target.closest("[data-substage-delete]")) {
+          stageDraft[stageIndex].subetapas.splice(childIndex, 1);
+          changed = true;
+        }
+        const substageMove = event.target.closest("[data-substage-move]")?.dataset.substageMove;
+        if (substageMove) {
+          const children = stageDraft[stageIndex].subetapas;
+          const target = substageMove === "up" ? childIndex - 1 : childIndex + 1;
+          if (target >= 0 && target < children.length) {
+            [children[childIndex], children[target]] = [children[target], children[childIndex]];
+            changed = true;
+          }
+        }
+        if (changed) renderStages();
+      });
+      const modalAlert = managementModal?.querySelector("#machine-v02-alert");
+      const setModalAlert = (message, tone = "neutral") => {
+        if (!modalAlert) return;
         if (!message) {
-          alertNode.textContent = "";
-          alertNode.className = "hidden rounded-lg border px-md py-sm text-[12px]";
+          modalAlert.textContent = "";
+          modalAlert.className = "hidden rounded-lg border px-md py-sm text-[12px] mt-lg";
           return;
         }
         const toneClass = tone === "danger"
@@ -501,81 +726,106 @@ export function renderMaquinasV02(state, bus) {
           : tone === "success"
             ? "border-green-200 bg-green-50 text-green-700"
             : "border-amber-200 bg-amber-50 text-amber-700";
-        alertNode.textContent = message;
-        alertNode.className = `rounded-lg border px-md py-sm text-[12px] ${toneClass}`;
+        modalAlert.textContent = message;
+        modalAlert.className = `rounded-lg border px-md py-sm text-[12px] mt-lg ${toneClass}`;
       };
-      const refreshCatalog = async () => {
-        if (eventBus) eventBus.emit("catalog:refresh");
+      const setModalVisible = (visible) => {
+        if (!managementModal) return;
+        managementModal.classList.toggle("hidden", !visible);
+        managementModal.classList.toggle("flex", visible);
       };
-      const currentMachine = () => {
-        const rows = getVisibleMachines(AppState);
-        return getActiveMachine(AppState, rows);
+      const setModalTab = (tab) => {
+        if (!managementModal) return;
+        managementModal.querySelectorAll("[data-machine-tab]").forEach((node) => {
+          const selected = node.getAttribute("data-machine-tab") === tab;
+          node.setAttribute("aria-selected", String(selected));
+          node.classList.toggle("border-primary", selected);
+          node.classList.toggle("text-primary", selected);
+          node.classList.toggle("border-transparent", !selected);
+          node.classList.toggle("text-on-surface-variant", !selected);
+        });
+        managementModal.querySelectorAll("[data-machine-panel]").forEach((node) => {
+          node.classList.toggle("hidden", node.getAttribute("data-machine-panel") !== tab);
+        });
       };
-
-      mountRoot.querySelector("[data-action='machine-create']")?.addEventListener("click", async () => {
-        try {
-          const contractId = contractField?.value || "";
-          const contract = contractId ? findContract(AppState, contractId) : null;
-          const response = await createMachine({
-            name: nameInput?.value || "",
-            contractId,
-            processId: contract?.processId || "",
-          });
-          const machine = response?.data || null;
-          if (machine?.processId) {
-            setCurrentProcess(machine.processId);
-          }
-          if (machine?.contractId) {
-            setCurrentContract(machine.contractId);
-          }
-          if (machine?.id) {
-            setCurrentMachine(machine.id);
-          }
-          setAlert("Machine created.", "success");
-          await refreshCatalog();
-        } catch (error) {
-          setAlert(error.message, "danger");
-        }
+      mountRoot.querySelector("[data-action='machine-modal-open']")?.addEventListener("click", () => {
+        setModalVisible(true);
+        const machine = currentMachine();
+        if (machine) fetchMachineContext(machine.id).then((response) => populateManagementModal(response?.data)).catch(() => {});
+      });
+      mountRoot.querySelectorAll("[data-action='machine-modal-close'], [data-action='machine-modal-cancel']").forEach((node) => {
+        node.addEventListener("click", () => setModalVisible(false));
+      });
+      managementModal?.querySelectorAll("[data-machine-tab]").forEach((node) => {
+        node.addEventListener("click", () => setModalTab(node.getAttribute("data-machine-tab") || "type"));
+      });
+      managementModal?.addEventListener("click", (event) => {
+        if (event.target === managementModal) setModalVisible(false);
       });
 
-      mountRoot.querySelector("[data-action='machine-update']")?.addEventListener("click", async () => {
-        const machine = currentMachine();
-        if (!machine) {
-          setAlert("Select a machine before updating.", "warning");
-          return;
-        }
+      const parseModalJson = (id, label) => {
+        const value = managementModal?.querySelector(`#${id}`)?.value?.trim() || "";
+        if (!value) return null;
         try {
-          const contractId = contractField?.value || "";
+          const parsed = JSON.parse(value);
+          if (typeof parsed !== "object" || parsed === null) throw new Error("debe ser un objeto o una lista");
+          return parsed;
+        } catch (error) {
+          throw new Error(`${label} ${error.message}`);
+        }
+      };
+      managementModal?.querySelector("[data-action='machine-save']")?.addEventListener("click", async () => {
+        try {
+          const value = (id) => managementModal.querySelector(`#${id}`)?.value?.trim() || "";
+          const typeName = value("machine-v02-type-name");
+          const operatingPrinciple = value("machine-v02-type-principle");
+          const generalDescription = value("machine-v02-type-general-description");
+          const machineName = value("machine-v02-name-field");
+          if (!typeName || !operatingPrinciple || !generalDescription || !machineName) {
+            throw new Error("Completa nombre, principio, descripción general y nombre de máquina.");
+          }
+          const contractId = value("machine-v02-contract-field");
           const contract = contractId ? findContract(AppState, contractId) : null;
-          await updateMachine(machine.id, {
-            name: nameInput?.value || "",
+          const selectedOperation = activeMachine?.operations?.find((item) => item.operation_id === activeMachine.selectedOperationId) || activeMachine?.operations?.[0];
+          const payload = {
+            name: machineName,
             contractId,
             processId: contract?.processId || "",
-          });
-          if (contract?.processId) {
-            setCurrentProcess(contract.processId);
-          }
+            operational_status: managementModal.querySelector("#machine-v02-status-field")?.value || "unknown",
+            machine_type: {
+              id: activeMachine?.machineContext?.machine_type?.id,
+              name: typeName,
+              technology_description: value("machine-v02-type-technology"),
+              operating_principle: operatingPrinciple,
+              general_technical_description: generalDescription,
+              nominal_capacity: parseModalJson("machine-v02-type-capacity", "Capacidad nominal"),
+              control_systems: parseModalJson("machine-v02-type-controls", "Sistemas de control"),
+              common_limitations: parseModalJson("machine-v02-type-limitations", "Limitaciones comunes"),
+              common_technical_characteristics: parseModalJson("machine-v02-type-characteristics", "Características comunes"),
+            },
+            specific_description: value("machine-v02-specific-description"),
+            specific_characteristics: parseModalJson("machine-v02-specific-characteristics", "Características específicas"),
+            specific_parameters: parseModalJson("machine-v02-specific-parameters", "Parámetros"),
+            specific_operating_ranges: parseModalJson("machine-v02-specific-ranges", "Rangos"),
+            specific_limitations: parseModalJson("machine-v02-specific-limitations", "Limitaciones específicas"),
+            specific_instructions: parseModalJson("machine-v02-specific-instructions", "Instrucciones"),
+            differences_from_machine_type: parseModalJson("machine-v02-specific-differences", "Diferencias frente al tipo"),
+            ...(selectedOperation ? {
+              operation_id: selectedOperation.operation_id,
+              process_version_id: selectedOperation.process_version_id,
+              etapas: stageDraft.map((stage, index) => ({ ...stage, orden: index + 1, subetapas: stage.subetapas.map((child, childIndex) => ({ ...child, orden: childIndex + 1, subetapas: [] })) })),
+            } : {}),
+          };
+          const response = activeMachine ? await updateMachine(activeMachine.id, payload) : await createMachine(payload);
+          const savedMachine = response?.data || null;
+          if (savedMachine?.id) setCurrentMachine(savedMachine.id);
+          if (contract?.processId) setCurrentProcess(contract.processId);
           setCurrentContract(contractId || null);
-          setAlert("Machine updated.", "success");
+          setModalAlert(activeMachine ? "Machine updated." : "Machine created.", "success");
+          setModalVisible(false);
           await refreshCatalog();
         } catch (error) {
-          setAlert(error.message, "danger");
-        }
-      });
-
-      mountRoot.querySelector("[data-action='machine-delete']")?.addEventListener("click", async () => {
-        const machine = currentMachine();
-        if (!machine) {
-          setAlert("Select a machine before deleting.", "warning");
-          return;
-        }
-        try {
-          await deleteMachine(machine.id);
-          setCurrentMachine(null);
-          setAlert("Machine deleted.", "success");
-          await refreshCatalog();
-        } catch (error) {
-          setAlert(error.message, "danger");
+          setModalAlert(error.message, "danger");
         }
       });
     },
