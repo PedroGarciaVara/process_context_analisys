@@ -6,24 +6,23 @@ import time
 from unittest import TestCase
 
 ROOT = Path(__file__).resolve().parents[2]
-BACKEND_DIR = ROOT / "uc_bib_solv" / "webapp_java" / "python-backend"
+BACKEND_DIR = ROOT / "uc_bib_solv"
 sys.path.insert(0, str(ROOT))
 sys.path.insert(1, str(BACKEND_DIR))
 
-from app.persistence import (
+from uc_bib_solv.modules.bpm.adapters.outbound.postgres import contrato_repo, proceso_repo
+from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import (
     analisis_causas_detalle_repo,
     analisis_causas_repo,
     causa_repo,
-    contrato_repo,
     graph_sync,
     graph_query_repo,
     hipotesis_repo,
     node_repo,
-    proceso_repo,
     relationship_repo,
 )
-from app.persistence.db import db_cursor
-from repositories import causas_repository as java_causas_repository
+from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
+from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import causas_repository as java_causas_repository
 
 
 class GraphDbIntegrationTests(TestCase):

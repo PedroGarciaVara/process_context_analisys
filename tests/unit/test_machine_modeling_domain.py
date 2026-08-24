@@ -1,9 +1,9 @@
 import unittest
 from uuid import uuid4
 
-from app.domain.machine_modeling.entities import Machine, MachineOperationConfiguration, MachineType
-from app.domain.machine_modeling.exceptions import MachineModelError
-from app.domain.machine_modeling.validators import classify_field, validate_operation_identity
+from uc_bib_solv.modules.bpm.domain.machines.entities import Machine, MachineOperationConfiguration, MachineType
+from uc_bib_solv.modules.bpm.domain.machines.exceptions import MachineModelError
+from uc_bib_solv.modules.bpm.domain.machines.validators import classify_field, validate_operation_identity
 
 
 class MachineModelingDomainTests(unittest.TestCase):

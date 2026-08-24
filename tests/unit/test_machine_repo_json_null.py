@@ -1,6 +1,6 @@
 import unittest
 
-from app.persistence.maquina_repo import _db_json_value
+from uc_bib_solv.modules.bpm.adapters.outbound.postgres.maquina_repo import _db_json_value
 
 
 class MachineRepoJsonNullTest(unittest.TestCase):

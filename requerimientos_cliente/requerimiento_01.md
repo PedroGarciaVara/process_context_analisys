@@ -1621,8 +1621,8 @@ def build_tree(rows):
 
 # services/causa_service.py
 
-from repositories.causa_repository import get_causas_by_contrato
-from utils.tree_builder import build_tree
+from uc_bib_solv.repositories.causa_repository import get_causas_by_contrato
+from uc_bib_solv.utils.tree_builder import build_tree
 
 def get_tree(contrato_id):
     rows = get_causas_by_contrato(contrato_id)
@@ -1663,7 +1663,7 @@ def render_tree(tree):
 # callbacks/tree_callbacks.py
 
 from dash.dependencies import Input, Output
-from services.causa_service import get_tree
+from uc_bib_solv.services.causa_service import get_tree
 from components.tree_view import render_tree
 
 def register_callbacks(app):
@@ -1880,8 +1880,8 @@ def delete_causa(causa_id):
 
 # services/causa_service.py
 
-from repositories.causa_repository import get_causas_by_contrato
-from utils.tree_builder import build_tree
+from uc_bib_solv.repositories.causa_repository import get_causas_by_contrato
+from uc_bib_solv.utils.tree_builder import build_tree
 
 def get_tree(contrato_id):
     rows = get_causas_by_contrato(contrato_id)

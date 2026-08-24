@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.persistence.db import db_cursor  # noqa: E402
+from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor  # noqa: E402
 
 
 SEED = "R12_ML_FIXTURE_V1"

@@ -1,6 +1,6 @@
 import unittest
 
-from app.domain.graph import (
+from uc_bib_solv.modules.rca_tree.domain.causal_graph.rules import (
     GraphDomainError,
     project_graph_as_tree,
     validate_relationship_signature,

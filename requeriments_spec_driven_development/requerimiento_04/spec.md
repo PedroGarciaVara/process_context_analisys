@@ -2,7 +2,7 @@
 
 ## Metadata
 - Requirement ID: `requerimiento_04`
-- Estado: `spec_validada`
+- Estado: `vencido` — requisito inicial reformulado; no implementar este flujo.
 - Autor del spec: `requirements-agent`
 - Fecha: 2026-05-30
 - Fuente: `requerimientos_cliente/requerimiento_04/requerimiento_04.md` y `requerimientos_cliente/requerimiento_04/instrucciones_migracion.md`

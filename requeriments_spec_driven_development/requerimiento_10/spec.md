@@ -1,6 +1,6 @@
 # Especificación técnica — Requerimiento 10
 
-**Estado:** `spec_validada`  
+**Estado:** `vencido` — requisito inicial reformulado; no continuar este flujo.  
 **Versión:** 1.4 — vertical slice enmendado (AMD-005)  
 **Autor:** `requirements-agent`  
 **Fecha:** 2026-07-27

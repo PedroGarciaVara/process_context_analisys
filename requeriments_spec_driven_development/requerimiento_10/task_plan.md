@@ -1,7 +1,7 @@
 ## Metadata
 - Requirement ID: `requerimiento_10`
 - Spec File: `./requeriments_spec_driven_development/requerimiento_10/spec.md`
-- Status: `implementado_pendiente_validacion`
+- Status: `vencido`
 - Allowed Status Values:
   - `pending_human_validation`
   - `approved`

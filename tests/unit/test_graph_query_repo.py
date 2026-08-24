@@ -9,7 +9,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from app.persistence import graph_query_repo
+from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import graph_query_repo
 
 
 class _FakeCursor:
@@ -61,8 +61,8 @@ class GraphQueryRepoTests(TestCase):
         cursor = _FakeCursor(rows)
 
         with (
-            patch("app.persistence.graph_query_repo._contract_node", return_value={"id": 100}),
-            patch("app.persistence.graph_query_repo.db_cursor", return_value=nullcontext(cursor)),
+            patch("uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.graph_query_repo._contract_node", return_value={"id": 100}),
+            patch("uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.graph_query_repo.db_cursor", return_value=nullcontext(cursor)),
         ):
             projected = graph_query_repo.get_projected_causes_for_contract(42)
 

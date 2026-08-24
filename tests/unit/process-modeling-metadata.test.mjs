@@ -1,6 +1,67 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildMetadataSections } from "../../uc_bib_solv/webapp_java/webapp/js/views/process-modeling.js";
+import { additionalFieldMarkup, buildMetadataSections, mergeEditedMetadataData, metadataEditFields, validateAdditionalFieldDraft } from "../../uc_bib_solv/webapp/js/views/process-modeling.js";
+
+test("renders row-level save and remove actions for additional metadata fields", () => {
+  const markup = additionalFieldMarkup({ title: "Criterios", description: "Validar lote" }, 2);
+  assert.match(markup, /data-pm-action="save-metadata-field"/);
+  assert.match(markup, />Guardar campo<\/button>/);
+  assert.match(markup, /data-pm-action="remove-metadata-field"/);
+});
+
+test("validates one additional field against the current modal draft", () => {
+  assert.deepEqual(validateAdditionalFieldDraft([
+    { title: " Criterios ", description: " Validar lote " },
+    { title: "Trazabilidad", description: "Registrar evidencia" },
+  ], 0), { title: "Criterios", description: "Validar lote" });
+  assert.throws(() => validateAdditionalFieldDraft([{ title: "Criterios", description: "" }], 0), /título y descripción/);
+  assert.throws(() => validateAdditionalFieldDraft([
+    { title: "Criterios", description: "Uno" },
+    { title: " criterios ", description: "Dos" },
+  ], 1), /no pueden repetirse/);
+});
+
+test("creates one editable field per metadata.data child and preserves nested JSON", () => {
+  assert.deepEqual(metadataEditFields({
+    schema_version: 1,
+    provenance: { source: "planner" },
+    data: {
+      purpose: "Dosificar",
+      limits: { min: 1, max: 9 },
+      checks: ["visual", "weight"],
+      enabled: true,
+      missing: null,
+    },
+  }), [
+    { key: "purpose", value: "Dosificar", kind: "string", id: "pm-metadata-field-0" },
+    { key: "limits", value: '{\n  "min": 1,\n  "max": 9\n}', kind: "json", id: "pm-metadata-field-1" },
+    { key: "checks", value: '[\n  "visual",\n  "weight"\n]', kind: "json", id: "pm-metadata-field-2" },
+    { key: "enabled", value: "true", kind: "boolean", id: "pm-metadata-field-3" },
+    { key: "missing", value: "", kind: "null", id: "pm-metadata-field-4" },
+  ]);
+});
+
+test("renders no fields for an empty metadata.data object", () => {
+  assert.deepEqual(metadataEditFields({ schema_version: 1, data: {} }), []);
+});
+
+test("preserves the metadata envelope while replacing only data children", () => {
+  const envelope = {
+    schema_version: 1,
+    provenance: { source: "planner" },
+    data: { purpose: "old", unknown: { keep: true } },
+  };
+  const updated = mergeEditedMetadataData(envelope, {
+    purpose: "new",
+    unknown: { keep: false },
+  });
+  assert.deepEqual(updated, {
+    schema_version: 1,
+    provenance: { source: "planner" },
+    data: { purpose: "new", unknown: { keep: false } },
+  });
+  assert.deepEqual(envelope.data, { purpose: "old", unknown: { keep: true } });
+});
 
 test("projects node description and JSONB envelope fields into read-only sections", () => {
   const sections = Object.fromEntries(buildMetadataSections({

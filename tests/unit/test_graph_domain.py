@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unittest import TestCase
 
-from app.domain.graph import (
+from uc_bib_solv.modules.rca_tree.domain.causal_graph.rules import (
     GraphDomainError,
     project_graph_as_tree,
     validate_delete_allowed,

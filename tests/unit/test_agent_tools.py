@@ -1,10 +1,10 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parents[2] / "uc_bib_solv/webapp_java/python-backend"))
+sys.path.insert(0, str(Path(__file__).parents[2] / "uc_bib_solv"))
 
-from agent_tools import ToolRequest, ToolRegistry, build_default_registry
-from agent_tools.errors import AgentToolError
+from uc_bib_solv.agent_tools import ToolRequest, ToolRegistry, build_default_registry
+from uc_bib_solv.agent_tools.errors import AgentToolError
 
 
 class FakeGateway:

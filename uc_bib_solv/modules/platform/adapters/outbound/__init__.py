@@ -1,0 +1,2 @@
+"""Platform outbound adapter namespace."""
+

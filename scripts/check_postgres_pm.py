@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.persistence.db import get_connection  # noqa: E402
+from uc_bib_solv.modules.platform.infrastructure.postgres import get_connection  # noqa: E402
 
 EXPECTED_TABLES = {
     "pm_process_definition",
@@ -22,7 +22,7 @@ EXPECTED_TABLES = {
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply-schema", action="store_true", help="run db/schema.sql before checking pm_* tables")
+    parser.add_argument("--apply-schema", action="store_true", help="run db_management/schema.sql before checking pm_* tables")
     args = parser.parse_args()
 
     conn = get_connection()

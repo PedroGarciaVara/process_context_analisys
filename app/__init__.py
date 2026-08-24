@@ -1,2 +1,0 @@
-"""Aplicación Solve-Ishikawa."""
-

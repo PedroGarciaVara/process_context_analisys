@@ -3,11 +3,11 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
-from app.persistence.machine_model_repo import _operation_configuration
+from uc_bib_solv.modules.bpm.adapters.outbound.postgres.machine_model_repo import _operation_configuration
 
-BACKEND = Path(__file__).parents[2] / "uc_bib_solv" / "webapp_java" / "python-backend"
+BACKEND = Path(__file__).parents[2] / "uc_bib_solv"
 sys.path.insert(0, str(BACKEND))
-from repositories import operational_repository  # noqa: E402
+from uc_bib_solv.modules.bpm.adapters.outbound.postgres import operational_repository  # noqa: E402
 
 
 class Req12MachineProjectionTests(unittest.TestCase):
@@ -53,7 +53,7 @@ class Req12MachineProjectionTests(unittest.TestCase):
         self.assertEqual(projected["operationRelations"][0]["contract_id"], 12)
 
     def test_context_projection_keeps_machine_type_identity_in_machine_and_relations(self):
-        source = (Path(__file__).parents[2] / "app" / "persistence" / "machine_model_repo.py").read_text(encoding="utf-8")
+        source = (Path(__file__).parents[2] / "uc_bib_solv" / "modules" / "bpm" / "adapters" / "outbound" / "postgres" / "machine_model_repo.py").read_text(encoding="utf-8")
         self.assertIn('canonical_machine_type_id = row.get("maquinas_tipo_id")', source)
         self.assertIn('"machine_type_id": canonical_machine_type_id', source)
         self.assertIn('row["machine_id"] = row.get("id")', source)

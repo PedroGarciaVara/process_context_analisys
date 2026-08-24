@@ -2,7 +2,7 @@
 
 ## Metadata
 - Requirement ID: `requerimiento_06`
-- Estado: `spec_pendiente_validacion`
+- Estado: `vencido` — requisito inicial reformulado; no continuar este flujo.
 - Autor del spec: `requirements-agent`
 - Fecha: 2026-05-31
 - Fuente: `requerimientos_cliente/requerimiento_06.md`

@@ -100,10 +100,16 @@ test("la paleta permite seleccionar un nodo, completar el modal y conectarlo al 
   await expect(page.locator(".pm-edge[data-pm-edge='palette-edge']")).toHaveCount(1);
   expect(version.transitions[0]).toMatchObject({ source_node_id: "palette-source", target_node_id: "palette-new", transition_type: "sequence" });
   await expect(page.locator("[data-pm-action='edit-selected-node']")).toBeEnabled();
-  await page.getByRole("button", { name: "Editar" }).click();
-  await page.locator("#pm-palette-name").fill("Operación editada");
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.locator("[data-node-id='palette-new']").first()).toContainText("Operación editada");
+  await page.locator("[data-pm-action='edit-selected-node']").click();
+  await expect(page).toHaveURL(/#\/operaciones_detalle_v02\?version_id=palette-v1&node_id=palette-new/);
+  await expect(page.locator("#pm-node-modal")).toHaveCount(0);
+  await page.goto("/index.html#/modelado-procesos?version_id=palette-v1");
+  await page.locator("[data-node-id='palette-new']").first().click({ force: true });
+  await page.getByLabel("Metadatos del elemento").getByRole("button", { name: "Editar" }).click();
+  await expect(page).toHaveURL(/#\/operaciones_detalle_v02\?version_id=palette-v1&node_id=palette-new/);
+  await expect(page.locator("#pm-metadata-modal")).toHaveCount(0);
+  await page.goto("/index.html#/modelado-procesos?version_id=palette-v1");
+  await page.locator("[data-node-id='palette-new']").first().click({ force: true });
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Eliminar" }).click();
   await expect(page.locator("[data-node-id='palette-new']")).toHaveCount(0);
@@ -154,14 +160,8 @@ test("muestra y persiste los metadatos JSON de la operación seleccionada", asyn
   await expect(metadataPanel).toContainText("Resumen");
 
   await metadataPanel.getByRole("button", { name: "Editar", exact: true }).click();
-  const metadataJson = page.locator("#pm-metadata-json");
-  const originalMetadata = await metadataJson.inputValue();
-  const saveResponse = page.waitForResponse((response) => response.url().includes("/metadata") && response.request().method() === "PATCH");
-  await page.getByRole("button", { name: "Guardar metadatos" }).click();
-  expect((await saveResponse).status()).toBe(200);
-  await expect(page.locator("#pm-message")).toHaveText("Metadatos guardados.");
-  await expect(metadataJson).toHaveCount(0);
-  expect(JSON.parse(originalMetadata)).toMatchObject({ schema_version: "1.0" });
+  await expect(page).toHaveURL(/#\/operaciones_detalle_v02\?version_id=.*&node_id=.*/);
+  await expect(page.locator("#pm-metadata-modal")).toHaveCount(0);
 });
 
 test("muestra el contexto funcional enriquecido en modo lectura", async ({ page }) => {
@@ -541,7 +541,7 @@ test("expande subprocess inline y conserva etiquetas semánticas", async ({ page
   await decisionCard.scrollIntoViewIfNeeded();
   await decisionCard.click({ position: { x: 95, y: 70 } });
   await expect(decisionCard).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("button", { name: "Editar" })).toBeEnabled();
+  await expect(page.locator("[data-pm-action='edit-selected-node']")).toBeEnabled();
   await page.locator(".pm-palette-item[data-pm-palette-type='operation']").click();
   await expect(page.locator(".pm-palette-branch-fields")).toBeVisible();
   await expect(page.locator("#pm-palette-branch-label")).toHaveAttribute("required", "");

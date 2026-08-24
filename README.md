@@ -43,7 +43,7 @@ Crear la base si es necesario y aplicar el esquema:
 
 ```bash
 createdb -h /var/run/postgresql -U pedro solve_ishikawa
-psql -h /var/run/postgresql -U pedro -d solve_ishikawa -f db/schema.sql
+psql -h /var/run/postgresql -U pedro -d solve_ishikawa -f db_management/schema.sql
 python3 scripts/check_postgres_pm.py
 ```
 
@@ -66,7 +66,7 @@ El punto de entrada actual es el servidor Flask que sirve la SPA JavaScript:
 
 La aplicación queda disponible en `http://127.0.0.1:8050`.
 
-El script ejecuta `uc_bib_solv/webapp_java/local_server.py`, que:
+El script ejecuta `uc_bib_solv/local_server.py`, que:
 
 1. crea la aplicación Flask;
 2. registra los blueprints HTTP;
@@ -93,9 +93,9 @@ El script ejecuta `uc_bib_solv/webapp_java/local_server.py`, que:
 ## Arquitectura principal
 
 ```text
-HTML/CSS/JavaScript (webapp_java/webapp)
+HTML/CSS/JavaScript (webapp)
         ↓ clientes API y router por hash
-Flask (webapp_java/python-backend/routes)
+Flask (uc_bib_solv/routes)
         ↓
 Servicios de aplicación
         ↓
@@ -106,13 +106,13 @@ PostgreSQL
 
 Rutas relevantes:
 
-- `uc_bib_solv/webapp_java/webapp/`: SPA, vistas, componentes, estado, CSS y clientes API.
-- `uc_bib_solv/webapp_java/python-backend/routes/`: endpoints Flask.
-- `uc_bib_solv/webapp_java/python-backend/services/`: casos de uso y payloads.
-- `uc_bib_solv/webapp_java/python-backend/repositories/`: persistencia usada por el backend Flask.
+- `uc_bib_solv/webapp/`: SPA, vistas, componentes, estado, CSS y clientes API.
+- `uc_bib_solv/routes/`: endpoints Flask.
+- `uc_bib_solv/services/`: casos de uso y payloads.
+- `uc_bib_solv/repositories/`: persistencia usada por el backend Flask.
 - `app/domain/`: reglas de dominio y validadores, especialmente process modeling.
 - `app/persistence/`: repositorios PostgreSQL compartidos y legado.
-- `db/schema.sql`: DDL PostgreSQL.
+- `db_management/schema.sql`: DDL PostgreSQL.
 - `tests/`: pruebas unitarias, integración, API, smoke y E2E.
 
 ## Tests

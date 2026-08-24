@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 class CausaDetalleFrontendTests(TestCase):
     def test_build_causa_detalle_hash_uses_created_causa_id(self):
         script = """
-import { buildCausaDetalleHash } from "./uc_bib_solv/webapp_java/webapp/js/views/causa_detalle.js";
+import { buildCausaDetalleHash } from "./uc_bib_solv/webapp/js/views/causa_detalle.js";
 
 console.log(buildCausaDetalleHash({ contrato_id: 16, causa_id: 65 }));
 console.log(buildCausaDetalleHash({ contrato_id: 16, causa_id: "", parent_id: null }));
@@ -35,7 +35,7 @@ console.log(buildCausaDetalleHash({ contrato_id: 16, causa_id: "", parent_id: nu
 
     def test_get_editor_mode_options_varies_by_route_context(self):
         script = """
-import { getEditorModeOptions } from "./uc_bib_solv/webapp_java/webapp/js/views/causa_detalle.js";
+import { getEditorModeOptions } from "./uc_bib_solv/webapp/js/views/causa_detalle.js";
 
 console.log(JSON.stringify(getEditorModeOptions({ contrato_id: "17" })));
 console.log(JSON.stringify(getEditorModeOptions({ contrato_id: "17", parent_id: "69" })));
@@ -62,7 +62,7 @@ console.log(JSON.stringify(getEditorModeOptions({ contrato_id: "17", causa_id: "
 
     def test_derive_scope_from_detail_params_resolves_contract_and_process(self):
         script = """
-import { deriveScopeFromDetailParams } from "./uc_bib_solv/webapp_java/webapp/js/views/causa_detalle_v02.js";
+import { deriveScopeFromDetailParams } from "./uc_bib_solv/webapp/js/views/causa_detalle_v02.js";
 
 const scope = deriveScopeFromDetailParams(
   { contrato_id: "17" },
@@ -88,7 +88,7 @@ console.log(JSON.stringify(scope));
 
     def test_derive_tree_scope_from_route_prefers_contract_in_url(self):
         script = """
-import { deriveTreeScopeFromRoute } from "./uc_bib_solv/webapp_java/webapp/js/views/arboles_v02.js";
+import { deriveTreeScopeFromRoute } from "./uc_bib_solv/webapp/js/views/arboles_v02.js";
 
 const scope = deriveTreeScopeFromRoute(
   { contract_id: "17" },
@@ -115,8 +115,8 @@ console.log(JSON.stringify(scope));
 
     def test_resolve_active_tree_contract_id_prefers_runtime_state(self):
         script = """
-import { resolveActiveTreeContractId } from "./uc_bib_solv/webapp_java/webapp/js/components/tree-shell.js";
-import { AppState } from "./uc_bib_solv/webapp_java/webapp/js/core/state.js";
+import { resolveActiveTreeContractId } from "./uc_bib_solv/webapp/js/components/tree-shell.js";
+import { AppState } from "./uc_bib_solv/webapp/js/core/state.js";
 
 AppState.currentContract = 21;
 console.log(resolveActiveTreeContractId({ currentContract: 8 }, { currentContract: 17 }));
@@ -141,7 +141,7 @@ console.log(resolveActiveTreeContractId({ currentContract: 8 }, {}));
 
     def test_normalize_hidden_node_ids_accepts_set(self):
         script = """
-import { normalizeHiddenNodeIds } from "./uc_bib_solv/webapp_java/webapp/js/components/tree-shell.js";
+import { normalizeHiddenNodeIds } from "./uc_bib_solv/webapp/js/components/tree-shell.js";
 
 const normalized = normalizeHiddenNodeIds(new Set([17, 18]));
 console.log(JSON.stringify(Array.from(normalized)));
@@ -164,7 +164,7 @@ console.log(JSON.stringify(Array.from(normalized)));
 
     def test_prune_tree_removes_hidden_nodes_recursively(self):
         script = """
-import { pruneTree } from "./uc_bib_solv/webapp_java/webapp/js/components/tree-shell.js";
+import { pruneTree } from "./uc_bib_solv/webapp/js/components/tree-shell.js";
 
 const tree = [
   { id: 1, children: [{ id: 2, children: [] }, { id: 3, children: [] }] },

@@ -7,12 +7,13 @@ import sys
 from unittest import TestCase
 
 ROOT = Path(__file__).resolve().parents[2]
-BACKEND_DIR = ROOT / "uc_bib_solv" / "webapp_java" / "python-backend"
+BACKEND_DIR = ROOT / "uc_bib_solv"
 sys.path.insert(0, str(ROOT))
 sys.path.insert(1, str(BACKEND_DIR))
 
-from app.persistence import causa_repo, contrato_repo, hipotesis_repo, proceso_repo
-from app.persistence.db import db_cursor
+from uc_bib_solv.modules.bpm.adapters.outbound.postgres import contrato_repo, proceso_repo
+from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import causa_repo, hipotesis_repo
+from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
 
 APP_SPEC = importlib.util.spec_from_file_location("webapp_java_backend_app", BACKEND_DIR / "app.py")
 APP_MODULE = importlib.util.module_from_spec(APP_SPEC)

@@ -7,18 +7,17 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(1, str(ROOT / "uc_bib_solv" / "webapp_java" / "python-backend"))
 
-from repositories import causas_repository
-from services import causas_service
+from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import causas_repository
+from uc_bib_solv.modules.rca_tree.adapters.outbound import causas_compat as causas_service
 
 
 class TreePayloadTests(TestCase):
-    @patch("repositories.causas_repository.analisis_causas_repo.get_by_contrato")
-    @patch("repositories.causas_repository.hipotesis_repo.get_by_causa")
-    @patch("repositories.causas_repository.causa_repo.build_tree")
-    @patch("repositories.causas_repository.causa_repo.get_by_contrato")
-    @patch("repositories.causas_repository.contrato_repo.get_by_id")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.causas_repository.analisis_causas_repo.get_by_contrato")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.causas_repository.hipotesis_repo.get_by_causa")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.causas_repository.causa_repo.build_tree")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.causas_repository.causa_repo.get_by_contrato")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.causas_repository.get_contract")
     def test_repository_tree_payload_uses_selected_contract_causes(
         self,
         get_contract_mock,
@@ -74,7 +73,7 @@ class TreePayloadTests(TestCase):
         self.assertEqual(payload["tree"][0]["children"][0]["id"], 70)
         self.assertEqual(payload["detail"]["cause"]["id"], 69)
 
-    @patch("services.causas_service.get_tree_repository_payload")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causas_compat.get_tree_repository_payload")
     def test_service_tree_payload_forwards_selected_contract(self, get_tree_repository_payload_mock):
         get_tree_repository_payload_mock.return_value = {
             "contract": {"id": 17},
@@ -96,7 +95,7 @@ class TreePayloadTests(TestCase):
 
 
 class DeleteCauseTests(TestCase):
-    @patch("services.causas_service.delete_causa")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causas_compat.delete_causa")
     def test_delete_causa_record_returns_success(self, delete_causa_mock):
         delete_causa_mock.return_value = True
 
@@ -105,7 +104,7 @@ class DeleteCauseTests(TestCase):
         delete_causa_mock.assert_called_once_with(44)
         self.assertEqual(result, {"deleted": True, "message": "Causa eliminada."})
 
-    @patch("services.causas_service.delete_causa")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causas_compat.delete_causa")
     def test_delete_causa_record_raises_when_missing(self, delete_causa_mock):
         delete_causa_mock.return_value = False
 
@@ -114,7 +113,7 @@ class DeleteCauseTests(TestCase):
 
 
 class ReusableNodeFlowTests(TestCase):
-    @patch("services.causas_service.search_reusable_nodes_repository")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causas_compat.search_reusable_nodes_repository")
     def test_search_reusable_nodes_forwards_context_and_limits(self, search_repository_mock):
         search_repository_mock.return_value = [{"node_id": 31, "node_type": "CAUSE"}]
 
@@ -136,7 +135,7 @@ class ReusableNodeFlowTests(TestCase):
         self.assertEqual(payload["count"], 1)
         self.assertEqual(payload["node_type"], "CAUSE")
 
-    @patch("services.causas_service.link_reusable_node_repository")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causas_compat.link_reusable_node_repository")
     def test_link_reusable_node_builds_contract_specific_message(self, link_repository_mock):
         link_repository_mock.return_value = {
             "relationship": {"id": 91},
@@ -157,7 +156,7 @@ class ReusableNodeFlowTests(TestCase):
         )
         self.assertEqual(payload["message"], "Contrato existente vinculado.")
 
-    @patch("services.causas_service.create_contract_child_repository")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causas_compat.create_contract_child_repository")
     def test_create_contract_node_maps_editor_fields_to_contract_payload(self, create_contract_child_repository_mock):
         create_contract_child_repository_mock.return_value = {
             "contract": {"id": 88},

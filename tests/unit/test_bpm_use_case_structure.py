@@ -1,0 +1,39 @@
+import unittest
+from pathlib import Path
+
+from uc_bib_solv.modules.bpm.application import BpmOperationalApplication
+from uc_bib_solv.modules.bpm.application.use_cases.catalog import GetOperationalCatalog
+from uc_bib_solv.modules.bpm.application.use_cases.contracts import CreateContract
+from uc_bib_solv.modules.bpm.application.use_cases.machines import CreateMachine
+from uc_bib_solv.modules.bpm.application.use_cases.operations import ListOperations
+from uc_bib_solv.modules.bpm.application.use_cases.processes import ListProcesses
+
+
+class FakePersistence:
+    def list_processes(self):
+        return [{"id": 1, "name": "Proceso"}]
+
+    def get_operational_catalog(self, version_id=None):
+        return {"data": {"contractScopes": {"operations": [{"id": "op-1"}]}}}
+
+
+class BpmUseCaseStructureTests(unittest.TestCase):
+    def test_use_cases_are_grouped_by_bpm_capability(self):
+        self.assertEqual(ListProcesses(FakePersistence()).execute(), [{"id": 1, "name": "Proceso"}])
+        self.assertEqual(ListOperations(FakePersistence()).execute(), [{"id": "op-1"}])
+        self.assertIsInstance(GetOperationalCatalog(FakePersistence()), GetOperationalCatalog)
+        self.assertIsInstance(CreateContract, type)
+        self.assertIsInstance(CreateMachine, type)
+
+    def test_composition_preserves_compatibility_api(self):
+        use_cases = BpmOperationalApplication(FakePersistence())
+        self.assertEqual(use_cases.list_processes(), [{"id": 1, "name": "Proceso"}])
+        self.assertEqual(use_cases.list_operations(), [{"id": "op-1"}])
+
+    def test_generic_operational_use_case_module_is_retired(self):
+        path = Path(__file__).parents[2] / "uc_bib_solv/modules/bpm/application/use_cases/operational.py"
+        self.assertFalse(path.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

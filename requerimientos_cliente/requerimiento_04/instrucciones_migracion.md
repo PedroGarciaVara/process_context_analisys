@@ -129,7 +129,7 @@ webapp/
 │       ├── notifications.js
 │       └── permissions.js
 │
-└── python-backend/
+└── uc_bib_solv/
     ├── app.py
     ├── routes/
     │   ├── checklist.py

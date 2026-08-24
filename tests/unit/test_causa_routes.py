@@ -1,30 +1,26 @@
 from __future__ import annotations
 
-import importlib.util
-from pathlib import Path
-import sys
 from unittest import TestCase
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[2]
-BACKEND_DIR = ROOT / "uc_bib_solv" / "webapp_java" / "python-backend"
-sys.path.insert(0, str(BACKEND_DIR))
-sys.path.insert(1, str(ROOT))
+from flask import Flask
 
-APP_SPEC = importlib.util.spec_from_file_location("webapp_java_backend_app", BACKEND_DIR / "app.py")
-APP_MODULE = importlib.util.module_from_spec(APP_SPEC)
-assert APP_SPEC and APP_SPEC.loader
-APP_SPEC.loader.exec_module(APP_MODULE)
-create_app = APP_MODULE.create_app
+from uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat import bp as legacy_causas_bp
+
+
+def create_legacy_app():
+    application = Flask(__name__)
+    application.register_blueprint(legacy_causas_bp)
+    return application
 
 
 class CausaRoutesTests(TestCase):
     def setUp(self):
-        application = create_app()
+        application = create_legacy_app()
         application.testing = True
         self.client = application.test_client()
 
-    @patch("routes.causas.save_cause")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.save_cause")
     def test_create_causa_route_returns_201_and_passes_payload(self, save_cause_mock):
         save_cause_mock.return_value = {"cause": {"id": 61}, "message": "Causa creada."}
 
@@ -37,7 +33,7 @@ class CausaRoutesTests(TestCase):
         save_cause_mock.assert_called_once_with({"contract_id": 6, "nombre": "Nueva causa"})
         self.assertEqual(response.get_json()["cause"]["id"], 61)
 
-    @patch("routes.causas.save_cause")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.save_cause")
     def test_update_causa_route_injects_causa_id(self, save_cause_mock):
         save_cause_mock.return_value = {"cause": {"id": 61}, "message": "Causa actualizada."}
 
@@ -50,7 +46,7 @@ class CausaRoutesTests(TestCase):
         save_cause_mock.assert_called_once_with({"nombre": "Causa editada", "causa_id": 61})
         self.assertEqual(response.get_json()["message"], "Causa actualizada.")
 
-    @patch("routes.causas.delete_causa_record")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.delete_causa_record")
     def test_delete_causa_route_returns_success(self, delete_causa_mock):
         delete_causa_mock.return_value = {"deleted": True, "message": "Causa eliminada."}
 
@@ -60,7 +56,7 @@ class CausaRoutesTests(TestCase):
         delete_causa_mock.assert_called_once_with(61)
         self.assertEqual(response.get_json()["deleted"], True)
 
-    @patch("routes.causas.save_hypothesis")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.save_hypothesis")
     def test_create_hypothesis_route_injects_cause_id(self, save_hypothesis_mock):
         save_hypothesis_mock.return_value = {"hypothesis": {"id": 91}, "message": "Hipotesis creada."}
 
@@ -73,7 +69,7 @@ class CausaRoutesTests(TestCase):
         save_hypothesis_mock.assert_called_once_with({"descripcion": "Hipotesis nueva", "cause_id": 61})
         self.assertEqual(response.get_json()["hypothesis"]["id"], 91)
 
-    @patch("routes.causas.save_hypothesis")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.save_hypothesis")
     def test_update_hypothesis_route_injects_hypothesis_id(self, save_hypothesis_mock):
         save_hypothesis_mock.return_value = {"hypothesis": {"id": 91}, "message": "Hipotesis actualizada."}
 
@@ -86,7 +82,7 @@ class CausaRoutesTests(TestCase):
         save_hypothesis_mock.assert_called_once_with({"descripcion": "Hipotesis editada", "hypothesis_id": 91})
         self.assertEqual(response.get_json()["message"], "Hipotesis actualizada.")
 
-    @patch("routes.causas.delete_hypothesis_record")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.delete_hypothesis_record")
     def test_delete_hypothesis_route_returns_success(self, delete_hypothesis_mock):
         delete_hypothesis_mock.return_value = {"deleted": True, "message": "Hipotesis eliminada."}
 
@@ -96,7 +92,7 @@ class CausaRoutesTests(TestCase):
         delete_hypothesis_mock.assert_called_once_with(91)
         self.assertEqual(response.get_json()["deleted"], True)
 
-    @patch("routes.causas.get_tree_payload")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.get_tree_payload")
     def test_tree_route_passes_selected_contract_to_service(self, get_tree_payload_mock):
         get_tree_payload_mock.return_value = {
             "status": "ok",
@@ -116,7 +112,7 @@ class CausaRoutesTests(TestCase):
         )
         self.assertEqual(response.get_json()["contract"]["id"], 17)
 
-    @patch("routes.causas.create_contract_node")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.create_contract_node")
     def test_create_causa_route_can_delegate_to_contract_creation_mode(self, create_contract_node_mock):
         create_contract_node_mock.return_value = {"contract": {"id": 88}, "message": "Contrato creado y vinculado."}
 
@@ -131,7 +127,7 @@ class CausaRoutesTests(TestCase):
         )
         self.assertEqual(response.get_json()["contract"]["id"], 88)
 
-    @patch("routes.causas.search_reusable_nodes")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.search_reusable_nodes")
     def test_reusable_search_route_forwards_query_params(self, search_reusable_nodes_mock):
         search_reusable_nodes_mock.return_value = {"count": 1, "items": [{"node_id": 301}]}
 
@@ -144,7 +140,7 @@ class CausaRoutesTests(TestCase):
         self.assertEqual(args["text"], "horno")
         self.assertEqual(response.get_json()["count"], 1)
 
-    @patch("routes.causas.link_reusable_node")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat.link_reusable_node")
     def test_reusable_link_route_passes_payload(self, link_reusable_node_mock):
         link_reusable_node_mock.return_value = {"relationship": {"id": 55}, "message": "Contrato existente vinculado."}
 

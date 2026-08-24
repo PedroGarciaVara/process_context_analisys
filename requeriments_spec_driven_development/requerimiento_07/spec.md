@@ -2,7 +2,7 @@
 
 ## Metadata
 - Requirement ID: `requerimiento_07`
-- Estado: `spec_pendiente_validacion`
+- Estado: `vencido` — requisito inicial reformulado; no continuar este flujo.
 - Autor del spec: `requirements-agent`
 - Fecha: 2026-06-02
 - Fuente: `requerimientos_cliente/requerimiento_07.md` + instrucción del programador en sesión
@@ -415,4 +415,3 @@ No quedan preguntas bloqueantes abiertas en esta iteración.
 - 2026-06-02 — Programador humano confirma la nueva firma estructural obligatoria: `CAUSE -[DEPENDS_ON]-> CONTRACT`.
 - 2026-06-02 — `requirements-agent` fija `node` + `relationship` como fuente de verdad y redefine `causa` e `hypothesis` como satélites de atributos específicos.
 - 2026-06-02 — `requirements-agent` determina que `causa` debe permanecer como satélite descriptivo ligero; no se añaden nuevos campos estructurados adicionales más allá de clasificación propia (`type`, `category`) y timestamps.
-

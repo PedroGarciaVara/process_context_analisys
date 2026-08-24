@@ -1,0 +1,72 @@
+export async function requestJson(path, options = {}) {
+  const response = await fetch(path, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    let message = `Request failed: ${response.status}`;
+    try {
+      const payload = await response.json();
+      if (payload?.message) message = payload.message;
+      const detail = Object.assign(new Error(message), { status: response.status, code: payload?.code || "request_failed", field: payload?.field || null, data: payload?.data });
+      throw detail;
+    } catch (_error) {
+      // Ignore body parse failures and keep the generic message.
+    }
+    throw Object.assign(new Error(message), { status: response.status, code: "request_failed", field: null });
+  }
+
+  return response.json();
+}
+
+export function fetchBootstrap() {
+  return requestJson("/api/bootstrap");
+}
+
+export function fetchOperationalCatalog() {
+  return requestJson("/api/bpm/operational/catalog").then(unwrapApiData);
+}
+
+export function fetchOperationalPage(page, params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== "") {
+      query.set(key, String(value));
+    }
+  });
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return requestJson(`/api/bpm/operational/page/${page}${suffix}`).then(unwrapApiData);
+}
+
+export function fetchCausas(view = "arbol", params = {}) {
+  const query = new URLSearchParams({ view });
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== "") {
+      query.set(key, String(value));
+    }
+  });
+  return requestJson(`/api/rca-tree/nodes?${query.toString()}`);
+}
+
+/**
+ * Operational endpoints expose the common HTTP envelope:
+ * `{ status: "ok", data: <catalog-or-page> }`.
+ *
+ * The views consume the catalog/page contract itself, so unwrap this boundary
+ * once in the API client. Keeping it here prevents every view and state helper
+ * from having to know how the HTTP adapter wraps successful responses.
+ */
+export function unwrapApiData(payload) {
+  if (
+    payload
+    && payload.status === "ok"
+    && Object.prototype.hasOwnProperty.call(payload, "data")
+  ) {
+    return payload.data;
+  }
+  return payload;
+}

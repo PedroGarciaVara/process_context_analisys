@@ -1,13 +1,13 @@
 import unittest
 
-from app.domain.process_modeling.context import (
+from uc_bib_solv.modules.bpm.domain.processes.context import (
     ContextDetail,
     ContextRecord,
     calculate_kpi,
     normalize_agent_process_payload,
     normalize_operation_name,
 )
-from app.domain.process_modeling.exceptions import ProcessModelingError
+from uc_bib_solv.modules.bpm.domain.processes.exceptions import ProcessModelingError
 
 
 class Req12ContextTests(unittest.TestCase):

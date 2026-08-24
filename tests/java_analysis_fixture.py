@@ -9,9 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.persistence.db import db_cursor, get_connection
-from db.init_db import init_db
-from db.reset_db import reset_db
+from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor, get_connection
+from db_management.init_db import init_db
+import time
+import uuid
 
 
 def _node(cur, node_type: str, code: str, name: str, legacy_table: str, legacy_id: int) -> int:
@@ -26,17 +27,36 @@ def _node(cur, node_type: str, code: str, name: str, legacy_table: str, legacy_i
     return int(cur.fetchone()["id"])
 
 
-def build_fixture() -> dict[str, int]:
+def build_fixture() -> dict[str, int | str]:
     init_db()
-    reset_db()
+    stamp = int(time.time() * 1000)
+    prefix = f"TEST_REQ16_JAVA_{stamp}"
     with db_cursor() as cur:
-        cur.execute("INSERT INTO proceso(nombre) VALUES (%s) RETURNING id", ("Proceso fixture Java",))
+        bpm_process_id = str(uuid.uuid4())
+        version_id = str(uuid.uuid4())
+        operation_id = str(uuid.uuid4())
+        cur.execute(
+            """INSERT INTO pm_process_definition(process_id, process_code, name, status)
+               VALUES (%s, %s, %s, 'draft')""",
+            (bpm_process_id, f"{prefix}_BPM", f"{prefix} BPM"),
+        )
+        cur.execute(
+            """INSERT INTO pm_process_version(version_id, process_id, version_number, status)
+               VALUES (%s, %s, 1, 'draft')""",
+            (version_id, bpm_process_id),
+        )
+        cur.execute(
+            """INSERT INTO pm_process_node(node_id, version_id, node_code, node_type, name)
+               VALUES (%s, %s, %s, 'operation', %s)""",
+            (operation_id, version_id, f"{prefix}_OP", f"{prefix} operation"),
+        )
+        cur.execute("INSERT INTO proceso(nombre, bpm_process_id) VALUES (%s, %s) RETURNING id", (f"{prefix}_PROCESS", bpm_process_id))
         process_id = int(cur.fetchone()["id"])
-        cur.execute("INSERT INTO maquinas_tipo(nombre, descripcion) VALUES (%s, %s) RETURNING id", ("Familia fixture", "Tipo de prueba"))
+        cur.execute("INSERT INTO maquinas_tipo(nombre, descripcion) VALUES (%s, %s) RETURNING id", (f"{prefix}_TYPE", "Tipo de prueba"))
         machine_type_id = int(cur.fetchone()["id"])
         cur.execute(
             "INSERT INTO maquina(nombre, maquinas_tipo_id) VALUES (%s, %s) RETURNING id",
-            ("Maquina fixture", machine_type_id),
+            (f"{prefix}_MACHINE", machine_type_id),
         )
         machine_id = int(cur.fetchone()["id"])
         cur.execute(
@@ -44,13 +64,14 @@ def build_fixture() -> dict[str, int]:
             (machine_id, "FIX-JAVA-001", "SERIE-FIX-001"),
         )
         cur.execute(
-            "INSERT INTO contrato(proceso_id, nombre, metrica, objetivo) VALUES (%s, %s, %s, %s) RETURNING id",
-            (process_id, "Contrato fixture Java", "OEE", "Validar trazabilidad"),
+            """INSERT INTO contrato(proceso_id, bpm_node_id, nombre, metrica, objetivo)
+               VALUES (%s, %s, %s, %s, %s) RETURNING id""",
+            (process_id, operation_id, f"{prefix}_CONTRACT", "OEE", "Validar trazabilidad"),
         )
         contract_id = int(cur.fetchone()["id"])
         cur.execute("INSERT INTO contrato_maquina(contrato_id, maquina_id) VALUES (%s, %s)", (contract_id, machine_id))
 
-        contract_node_id = _node(cur, "CONTRACT", "CONTRACT-FIX-001", "Contrato fixture Java", "contrato", contract_id)
+        contract_node_id = _node(cur, "CONTRACT", f"{prefix}_CONTRACT_NODE", f"{prefix}_CONTRACT", "contrato", contract_id)
         causes: list[tuple[int, int, int]] = []
         level_parents: list[int | None] = [None]
         for level, count in ((1, 1), (2, 3), (3, 5)):
@@ -135,7 +156,7 @@ def build_fixture() -> dict[str, int]:
         assert int(cur.fetchone()["count"]) == 9
         cur.execute("SELECT COUNT(*) AS count FROM analisis_resultado WHERE analisis_id=%s AND evidencia IS NOT NULL AND conclusion IS NOT NULL", (analysis_id,))
         assert int(cur.fetchone()["count"]) == 18
-    return {"process_id": process_id, "machine_id": machine_id, "contract_id": contract_id, "analysis_id": analysis_id, "cause_count": 9, "hypothesis_count": 9}
+    return {"process_id": process_id, "machine_id": machine_id, "contract_id": contract_id, "analysis_id": analysis_id, "prefix": prefix, "cause_count": 9, "hypothesis_count": 9}
 
 
 if __name__ == "__main__":

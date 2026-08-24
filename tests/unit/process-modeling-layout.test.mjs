@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { computeProcessLayout } from "../../uc_bib_solv/webapp_java/webapp/js/components/process-modeling/layout.js";
-import { measureDiagram } from "../../uc_bib_solv/webapp_java/webapp/js/components/process-modeling/measurement.js";
+import { computeProcessLayout } from "../../uc_bib_solv/webapp/js/components/process-modeling/layout.js";
+import { measureDiagram } from "../../uc_bib_solv/webapp/js/components/process-modeling/measurement.js";
 
 function overlaps(left, right) {
   return left.x < right.x + right.width

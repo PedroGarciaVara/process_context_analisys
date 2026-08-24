@@ -3,7 +3,7 @@
 ## Metadata
 - Requirement ID: `requerimiento_05`
 - Spec File: `./requeriments_spec_driven_development/requerimiento_05/spec.md`
-- Status: `en_correccion`
+- Status: `vencido`
 - Allowed Status Values:
   - `pending_human_validation`
   - `approved`

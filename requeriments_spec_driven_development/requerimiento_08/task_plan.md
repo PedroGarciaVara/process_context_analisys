@@ -8,7 +8,7 @@
 ## Metadata
 - Requirement ID: `requerimiento_08`
 - Spec File: `./requeriments_spec_driven_development/requerimiento_08/spec.md`
-- Status: `implementado_pendiente_validacion`
+- Status: `vencido`
 - Owner: `orchestrator (degraded mode)`
 - Created At: `2026-07-18`
 - Last Updated: `2026-07-18`

@@ -1,0 +1,2 @@
+def BadFunction():
+    pass

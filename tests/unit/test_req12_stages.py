@@ -1,7 +1,7 @@
 import unittest
 
-from app.domain.machine_modeling.exceptions import MachineModelError
-from app.domain.machine_modeling.validators import canonical_stages, validate_stages
+from uc_bib_solv.modules.bpm.domain.machines.exceptions import MachineModelError
+from uc_bib_solv.modules.bpm.domain.machines.validators import canonical_stages, validate_stages
 
 
 class Req12StagesTest(unittest.TestCase):

@@ -3,7 +3,7 @@ import re
 import unittest
 from pathlib import Path
 
-from app.persistence.pm_process_repo import _node_record
+from uc_bib_solv.modules.bpm.adapters.outbound.postgres.pm_process_repo import _node_record
 
 
 class Req12FixtureSeedContractTests(unittest.TestCase):
@@ -126,7 +126,7 @@ class Req12FixtureSeedContractTests(unittest.TestCase):
         self.assertNotRegex(self.source, r"(?i)\bDELETE\s+FROM\s+maquina(?!\w)")
 
     def test_canonical_schema_has_fk_guards_for_orphan_detection(self):
-        schema = (Path(__file__).parents[2] / "db" / "schema.sql").read_text(encoding="utf-8")
+        schema = (Path(__file__).parents[2] / "db_management" / "schema.sql").read_text(encoding="utf-8")
         self.assertIn('proceso_id INT NOT NULL REFERENCES proceso(id)', schema)
         self.assertIn('contrato_id INT NOT NULL REFERENCES contrato(id)', schema)
         self.assertIn('maquina_id INT NOT NULL REFERENCES maquina(id)', schema)
@@ -142,14 +142,14 @@ class Req12FixtureSeedContractTests(unittest.TestCase):
         self.assertIn('"canonical_evidence"', self.source)
 
     def test_process_modeling_api_projects_canonical_relations(self):
-        repo = (Path(__file__).parents[2] / "app" / "persistence" / "pm_process_repo.py").read_text(encoding="utf-8")
+        repo = (Path(__file__).parents[2] / "uc_bib_solv" / "modules" / "bpm" / "adapters" / "outbound" / "postgres" / "pm_process_repo.py").read_text(encoding="utf-8")
         self.assertIn('"canonical_relations"', repo)
         self.assertIn('"contract_id"', repo)
         self.assertIn('"machine_ids"', repo)
 
     def test_operational_catalog_can_project_exact_bpm_version(self):
-        repo = (Path(__file__).parents[2] / "uc_bib_solv" / "webapp_java" / "python-backend" / "repositories" / "operational_repository.py").read_text(encoding="utf-8")
-        route = (Path(__file__).parents[2] / "uc_bib_solv" / "webapp_java" / "python-backend" / "routes" / "operational.py").read_text(encoding="utf-8")
+        repo = (Path(__file__).parents[2] / "uc_bib_solv" / "modules" / "bpm" / "adapters" / "outbound" / "postgres" / "operational_repository.py").read_text(encoding="utf-8")
+        route = (Path(__file__).parents[2] / "uc_bib_solv" / "modules" / "bpm" / "adapters" / "inbound" / "http" / "operational_compat.py").read_text(encoding="utf-8")
         self.assertIn("def _bpm_identity", repo)
         self.assertIn("pm_process_version", repo)
         self.assertIn("request.args.get(\"version_id\")", route)

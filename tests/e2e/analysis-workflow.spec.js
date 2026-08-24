@@ -10,9 +10,13 @@ test("flujo completo: abre analisis, importa plantilla, traza evaluaciones y cie
   await page.locator("#analysis-opening-indication").fill("Desviacion detectada durante la inspeccion E2E.");
 
   const openResponse = page.waitForResponse((response) => response.url().endsWith("/api/analyses") && response.request().method() === "POST" && response.status() === 201);
+  const treeRequest = page.waitForRequest((request) => request.url().includes("/api/causas?") && request.url().includes("view=analisis_causas_v2"));
   await page.locator("#analysis-open-button").click();
   await openResponse;
   await expect(page).toHaveURL(/#\/analisis_causas_v02\?contract_id=1&analysis_id=\d+/);
+  const routeContractId = new URL(page.url()).hash.split("?")[1].match(/(?:^|&)contract_id=(\d+)/)[1];
+  const treeResponse = await treeRequest;
+  expect(new URL(treeResponse.url()).searchParams.get("contract_id")).toBe(routeContractId);
   await expect(page.locator(".acv2-tree-node-button")).toHaveCount(9, { timeout: 10_000 });
   await expect(page.locator(".analysis-workspace-panel")).toBeVisible();
   await expect(page.locator("#cd-cause-name")).toHaveCount(0);

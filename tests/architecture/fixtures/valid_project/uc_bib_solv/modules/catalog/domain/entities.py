@@ -1,0 +1,2 @@
+class CatalogItem:
+    pass

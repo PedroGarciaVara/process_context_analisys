@@ -7,16 +7,18 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from app.domain.arbol import validate_no_cycle
-from app.persistence import (
+from uc_bib_solv.modules.rca_tree.domain.causal_graph.rules import validate_no_cycle
+from uc_bib_solv.modules.bpm.adapters.outbound.postgres import (
+    contrato_repo,
+    maquina_repo,
+    proceso_repo,
+)
+from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import (
     analisis_causas_detalle_repo,
     analisis_causas_repo,
     causa_repo,
-    contrato_repo,
     hipotesis_repo,
-    maquina_repo,
     node_repo,
-    proceso_repo,
 )
 
 

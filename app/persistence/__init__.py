@@ -1,2 +1,0 @@
-"""Repositorios de persistencia PostgreSQL."""
-

@@ -93,8 +93,8 @@ El resultado de idempotencia queda `no verificable por bloqueo de entorno`, no
 - El helper exige literalmente la versión BPM `886ffe83-5235-4eb8-8c1d-528041518617`, no crea versiones y usa únicamente tablas/contratos genéricos.
 - `python3 -m unittest tests.unit.test_req12_fixture_seed tests.unit.test_req12_context tests.unit.test_process_modeling_api tests.unit.test_process_modeling_service tests.unit.test_process_modeling_validation` → 13 OK.
 - `python3 -m unittest discover -s tests/unit -p 'test_*.py'` → 51 OK.
-- `python3 -m compileall -q scripts/seed_req12_bu_fixture.py app uc_bib_solv/webapp_java/python-backend` → OK.
-- `node --check uc_bib_solv/webapp_java/webapp/js/views/contexto.js` y del cliente API → OK.
+- `python3 -m compileall -q scripts/seed_req12_bu_fixture.py app uc_bib_solv` → OK.
+- `node --check uc_bib_solv/webapp/js/views/contexto.js` y del cliente API → OK.
 - La revisión estática no encuentra tabla, entidad, repositorio o bounded context especializado BU/MACBU. El helper protege los `ON CONFLICT` contra actualización de filas con provenance ajena.
 
 ### Evidencia runtime no disponible

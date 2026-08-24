@@ -1,6 +1,6 @@
 # Especificación técnica — Requerimiento 12
 
-**Estado:** `spec_validada`  
+**Estado:** `vencido` — requisito inicial reformulado; no continuar este flujo.  
 **Versión:** 0.3 — enmienda `AMD-002` de tipo B  
 **Autor:** `requirements-agent`  
 **Fecha:** 2026-08-01  

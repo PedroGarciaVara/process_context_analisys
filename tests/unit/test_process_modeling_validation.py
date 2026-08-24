@@ -1,7 +1,7 @@
 import unittest
 from uuid import uuid4
 
-from app.domain.process_modeling.validators import validate_graph, validate_hierarchy
+from uc_bib_solv.modules.bpm.domain.processes.rules import validate_graph, validate_hierarchy
 
 
 class ProcessModelingValidationTests(unittest.TestCase):

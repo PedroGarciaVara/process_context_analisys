@@ -2,25 +2,38 @@ import importlib.util
 import sys
 from pathlib import Path
 from unittest import TestCase
-from unittest.mock import patch
+from types import SimpleNamespace
 from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[2]
-BACKEND = ROOT / "uc_bib_solv" / "webapp_java" / "python-backend"
+BACKEND = ROOT / "uc_bib_solv"
 sys.path.insert(0, str(ROOT))
 sys.path.insert(1, str(BACKEND))
 
-from services import process_modeling_service as service  # noqa: E402
+from uc_bib_solv.modules.bpm.process_modeling.application import ProcessModelingApplication  # noqa: E402
+
+
+def _application(*, version=None):
+    processes = SimpleNamespace(get=lambda _id: {"process_id": str(uuid4()), "process_code": "P-1", "name": "Proceso"})
+    versions = SimpleNamespace(get=lambda _id: version)
+    nodes = SimpleNamespace()
+    transitions = SimpleNamespace()
+    return ProcessModelingApplication(SimpleNamespace(
+        processes=processes,
+        versions=versions,
+        nodes=nodes,
+        transitions=transitions,
+    ))
 
 
 class ProcessModelingServiceTests(TestCase):
     def test_create_process_uses_domain_validation(self):
+        service = _application()
         with self.assertRaises(ValueError):
             service.create_process({"process_code": "", "name": "x"})
 
-    @patch.object(service.versions, "get")
-    def test_missing_version_is_not_found(self, get_mock):
-        get_mock.return_value = None
+    def test_missing_version_is_not_found(self):
+        service = _application(version=None)
         with self.assertRaises(Exception) as context:
             service.get_version(str(uuid4()))
         self.assertEqual(getattr(context.exception, "code", None), "not_found")

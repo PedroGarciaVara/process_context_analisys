@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderGraph } from "../../uc_bib_solv/webapp_java/webapp/js/components/process-modeling/graph.js";
-import { createProcessModelingState } from "../../uc_bib_solv/webapp_java/webapp/js/core/process-modeling-state.js";
-import { nextNodeCode } from "../../uc_bib_solv/webapp_java/webapp/js/views/process-modeling.js";
+import { renderGraph } from "../../uc_bib_solv/webapp/js/components/process-modeling/graph.js";
+import { createProcessModelingState } from "../../uc_bib_solv/webapp/js/core/process-modeling-state.js";
+import { nextNodeCode } from "../../uc_bib_solv/webapp/js/views/process-modeling.js";
 
 const version = {
   nodes: [

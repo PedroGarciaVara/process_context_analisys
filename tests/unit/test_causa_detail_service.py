@@ -7,13 +7,12 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(1, str(ROOT / "uc_bib_solv" / "webapp_java" / "python-backend"))
 
-from services import causa_detail_service
+from uc_bib_solv.modules.rca_tree.adapters.outbound import causa_detail_compat as causa_detail_service
 
 
 class SaveCauseTests(TestCase):
-    @patch("services.causa_detail_service.create_causa")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causa_detail_compat.create_causa")
     def test_save_cause_creates_root_when_no_cause_id(self, create_causa_mock):
         create_causa_mock.return_value = {
             "id": 10,
@@ -36,7 +35,7 @@ class SaveCauseTests(TestCase):
         self.assertEqual(result["cause"]["id"], 10)
         self.assertEqual(result["message"], "Causa creada.")
 
-    @patch("services.causa_detail_service.update_causa")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causa_detail_compat.update_causa")
     def test_save_cause_updates_when_cause_id_exists(self, update_causa_mock):
         update_causa_mock.return_value = {"id": 11, "contrato_id": 5, "nombre": "Updated"}
 
@@ -65,7 +64,7 @@ class SaveCauseTests(TestCase):
 
 
 class SaveHypothesisTests(TestCase):
-    @patch("services.causa_detail_service.create_hypothesis")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causa_detail_compat.create_hypothesis")
     def test_save_hypothesis_creates_when_no_hypothesis_id(self, create_hypothesis_mock):
         create_hypothesis_mock.return_value = {"id": 21, "causa_id": 10, "descripcion": "Hyp"}
 
@@ -83,7 +82,7 @@ class SaveHypothesisTests(TestCase):
         self.assertEqual(result["hypothesis"]["id"], 21)
         self.assertEqual(result["message"], "Hipotesis creada.")
 
-    @patch("services.causa_detail_service.update_hypothesis")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causa_detail_compat.update_hypothesis")
     def test_save_hypothesis_updates_when_hypothesis_id_exists(self, update_hypothesis_mock):
         update_hypothesis_mock.return_value = {"id": 22, "causa_id": 10, "descripcion": "Updated"}
 
@@ -107,7 +106,7 @@ class SaveHypothesisTests(TestCase):
 
 
 class DeleteHypothesisTests(TestCase):
-    @patch("services.causa_detail_service.delete_hypothesis")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causa_detail_compat.delete_hypothesis")
     def test_delete_hypothesis_record_returns_success(self, delete_hypothesis_mock):
         delete_hypothesis_mock.return_value = True
 
@@ -116,7 +115,7 @@ class DeleteHypothesisTests(TestCase):
         delete_hypothesis_mock.assert_called_once_with(22)
         self.assertEqual(result, {"deleted": True, "message": "Hipotesis eliminada."})
 
-    @patch("services.causa_detail_service.delete_hypothesis")
+    @patch("uc_bib_solv.modules.rca_tree.adapters.outbound.causa_detail_compat.delete_hypothesis")
     def test_delete_hypothesis_record_raises_when_missing(self, delete_hypothesis_mock):
         delete_hypothesis_mock.return_value = False
 

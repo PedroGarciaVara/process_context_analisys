@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 import {
   buildOperationalPageParams,
   filterMachines,
+  getContractScopes,
   getOperations,
-} from "../../uc_bib_solv/webapp_java/webapp/js/core/operational.js";
-import { AppState, setCurrentOperation } from "../../uc_bib_solv/webapp_java/webapp/js/core/state.js";
+} from "../../uc_bib_solv/webapp/js/core/operational.js";
+import { AppState, setCurrentOperation } from "../../uc_bib_solv/webapp/js/core/state.js";
 
 const processA = "11111111-1111-1111-1111-111111111111";
 const processB = "22222222-2222-2222-2222-222222222222";
@@ -18,7 +19,7 @@ function state() {
   return {
     currentProcess: 7,
     currentOperation: null,
-    filters: { machineStatus: "all" },
+    filters: {},
     catalog: {
       data: {
         procesos: [{ id: 7, name: "Proceso legacy A" }, { id: 8, name: "Proceso legacy B" }],
@@ -61,4 +62,24 @@ test("limpiar operación conserva el proceso seleccionado", () => {
   setCurrentOperation(null);
   assert.equal(AppState.currentOperation, null);
   assert.equal(AppState.currentProcess, 7);
+});
+
+test("los alcances BPM usan el catálogo de página como respaldo", () => {
+  const current = state();
+  current.pageData = {
+    contratos: {
+      catalog: {
+        data: {
+          contractScopes: {
+            processes: [{ id: "bpm-process-1", name: "Proceso BPM" }],
+            operations: [{ id: "bpm-node-1", name: "Operación BPM" }],
+          },
+        },
+      },
+    },
+  };
+  assert.deepEqual(getContractScopes(current), {
+    processes: [{ id: "bpm-process-1", name: "Proceso BPM" }],
+    operations: [{ id: "bpm-node-1", name: "Operación BPM" }],
+  });
 });

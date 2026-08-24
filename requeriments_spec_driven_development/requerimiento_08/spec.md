@@ -1,5 +1,7 @@
 # Especificacion tecnica - Requerimiento 08
 
+**Estado:** `vencido` — requisito inicial reformulado; no continuar este flujo.
+
 > **Modo degradado:** este artefacto fue producido por el orquestador tras la
 > autorizacion explicita del programador humano porque `requirements-agent` no
 > pudo escribirlo. Debe revisarse durante Gate 1.
