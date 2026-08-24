@@ -1,26 +1,53 @@
 from ..adapters.outbound.tree_persistence import (
     CauseRepositoryAdapter,
     HypothesisRepositoryAdapter,
-    NodeRepositoryAdapter,
-    RelationshipRepositoryAdapter,
     RcaTreePostgresAdapter,
 )
-from ..application.service import RcaTreeService
-from ..application.use_cases import RcaTreeUseCases
+from ..application.use_cases import (
+    CreateCause,
+    CreateContractNode,
+    CreateHypothesis,
+    DeleteCause,
+    DeleteHypothesis,
+    GetCauseDetail,
+    GetHypothesisDeletePreview,
+    GetTree,
+    LinkReusableNode,
+    ListHypotheses,
+    SearchReusableNodes,
+    UpdateCause,
+    UpdateHypothesis,
+)
+from .application import RcaTreeApplication
 
 
-def build_rca_tree_service(*, persistence=None) -> RcaTreeService:
+def build_rca_tree_application(*, persistence=None) -> RcaTreeApplication:
     persistence = persistence or build_rca_tree_postgres_adapter()
-    return RcaTreeService(RcaTreeUseCases(
-        CauseRepositoryAdapter(persistence),
-        HypothesisRepositoryAdapter(persistence),
-        NodeRepositoryAdapter(persistence),
-        RelationshipRepositoryAdapter(persistence),
-        persistence,
-    ))
+    causes = CauseRepositoryAdapter(persistence)
+    hypotheses = HypothesisRepositoryAdapter(persistence)
+    return RcaTreeApplication(
+        get_tree=GetTree(persistence),
+        get_cause_detail=GetCauseDetail(causes, hypotheses),
+        create_cause=CreateCause(causes),
+        update_cause=UpdateCause(causes),
+        delete_cause=DeleteCause(causes),
+        create_hypothesis=CreateHypothesis(hypotheses),
+        update_hypothesis=UpdateHypothesis(hypotheses),
+        list_hypotheses=ListHypotheses(hypotheses),
+        delete_hypothesis=DeleteHypothesis(hypotheses),
+        hypothesis_delete_preview=GetHypothesisDeletePreview(hypotheses, causes),
+        search_reusable_nodes=SearchReusableNodes(persistence),
+        link_reusable_node=LinkReusableNode(persistence),
+        create_contract_node=CreateContractNode(persistence),
+    )
 
 
-build_causal_tree_service = build_rca_tree_service
+# Compatibility factory name retained at the infrastructure boundary while
+# inbound adapters migrate from the old service terminology.
+build_rca_tree_service = build_rca_tree_application
+
+
+build_causal_tree_service = build_rca_tree_application
 
 
 def build_rca_tree_postgres_adapter():

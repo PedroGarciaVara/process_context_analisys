@@ -9,11 +9,11 @@ from flask import Flask, send_from_directory
 from uc_bib_solv.modules.platform.infrastructure.config import PlatformConfig
 from uc_bib_solv.modules.platform.infrastructure.wiring import create_platform_blueprints
 from uc_bib_solv.modules.bpm.adapters.inbound.http.operational_compat import bp as operational_compat_bp
-from uc_bib_solv.modules.bpm.process_modeling.adapters.inbound.http.routes import create_process_modeling_blueprint
-from uc_bib_solv.modules.bpm.process_modeling.infrastructure.wiring import create_process_modeling_handlers
+from uc_bib_solv.modules.bpm.adapters.inbound.http.process_modeling import create_blueprint as create_bpm_blueprint
+from uc_bib_solv.modules.bpm.adapters.inbound.http.process_modeling_compat import create_process_modeling_blueprint
+from uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring import create_process_modeling_handlers
 from uc_bib_solv.modules.rca_tree.adapters.inbound.http.analysis_compat import bp as legacy_analysis_bp
 from uc_bib_solv.modules.rca_tree.adapters.inbound.http.causas_compat import bp as causas_bp
-from uc_bib_solv.modules.bpm.adapters.inbound.http.routes import create_blueprint as create_bpm_blueprint
 from uc_bib_solv.modules.bpm.infrastructure.wiring import build_bpm_operational_service
 from uc_bib_solv.modules.rca_tree.adapters.inbound.http.routes import create_blueprint as create_rca_tree_blueprint
 from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_service

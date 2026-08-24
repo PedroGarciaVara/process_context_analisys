@@ -1,5 +1,43 @@
-from .context import BpmContextPort
-from .persistence import CausePort, HypothesisPort, NodePort, RelationshipPort, TreeQueryPort
-from .transaction import TransactionPort
+from .inbound import UseCase
+from .outbound import (
+    AnalysisRepositoryPort,
+    BpmContextPort,
+    CauseRepositoryPort,
+    HypothesisRepositoryPort,
+    NodeRepositoryPort,
+    ParticipantRepositoryPort,
+    RelationshipRepositoryPort,
+    ResultRepositoryPort,
+    TransactionPort,
+    TreeQueryPort,
+)
 
-__all__ = ["BpmContextPort", "CausePort", "HypothesisPort", "NodePort", "RelationshipPort", "TreeQueryPort", "TransactionPort"]
+# Public names retained for the transition from the former generic port names.
+CausePort = CauseRepositoryPort
+HypothesisPort = HypothesisRepositoryPort
+NodePort = NodeRepositoryPort
+RelationshipPort = RelationshipRepositoryPort
+AnalysisPort = AnalysisRepositoryPort
+ParticipantPort = ParticipantRepositoryPort
+ResultPort = ResultRepositoryPort
+
+__all__ = [
+    "UseCase",
+    "AnalysisRepositoryPort",
+    "BpmContextPort",
+    "CauseRepositoryPort",
+    "HypothesisRepositoryPort",
+    "NodeRepositoryPort",
+    "ParticipantRepositoryPort",
+    "RelationshipRepositoryPort",
+    "ResultRepositoryPort",
+    "TransactionPort",
+    "TreeQueryPort",
+    "CausePort",
+    "HypothesisPort",
+    "NodePort",
+    "RelationshipPort",
+    "AnalysisPort",
+    "ParticipantPort",
+    "ResultPort",
+]

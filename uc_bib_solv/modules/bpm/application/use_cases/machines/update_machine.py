@@ -1,5 +1,5 @@
-from uc_bib_solv.modules.bpm.domain.entities import Machine
-from uc_bib_solv.modules.bpm.domain.validators import validate_machine_payload
+from uc_bib_solv.modules.bpm.domain.machines.operational_entities import Machine
+from uc_bib_solv.modules.bpm.domain.machines.payload_rules import validate_machine_payload
 
 
 class UpdateMachine:

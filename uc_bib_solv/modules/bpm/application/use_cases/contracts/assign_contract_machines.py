@@ -1,4 +1,4 @@
-from uc_bib_solv.modules.bpm.domain.entities import MachineContractAssociation
+from uc_bib_solv.modules.bpm.domain.associations.entities import MachineContractAssociation
 
 
 class AssignContractMachines:

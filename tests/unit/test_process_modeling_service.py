@@ -10,7 +10,7 @@ BACKEND = ROOT / "uc_bib_solv"
 sys.path.insert(0, str(ROOT))
 sys.path.insert(1, str(BACKEND))
 
-from uc_bib_solv.modules.bpm.process_modeling.application import ProcessModelingApplication  # noqa: E402
+from uc_bib_solv.modules.bpm.application import ProcessModelingApplication  # noqa: E402
 
 
 def _application(*, version=None):

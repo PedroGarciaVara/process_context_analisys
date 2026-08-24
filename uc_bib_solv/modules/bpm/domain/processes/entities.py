@@ -6,8 +6,10 @@ from dataclasses import dataclass, field
 from typing import Any
 from uuid import uuid4
 
-from ..exceptions import BpmDomainError
-from ..value_objects import OperationRef, ProcessRef, require_positive_int, require_text, require_uuid
+from ..shared.exceptions import BpmDomainError
+from ..shared.value_objects import OperationRef
+from ..shared.value_objects import require_text as bpm_require_text
+from ..shared.value_objects import require_uuid as bpm_require_uuid
 from .exceptions import ProcessModelingError
 from .value_objects import (
     NODE_TYPES, PROCESS_STATUSES, TRANSITION_TYPES, VERSION_STATUSES,
@@ -29,12 +31,12 @@ class Process:
     status: str = "draft"
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "process_id", require_uuid(self.process_id, "process_id"))
-        object.__setattr__(self, "name", require_text(self.name, "name"))
+        object.__setattr__(self, "process_id", bpm_require_uuid(self.process_id, "process_id"))
+        object.__setattr__(self, "name", bpm_require_text(self.name, "name"))
         if self.process_code is not None:
-            object.__setattr__(self, "process_code", require_text(self.process_code, "process_code"))
+            object.__setattr__(self, "process_code", bpm_require_text(self.process_code, "process_code"))
         if self.parent_process_id is not None:
-            parent = require_uuid(self.parent_process_id, "parent_process_id")
+            parent = bpm_require_uuid(self.parent_process_id, "parent_process_id")
             if parent == self.process_id:
                 raise BpmDomainError("Un proceso no puede ser su propio padre", "hierarchy_cycle", "parent_process_id")
             object.__setattr__(self, "parent_process_id", parent)
@@ -54,10 +56,10 @@ class Operation:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "node_id", require_uuid(self.node_id, "node_id"))
-        object.__setattr__(self, "version_id", require_uuid(self.version_id, "version_id"))
-        object.__setattr__(self, "code", require_text(self.code, "code"))
-        object.__setattr__(self, "name", require_text(self.name, "name"))
+        object.__setattr__(self, "node_id", bpm_require_uuid(self.node_id, "node_id"))
+        object.__setattr__(self, "version_id", bpm_require_uuid(self.version_id, "version_id"))
+        object.__setattr__(self, "code", bpm_require_text(self.code, "code"))
+        object.__setattr__(self, "name", bpm_require_text(self.name, "name"))
         object.__setattr__(self, "metadata", dict(self.metadata or {}))
 
     @property
@@ -73,8 +75,8 @@ class Stage:
     description: str | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "code", require_text(self.code, "code"))
-        object.__setattr__(self, "name", require_text(self.name, "name"))
+        object.__setattr__(self, "code", bpm_require_text(self.code, "code"))
+        object.__setattr__(self, "name", bpm_require_text(self.name, "name"))
         if isinstance(self.sequence, bool) or not isinstance(self.sequence, int) or self.sequence < 0:
             raise BpmDomainError("sequence debe ser un entero no negativo", "invalid_integer", "sequence")
 

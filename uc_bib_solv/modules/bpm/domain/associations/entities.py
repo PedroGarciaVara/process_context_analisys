@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from ..value_objects import require_positive_int
+from ..shared.value_objects import require_positive_int
 
 
 @dataclass(frozen=True)

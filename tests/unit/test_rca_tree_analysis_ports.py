@@ -1,6 +1,11 @@
 import unittest
 
-from uc_bib_solv.modules.rca_tree.application.analysis_use_cases import AnalysisUseCases
+from uc_bib_solv.modules.rca_tree.application.use_cases.analyses import (
+    CreateAnalysis,
+    GetAnalysis,
+    SaveAnalysisResult,
+    UpdateAnalysis,
+)
 
 
 class FakeAnalysisPersistence:
@@ -26,17 +31,20 @@ class FakeTransaction:
 class RcaTreeAnalysisPortsTests(unittest.TestCase):
     def setUp(self):
         self.persistence = FakeAnalysisPersistence()
-        self.use_cases = AnalysisUseCases(self.persistence, self.persistence, self.persistence)
+        self.get_analysis = GetAnalysis(self.persistence, self.persistence, self.persistence)
+        self.create_analysis = CreateAnalysis(self.persistence, self.persistence)
+        self.update_analysis = UpdateAnalysis(self.persistence, self.get_analysis)
+        self.save_result = SaveAnalysisResult(self.persistence)
 
     def test_create_works_without_postgres(self):
-        result = self.use_cases.create({"contract_id": 4, "process_id": 2, "indication": "Apertura"})
+        result = self.create_analysis.execute({"contract_id": 4, "process_id": 2, "indication": "Apertura"})
         self.assertEqual(1, result["id"])
         self.assertEqual(["Usuario"], result["participants"])
 
     def test_update_and_result_use_explicit_ports(self):
-        self.use_cases.create({"contract_id": 4, "process_id": 2, "indication": "Apertura"})
-        self.assertEqual("cerrado", self.use_cases.update(1, {"status": "cerrado"})["status"])
-        result = self.use_cases.save_result(1, {"element_type": "causa", "cause_id": 3})
+        self.create_analysis.execute({"contract_id": 4, "process_id": 2, "indication": "Apertura"})
+        self.assertEqual("cerrado", self.update_analysis.execute(1, {"status": "cerrado"})["status"])
+        result = self.save_result.execute(1, {"element_type": "causa", "cause_id": 3})
         self.assertEqual(3, result["cause_id"])
 
     def test_transaction_port_is_separate_from_analysis_persistence(self):

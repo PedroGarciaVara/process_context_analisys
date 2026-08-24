@@ -56,7 +56,7 @@ def test_backend_ownership_keeps_operational_bpm_and_causal_tree_separate():
     assert ownership["uc_bib_solv/modules/bpm/adapters/outbound/postgres/contrato_repo.py"] == "BPM"
     assert ownership["uc_bib_solv/modules/bpm/adapters/outbound/postgres/maquina_repo.py"] == "BPM"
     assert ownership["uc_bib_solv/modules/rca_tree/adapters/outbound/postgres/node_repo.py"] == "TREE"
-    assert ownership["uc_bib_solv/modules/rca_tree/application/analysis_use_cases.py"] == "TREE"
+    assert ownership["uc_bib_solv/modules/rca_tree/application/use_cases/analyses/create_analysis.py"] == "TREE"
 
 
 def test_runtime_composition_uses_canonical_bpm_operational_adapter():

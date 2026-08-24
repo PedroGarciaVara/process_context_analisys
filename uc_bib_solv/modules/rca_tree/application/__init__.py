@@ -1,7 +1,9 @@
-"""Application services and ports for RCA_TREE."""
+"""Application layer for RCA_TREE.
 
-from .service import RcaTreeService
-from .use_cases import RcaTreeUseCases
+Use cases are organized by business capability under ``use_cases``. Concrete
+composition is intentionally kept in ``infrastructure``.
+"""
 
-__all__ = ["RcaTreeService", "RcaTreeUseCases"]
+from .use_cases import *
 
+__all__ = [name for name in globals() if not name.startswith("_")]

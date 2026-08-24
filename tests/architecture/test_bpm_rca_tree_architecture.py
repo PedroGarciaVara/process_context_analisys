@@ -21,6 +21,7 @@ class ExplicitDomainArchitectureTests(unittest.TestCase):
             MODULES / "causal_analysis",
             MODULES / "operational_modeling",
             MODULES / "process_modeling",
+            MODULES / "bpm" / "process_modeling",
             MODULES.parent / "routes",
             MODULES.parent / "services",
             MODULES.parent / "repositories",
@@ -34,6 +35,22 @@ class ExplicitDomainArchitectureTests(unittest.TestCase):
             with self.subTest(context=context):
                 for layer in ("domain", "application", "adapters", "infrastructure"):
                     self.assertTrue((MODULES / context / layer).is_dir(), f"missing {context}/{layer}")
+
+    def test_bpm_domain_has_no_flat_compatibility_artifacts(self):
+        domain = MODULES / "bpm" / "domain"
+        deprecated_files = (
+            domain / "entities.py",
+            domain / "validators.py",
+            domain / "value_objects.py",
+            domain / "exceptions.py",
+        )
+        for path in deprecated_files:
+            self.assertFalse(path.exists(), f"deprecated BPM domain file remains: {path}")
+        machine_modeling = domain / "machine_modeling"
+        self.assertFalse(
+            machine_modeling.exists() and any(machine_modeling.glob("*.py")),
+            "deprecated machine_modeling source remains",
+        )
 
     def test_domain_modules_are_framework_free_and_do_not_cross_import(self):
         forbidden = ("flask", "psycopg", "app.persistence", "repositories", "routes", "services")

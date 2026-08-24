@@ -1,0 +1,32 @@
+"""Input normalization kept at the application boundary."""
+
+from typing import Any
+
+from uc_bib_solv.modules.platform.application.ports import ContractRef
+
+
+def integer(value: Any) -> int | None:
+    if value in (None, "", "null", []):
+        return None
+    return int(value)
+
+
+def legacy_contract_id(value: Any) -> int | None:
+    if value in (None, "", "null", []):
+        return None
+    return ContractRef.from_value(value).as_legacy_int()
+
+
+def normalize_cause_type(value: Any) -> str:
+    normalized = {
+        "cause": "causa",
+        "effect": "efecto",
+    }.get(str(value or "causa").strip().lower(), str(value or "causa").strip().lower())
+    if normalized not in {"causa", "efecto"}:
+        raise ValueError("El tipo de causa debe ser causa o efecto.")
+    return normalized
+
+
+def normalize_tree_view(value: Any) -> str:
+    view = str(value or "arbol")
+    return view if view in {"arbol", "analisis_causas_v2"} else "arbol"

@@ -3,14 +3,18 @@ from uuid import uuid4
 from unittest.mock import patch
 from types import SimpleNamespace
 
-from uc_bib_solv.modules.bpm.process_modeling.application import ProcessModelingApplication
-from uc_bib_solv.modules.bpm.process_modeling.application.use_cases.operations import CreateOperation, DeleteOperation
-from uc_bib_solv.modules.bpm.process_modeling.application.ports import (
-    NodePort, OperationPort, ProcessPort, TransitionPort, VersionPort,
+from uc_bib_solv.modules.bpm.application import ProcessModelingApplication
+from uc_bib_solv.modules.bpm.application.use_cases.operations import CreateProcessOperation, DeleteProcessOperation
+from uc_bib_solv.modules.bpm.application.ports.process_ports import (
+    NodeRepositoryPort as NodePort,
+    OperationRepositoryPort as OperationPort,
+    ProcessRepositoryPort as ProcessPort,
+    TransitionRepositoryPort as TransitionPort,
+    VersionRepositoryPort as VersionPort,
 )
 from uc_bib_solv.modules.bpm.domain.processes.entities import ProcessDefinition
 from uc_bib_solv.modules.bpm.domain.processes.rules import validate_graph
-from uc_bib_solv.modules.bpm.process_modeling.infrastructure.wiring import build_process_modeling
+from uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring import build_process_modeling
 
 
 class ProcessModelingModuleBoundaryTests(unittest.TestCase):
@@ -31,8 +35,8 @@ class ProcessModelingModuleBoundaryTests(unittest.TestCase):
         self.assertTrue(hasattr(ProcessModelingApplication, "update_operation_stages"))
 
     def test_operations_have_explicit_create_and_delete_use_cases(self):
-        self.assertTrue(hasattr(CreateOperation, "execute"))
-        self.assertTrue(hasattr(DeleteOperation, "execute"))
+        self.assertTrue(hasattr(CreateProcessOperation, "execute"))
+        self.assertTrue(hasattr(DeleteProcessOperation, "execute"))
 
     def test_ports_are_runtime_replaceable_contracts(self):
         self.assertTrue(all(port is not None for port in (NodePort, OperationPort, ProcessPort, TransitionPort, VersionPort)))

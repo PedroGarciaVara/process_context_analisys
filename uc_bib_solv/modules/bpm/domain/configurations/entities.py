@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..value_objects import require_positive_int, require_uuid
+from ..shared.value_objects import require_positive_int, require_uuid
 
 
 @dataclass(frozen=True)

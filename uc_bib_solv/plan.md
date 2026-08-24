@@ -1797,6 +1797,407 @@ Eliminar la concentración de lógica en `modules/bpm/process_modeling/applicati
 - Compilación Python: correcta.
 - No se modificaron PostgreSQL, esquema ni datos.
 
+## Nueva auditoría — `rca_tree/application`
+
+### Objetivo
+
+Auditar `uc_bib_solv/modules/rca_tree/application/` para determinar por qué no existe `use_cases/`, localizar los casos de uso actuales, verificar su naming y compararlos con las reglas Clean/Hexagonal aplicadas al dominio BPM.
+
+### Puntos de revisión
+
+- Separación entre `application`, `domain`, `adapters` e `infrastructure`.
+- Inventario de servicios, fachadas, comandos y consultas actualmente presentes.
+- Identificación de clases y métodos que representan casos de uso.
+- Dependencias hacia repositorios concretos, Flask, PostgreSQL, wiring o entidades externas.
+- Naming: una intención de negocio por módulo y nombres ejecutables (`create_*`, `list_*`, `update_*`, etc.).
+- Duplicidad entre `rca_tree/application`, `causal_analysis`, `causal_tree` y adaptadores legacy.
+- Necesidad de separar casos de uso de nodos, relaciones, causas, hipótesis, análisis y evidencias.
+
+### Resultado esperado
+
+Proponer una estructura `rca_tree/application/use_cases/` alineada con BPM, indicando qué módulos deben moverse, dividirse, convertirse en ports/DTOs o eliminarse.
+
+## Resultado de auditoría — `rca_tree/application`
+
+### Estructura actual
+
+- No existe `application/use_cases/`.
+- `application/use_cases.py` concentra `RcaTreeUseCases`, con operaciones de árbol, detalle, causas e hipótesis, además de normalizadores y aliases legacy.
+- `application/analysis_use_cases.py` concentra seis capacidades de análisis en `AnalysisUseCases` y expone otro alias legacy.
+- `application/service.py` es una fachada de 9 operaciones que accede directamente a los atributos internos de `RcaTreeUseCases` (`causes`, `hypotheses`, `queries`) y añade reglas de respuesta HTTP/compatibilidad.
+- `application/ports/` está plano: `persistence.py` agrupa cinco contratos distintos y no existen subdirectorios `inbound/` y `outbound/` ni DTOs de aplicación.
+
+### Incumplimientos detectados
+
+- No hay una clase/módulo por intención de negocio; las clases plurales `RcaTreeUseCases` y `AnalysisUseCases` son agregadores tipo service locator.
+- Los métodos de aplicación no siguen una interfaz uniforme `execute(command)`; usan verbos heterogéneos (`tree`, `detail`, `save_*`, `get`, `update`) y payloads `dict` sin comandos/resultados tipados.
+- `RcaTreeUseCases` recibe dependencias que no utiliza (`nodes`, `relationships`, `bpm_context`) y delega consultas de escritura (`link_reusable_node`, `create_contract_child`) a `TreeQueryPort`, que mezcla lectura y comandos.
+- `RcaTreeService` no es un caso de uso: transforma respuestas, expone operaciones de borrado y accede al estado interno del agregador. Debe convertirse en composición de infraestructura o dividirse en casos de uso explícitos.
+- `AnalysisUseCases` mezcla listado, creación, consulta, actualización y resultados de análisis en una única clase; el adaptador de infraestructura añade otra fachada `RcaTreeAnalysisService` con delegación variádica (`*args`).
+- Los aliases `CausalTreeUseCases` y `CausalAnalysisUseCases` mantienen naming legacy dentro del núcleo canónico, en vez de quedar aislados en un adaptador de compatibilidad.
+- Los ports de persistencia describen repositorios con nombres genéricos y contratos amplios; falta segregación por capacidad (`causes`, `hypotheses`, `nodes`, `relationships`, `tree_queries`, `analyses`, `participants`, `results`).
+- `TransactionPort` existe pero no participa en la composición de los casos de uso auditados; la frontera transaccional queda implícita en el adaptador.
+- La aplicación importa referencias BPM correctamente a través de `platform.application.ports`, pero la conversión `ContractRef.as_legacy_int()` mantiene una decisión de compatibilidad dentro del caso de uso que debería quedar en un mapper/adaptador.
+
+### Estructura objetivo propuesta
+
+```text
+modules/rca_tree/application/
+├── dto/
+├── ports/
+│   ├── inbound/
+│   └── outbound/
+└── use_cases/
+    ├── tree/
+    ├── causes/
+    ├── hypotheses/
+    ├── reusable_nodes/
+    └── analyses/
+```
+
+Cada archivo de `use_cases/` debe contener una única clase con nombre de intención (`GetTree`, `GetCauseDetail`, `CreateCause`, `UpdateCause`, `DeleteCause`, `GetHypotheses`, `CreateHypothesis`, `UpdateHypothesis`, `DeleteHypothesis`, `SearchReusableNodes`, `LinkReusableNode`, `CreateContractNode`, `ListAnalyses`, `CreateAnalysis`, `GetAnalysis`, `UpdateAnalysis`, `SaveAnalysisResult`) y un método público `execute(...)`. La composición concreta debe permanecer en `infrastructure/wiring.py`; los aliases HTTP, si siguen siendo necesarios, deben delegar desde `adapters/inbound` sin reexportarse desde `application`.
+
+### Conclusión
+
+`rca_tree/application` cumple parcialmente la dirección de dependencias —no importa Flask ni PostgreSQL—, pero no cumple el estándar de casos de uso establecido para BPM ni una separación Clean/Hexagonal completa. El siguiente cambio debe ser una migración estructural y semántica de los agregadores a `use_cases/`, con ports segregados, DTOs explícitos y wiring actualizado. No se recomienda borrar todavía `service.py`, porque el runtime y los tests lo usan indirectamente; primero debe migrarse la composición y luego retirar las fachadas con gates de compatibilidad.
+
+### Restricción
+
+Esta fase es únicamente de auditoría y diseño. No se modificará código hasta recibir exactamente `inicia implementacion`.
+
+## Cierre — retirada física de `bpm/process_modeling`
+
+- Se confirmó que no existían archivos fuente ni referencias activas al namespace `uc_bib_solv.modules.bpm.process_modeling`.
+- Se ejecutaron los gates finales antes de eliminar residuos generados.
+- Se eliminó físicamente `uc_bib_solv/modules/bpm/process_modeling/`, incluidos sus `__pycache__` y directorios vacíos.
+- El gate arquitectónico vuelve a exigir la ausencia física del directorio.
+- La implementación canónica queda en `bpm/application`, `bpm/adapters` y `bpm/infrastructure`.
+
+## Nueva fase — validación final y retirada física de `bpm/process_modeling`
+
+### Objetivo
+
+Cerrar la migración eliminando físicamente `uc_bib_solv/modules/bpm/process_modeling/` después de verificar que no contiene código fuente, imports activos ni consumidores runtime.
+
+### Validaciones previstas
+
+- Buscar referencias a `uc_bib_solv.modules.bpm.process_modeling` en código, tests y scripts.
+- Verificar que el inventario runtime y `app_factory` usan únicamente los adapters y wiring canónicos de `bpm`.
+- Ejecutar compilación, tests unitarios, tests de arquitectura, validadores arquitectónicos y auditoría backend.
+- Confirmar que los endpoints `/api/bpm/*` y `/api/process-modeling/*` mantienen sus contratos.
+- Confirmar que PostgreSQL, esquema y datos no se modifican.
+
+### Eliminación prevista
+
+- Eliminar el directorio `bpm/process_modeling` únicamente si la comprobación anterior confirma que solo contiene residuos generados (`__pycache__`) y ningún archivo fuente.
+- Actualizar el gate arquitectónico para exigir la ausencia física del directorio.
+
+### Restricción
+
+No se modificarán código ni artefactos físicos hasta recibir exactamente `inicia implementacion`.
+
+## Implementación — separación semántica de entidades y reglas BPM
+
+### Entidades
+
+- `bpm/domain/processes/` contiene ahora también las entidades de identidad operativa `Process`, `Operation` y `Stage`, junto con las entidades del modelo BPM (`ProcessDefinition`, `ProcessVersion`, `ProcessNode` y `ProcessTransition`).
+- `bpm/domain/operations/` expone `Operation` y `Stage` como entrada conceptual del agregado de operaciones.
+- `bpm/domain/machines/operational_entities.py` contiene la entidad operacional `Machine`; los modelos de tipo y configuración técnica permanecen en `machines/entities.py`.
+- `bpm/domain/contracts/`, `associations/` y `configurations/` contienen respectivamente `Contract`, `MachineContractAssociation` y `MachineOperationConfiguration`.
+- `bpm/domain/entities.py` queda reducido a una fachada explícita de compatibilidad; no contiene implementaciones propias.
+
+### Reglas
+
+- Se creó `bpm/domain/shared/rules.py` para validaciones transversales de texto y campos estructurados.
+- Las reglas de payload de procesos viven en `processes/payload_rules.py`.
+- Las reglas de contratos viven en `contracts/rules.py`.
+- Las reglas de payload operacional de máquinas viven en `machines/payload_rules.py`; las reglas técnicas de tipos, configuraciones, etapas e identidad de operación continúan en `machines/validators.py`.
+- `bpm/domain/validators.py` queda reducido a reexports de compatibilidad y ya no contiene lógica de validación.
+- Los casos de uso BPM y el adaptador HTTP operacional importan las reglas desde el paquete propietario, no desde el módulo plano.
+
+### RCA_TREE
+
+- Se confirmó la organización por conceptos `causal_graph`, `causes` y `analyses` como fuente física de las entidades y reglas RCA_TREE.
+- `rca_tree/domain/value_objects.py` y `exceptions.py` permanecen como shared kernel interno del bounded context; no contienen infraestructura ni dependencias BPM.
+
+### Gates validados
+
+- Suite unitaria: `164/164` correctos.
+- Tests de arquitectura: `8/8` correctos.
+- Validadores `--check-structure`, `--check-naming`, `--check-dependencies` y `--check-concrete-implementations`: correctos.
+- `compileall` del paquete `uc_bib_solv`: correcto.
+- No se modificaron PostgreSQL, esquema ni datos.
+
+### Observación de compatibilidad
+
+- La fachada `bpm/domain/entities.py` y la fachada `bpm/domain/validators.py` se mantienen temporalmente porque existen consumidores externos o tests históricos. Toda nueva implementación debe importar desde los paquetes conceptuales. Su retirada será una etapa independiente tras validar consumidores dinámicos.
+
+## Nueva demanda — retirada de artefactos deprecated y temporales de `bpm/domain`
+
+### Objetivo
+
+Finalizar la limpieza física de `uc_bib_solv/modules/bpm/domain/`, eliminando fachadas, módulos y estructuras temporales que ya no tengan consumidores activos, sin alterar contratos HTTP, PostgreSQL ni el comportamiento de los dominios BPM y RCA_TREE.
+
+### Análisis y alcance
+
+- Auditar referencias en código de producción, tests, scripts, documentación e imports dinámicos.
+- Distinguir entre:
+  - artefactos sin consumidores, eliminables;
+  - fachadas internas aún referenciadas, migrables antes de eliminar;
+  - compatibilidad pública potencial, que debe conservarse hasta disponer de evidencia suficiente.
+- Revisar específicamente:
+  - `bpm/domain/entities.py`;
+  - `bpm/domain/validators.py`;
+  - `bpm/domain/value_objects.py` y `exceptions.py`;
+  - directorios vacíos o con residuos generados de `machine_modeling`;
+  - cualquier namespace antiguo bajo `bpm/domain`.
+
+### Plan de implementación, pendiente de autorización
+
+1. Generar inventario de archivos fuente y referencias por módulo.
+2. Migrar los consumidores restantes hacia `processes`, `operations`, `machines`, `contracts`, `associations`, `configurations` o `shared`.
+3. Eliminar físicamente las fachadas y módulos temporales sin consumidores confirmados.
+4. Retirar residuos de estructura fuente vacía; no considerar `__pycache__` como arquitectura del proyecto.
+5. Añadir o actualizar gates que fallen ante imports hacia namespaces eliminados.
+6. Ejecutar compilación, tests unitarios, tests de arquitectura, validadores y smoke HTTP.
+7. Registrar en este plan cada eliminación, sus consumidores verificados y los gates superados.
+
+### Restricciones
+
+- No modificar PostgreSQL, esquema, datos ni contratos HTTP.
+- No eliminar una fachada si existe un consumidor externo no validado.
+- No modificar RCA_TREE salvo para verificar que no depende de BPM mediante imports directos.
+- No modificar código hasta recibir exactamente `inicia implementacion`.
+
+## Implementación — retirada de artefactos BPM deprecated
+
+### Eliminaciones físicas
+
+- Eliminados `bpm/domain/entities.py` y `bpm/domain/validators.py`; el paquete raíz ya no contiene fachadas planas de entidades ni reglas.
+- Eliminados `bpm/domain/value_objects.py` y `bpm/domain/exceptions.py`; sus primitivas compartidas viven en `bpm/domain/shared/value_objects.py` y `bpm/domain/shared/exceptions.py`.
+- No quedan archivos fuente dentro de `bpm/domain/machine_modeling`; los residuos `__pycache__` generados no forman parte de la arquitectura fuente.
+
+### Migraciones realizadas
+
+- `domain/__init__.py` importa directamente desde los paquetes conceptuales.
+- Adaptadores HTTP, casos de uso, tests y el script `scripts/migrate_req12_machine_model.py` fueron migrados a namespaces canónicos.
+- `OperationalModelError` dejó de utilizarse; los adaptadores usan `BpmDomainError` desde `domain/shared`.
+- Se añadió un test arquitectónico que impide reintroducir las fachadas planas y el namespace `machine_modeling` como código fuente.
+
+### Verificación de consumidores
+
+- No quedan referencias en código, tests o scripts a `bpm.domain.entities`, `bpm.domain.validators`, `bpm.domain.value_objects`, `bpm.domain.exceptions` ni `bpm.domain.machine_modeling`.
+- Los imports compartidos restantes de RCA_TREE pertenecen exclusivamente a su propio bounded context y no son artefactos BPM.
+- La auditoría runtime mantiene las rutas públicas; el único duplicado de endpoint reportado es el ya existente en la composición HTTP, no causado por esta limpieza.
+
+### Gates finales
+
+- Tests unitarios: `164/164` correctos.
+- Tests de arquitectura: `9/9` correctos.
+- Validadores de estructura, naming, dependencias e implementaciones concretas: correctos.
+- `compileall` de `uc_bib_solv` y `scripts`: correcto.
+- `git diff --check`: correcto.
+- `scripts/audit_application_architecture.py --check --check-backend`: correcto.
+- No se modificaron PostgreSQL, esquema ni datos.
+
+## Nueva auditoría — `bpm/process_modeling`
+
+### Objetivo
+
+Determinar si `uc_bib_solv/modules/bpm/process_modeling/` respeta Domain-first, Clean Architecture y Hexagonal Architecture, y clasificar correctamente sus módulos `domain_function` como reglas de dominio, servicios de dominio o casos de uso de aplicación.
+
+### Puntos de revisión
+
+- Separación entre `domain`, `application`, `adapters` e `infrastructure`.
+- Dependencias hacia Flask, PostgreSQL, repositorios concretos, wiring o módulos externos.
+- Ubicación de validaciones, reglas BPM, coordinación de persistencia y traducción HTTP.
+- Responsabilidad y naming de cada `domain_function`.
+- Duplicidad con `bpm/application/use_cases`, `bpm/domain/processes` y los adaptadores canónicos.
+- Necesidad de conservar `process_modeling` como subdominio BPM o integrarlo directamente bajo `bpm`.
+
+### Criterio de clasificación
+
+- Es `domain` si expresa una invariante o comportamiento puro de entidades/value objects sin puertos ni efectos secundarios.
+- Es `application/use_case` si coordina una intención del usuario, puertos, transacciones o varios agregados.
+- Es `adapter` si traduce HTTP, persistencia o DTOs.
+- Es `infrastructure` si compone implementaciones concretas.
+
+### Restricción
+
+Esta fase es únicamente de auditoría. No se modificarán archivos de código hasta recibir exactamente `inicia implementacion`.
+
+## Resultado de auditoría — `bpm/process_modeling`
+
+### Clasificación
+
+- `bpm/process_modeling` no contiene un directorio `domain` ni módulos `domain_function`; actualmente es un submódulo BPM organizado por capas (`application`, `adapters`, `infrastructure`) que reutiliza el dominio canónico `bpm/domain/processes`.
+- `application/use_cases/` contiene los interactores reales: procesos, versiones, nodos, transiciones, contexto y operaciones.
+- `ProcessModelingApplication` es una fachada/composición de aplicación, no un caso de uso individual.
+- `use_cases/dependencies.py` es un contenedor de puertos y utilidades de serialización; no debe tratarse como caso de uso.
+- `use_cases/operations/__init__.py` contiene implementaciones de varios casos de uso y rompe la convención de un caso de uso por módulo; debe dividirse en `create_operation.py`, `get_operation.py`, `delete_operation.py` y `update_operation_stages.py`.
+
+### Incumplimientos o riesgos Clean Architecture
+
+1. Hay tres implementaciones del adaptador HTTP con responsabilidad equivalente: `adapters/inbound/http.py`, `adapters/inbound/http/__init__.py` y `adapters/inbound/http/routes.py`. Solo `routes.py` está registrado por `app_factory`; los otros dos son duplicidad o compatibilidad no demostrada.
+2. `adapters/inbound/http/legacy_routes.py` crea un servicio y blueprint al importar el módulo, lo que introduce composición global y efectos secundarios de importación; no tiene consumidores internos conocidos.
+3. `application/use_cases/dependencies.py` usa un objeto de persistencia estructural (`persistence.processes`, `versions`, `nodes`, `transitions`) en lugar de recibir puertos explícitos tipados por caso de uso.
+4. `jsonable` mezcla serialización de respuesta con la capa de aplicación; debe trasladarse a un mapper/DTO o presenter del adaptador inbound.
+5. Los casos de uso manejan diccionarios de persistencia directamente y no DTOs de aplicación consistentes; esto acopla el contrato de aplicación al shape del adaptador PostgreSQL.
+6. `adapters/outbound/persistence.py` y `ProcessModelingPersistenceAdapter` son una fachada de compatibilidad; solo tienen consumidores en tests y no en el runtime. No deben eliminarse sin actualizar esos tests y validar consumidores externos.
+7. `infrastructure/wiring.py` es correcto como composition root, pero contiene funciones legacy globales (`operational_service`, wrappers de módulo y caché global) fuera del alcance específico de process modeling; no deben entrar en `application`.
+
+### Respuesta a la pregunta sobre `use_case`
+
+`process_modeling` no debería convertirse en un único `use_case`: representa una capacidad BPM con múltiples intenciones independientes. Cada intención sí debe ser un caso de uso explícito y nombrado en `application/use_cases/`. La composición `ProcessModelingApplication` puede mantenerse como fachada de aplicación o sustituirse por un registro/compositor en `infrastructure`, pero no debe contener reglas de negocio.
+
+### Acciones recomendadas antes de eliminar
+
+1. Consolidar el adaptador HTTP en un único módulo canónico y convertir los demás en aliases sin lógica o eliminarlos tras validar referencias.
+2. Dividir `use_cases/operations/__init__.py` por caso de uso.
+3. Extraer `jsonable` a un mapper/presenter.
+4. Definir DTOs y puertos explícitos para procesos, versiones, nodos, transiciones y operaciones.
+5. Actualizar tests de compatibilidad y verificar imports externos antes de retirar `ProcessModelingPersistenceAdapter` y `legacy_routes.py`.
+
+### Restricción de implementación
+
+Este resultado no modifica código. Las acciones recomendadas comenzarán únicamente tras recibir exactamente `inicia implementacion`.
+
+## Nueva valoración — distribución de `process_modeling` dentro de BPM
+
+### Objetivo
+
+Definir la distribución objetivo si el contenido de `bpm/process_modeling` se integra físicamente en `bpm/application`, `bpm/adapters` e `bpm/infrastructure`, manteniendo la separación Clean/Hexagonal y un naming consistente de casos de uso.
+
+### Preguntas a resolver
+
+- Si `nodes` representa un caso de uso o un agregado/concepto.
+- Qué archivos deben trasladarse a `bpm/application/use_cases`.
+- Qué elementos deben permanecer bajo `domain`, `ports`, `adapters` e `infrastructure`.
+- Cómo evitar que la integración cree una única fachada monolítica o duplique los casos de uso operativos.
+
+### Restricción
+
+Esta fase es de diseño y valoración. No se modificarán archivos de código hasta recibir exactamente `inicia implementacion`.
+
+## Resultado — distribución recomendada de `process_modeling` en BPM
+
+### Decisión arquitectónica
+
+`process_modeling` debe desaparecer como paquete físico independiente cuando sus consumidores estén migrados. No debe convertirse en un único caso de uso: representa una capacidad de BPM con varios casos de uso relacionados.
+
+### Distribución objetivo
+
+```text
+modules/bpm/
+├── domain/
+│   ├── processes/       # ProcessDefinition, ProcessVersion y reglas de jerarquía
+│   ├── operations/      # Operation, Stage y reglas de operación
+│   └── workflow/        # ProcessNode, ProcessTransition y reglas del grafo BPM
+├── application/
+│   ├── dto/
+│   ├── ports/
+│   └── use_cases/
+│       ├── processes/
+│       ├── versions/
+│       ├── nodes/
+│       ├── operations/
+│       ├── transitions/
+│       └── context/
+├── adapters/
+│   ├── inbound/http/
+│   └── outbound/postgres/
+└── infrastructure/
+```
+
+### Respuesta sobre `nodes`
+
+Sí, `nodes` puede y debe existir bajo `bpm/application/use_cases/`, pero como grupo de casos de uso, no como un único caso de uso:
+
+```text
+use_cases/nodes/
+├── create_process_node.py
+├── update_process_node.py
+├── delete_process_node.py
+├── get_node_metadata.py
+└── update_node_metadata.py
+```
+
+`ProcessNode` sigue siendo una entidad del dominio. `CreateProcessNode`, `UpdateProcessNode` y `DeleteProcessNode` son interactores de aplicación. La carpeta `nodes` describe una capacidad y no viola Clean Architecture.
+
+### Mapeo de los contenidos actuales
+
+- `process_modeling/application/use_cases/processes.py` → `bpm/application/use_cases/processes/`; separar cada clase en un archivo.
+- `versions.py` → `bpm/application/use_cases/versions/`; separar lectura, edición y validación.
+- `nodes.py` → `bpm/application/use_cases/nodes/`.
+- `operations/__init__.py` → `bpm/application/use_cases/operations/`; dejar de implementar casos de uso dentro de `__init__.py`.
+- `transitions.py` → `bpm/application/use_cases/transitions/`.
+- `context_records.py` → `bpm/application/use_cases/context/`.
+- `dependencies.py` → ports/DTOs de aplicación explícitos; `jsonable` debe pasar a un mapper o presenter HTTP.
+- `ProcessModelingApplication` → compositor de aplicación BPM, no caso de uso de dominio.
+- `adapters/inbound/http/routes.py` → único adapter HTTP canónico del modelado; `http.py`, `http/__init__.py` y `legacy_routes.py` deben eliminar duplicación o quedar como aliases sin lógica.
+- `adapters/outbound/persistence.py` y `application/ports/persistence_ports.py` → compatibilidad temporal; retirables después de migrar tests y consumidores externos.
+- `infrastructure/wiring.py` → composition root BPM, manteniendo allí la instanciación concreta.
+
+### Regla de naming
+
+El nombre del archivo debe expresar una intención ejecutable (`create_process_node`, `list_versions`, `validate_version`). El nombre de la entidad (`nodes.py`) solo es apropiado para el paquete agrupador, no para un módulo que contiene cinco interactores.
+
+### Secuencia recomendada
+
+1. Crear los paquetes de casos de uso BPM y mover cada interactor sin cambiar comportamiento.
+2. Migrar `ProcessModelingApplication`, wiring, adapters y tests a los imports nuevos.
+3. Consolidar el adapter HTTP y eliminar duplicados sin consumidores.
+4. Migrar ports/DTOs y retirar `process_modeling` físico.
+5. Ejecutar gates de arquitectura, tests HTTP, integración y auditoría de rutas.
+
+## Implementación — integración de `process_modeling` en BPM
+
+### Estructura aplicada
+
+- Eliminado el código fuente de `bpm/process_modeling`.
+- Añadida la fachada de aplicación canónica en `bpm/application/process_modeling_application.py`.
+- Añadidos DTO/serialización en `bpm/application/dto/serialization.py`.
+- Añadidas dependencias de aplicación en `bpm/application/use_cases/process_modeling_dependencies.py`.
+- Movidos los casos de uso a `bpm/application/use_cases`.
+- Creado el grupo `use_cases/nodes/` con interactores explícitos:
+  - `create_process_node.py`;
+  - `update_process_node.py`;
+  - `delete_process_node.py`;
+  - `get_node_metadata.py`;
+  - `update_node_metadata.py`.
+- Creado el grupo `use_cases/operations/` con casos de uso de operaciones BPM diferenciados de la consulta operacional:
+  - `CreateProcessOperation`;
+  - `GetProcessOperation`;
+  - `DeleteProcessOperation`;
+  - `UpdateProcessOperationStages`.
+- Separados los interactores de definición de procesos:
+  - `create_process_definition.py`;
+  - `get_process_definition.py`;
+  - `update_process_definition.py`;
+  - `list_process_definitions.py`;
+  - `create_version.py`;
+  - `list_versions.py`.
+- El wiring canónico está en `bpm/infrastructure/process_modeling_wiring.py`.
+- Los adapters HTTP están en `bpm/adapters/inbound/http/process_modeling.py` y `process_modeling_compat.py`.
+- Se eliminó la duplicidad del adapter HTTP antiguo y se actualizó el inventario arquitectónico.
+
+### Compatibilidad
+
+- Se mantienen los endpoints `/api/process-modeling/*` mediante `process_modeling_compat.py`.
+- Los endpoints `/api/bpm/*` se registran desde el adapter BPM canónico.
+- La persistencia continúa usando los ports BPM existentes; no se modificaron tablas, SQL ni datos.
+- Se actualizaron gateway, wiring, tests y app factory para no importar `bpm.process_modeling`.
+
+### Gates
+
+- Tests unitarios: `163/163` correctos.
+- Tests de arquitectura: `9/9` correctos.
+- `compileall` de `uc_bib_solv` y `scripts`: correcto.
+- Validadores de estructura, naming, dependencias e implementaciones concretas: correctos.
+- `scripts/audit_application_architecture.py --check --check-backend`: correcto.
+- `git diff --check`: correcto.
+- No se modificaron PostgreSQL, esquema ni datos.
+
 ## Auditoría — estandarización de capas `domain`
 
 ### Objetivo

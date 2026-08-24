@@ -9,7 +9,7 @@ from uc_bib_solv.modules.bpm.domain import (
     Process,
     Stage,
 )
-from uc_bib_solv.modules.bpm.domain.exceptions import BpmDomainError
+from uc_bib_solv.modules.bpm.domain.shared.exceptions import BpmDomainError
 
 
 class BpmDomainTests(unittest.TestCase):

@@ -21,7 +21,6 @@ BACKEND = ROOT / "uc_bib_solv"
 
 DOMAIN_OWNERSHIP = (
     ("uc_bib_solv/modules/bpm", "BPM", "canonical BPM domain, application ports and adapters"),
-    ("uc_bib_solv/modules/bpm/process_modeling", "BPM", "procesos, versiones, nodos, operaciones y transiciones BPM"),
     ("uc_bib_solv/modules/bpm/adapters/outbound/postgres", "BPM", "persistencia de procesos, máquinas, contratos y configuraciones"),
     ("uc_bib_solv/modules/rca_tree", "TREE", "grafo causal, análisis, causas, hipótesis y relaciones"),
     ("uc_bib_solv/modules/platform", "PLATFORM", "configuración, wiring y bootstrap"),

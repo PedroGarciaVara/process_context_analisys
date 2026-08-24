@@ -1,4 +1,4 @@
-from uc_bib_solv.modules.bpm.domain.validators import validate_process_payload
+from uc_bib_solv.modules.bpm.domain.processes.payload_rules import validate_process_payload
 
 
 class CreateProcess:

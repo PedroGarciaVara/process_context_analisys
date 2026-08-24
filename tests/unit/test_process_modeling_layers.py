@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from uc_bib_solv.modules.bpm.domain.processes.entities import ProcessNode
 from uc_bib_solv.modules.bpm.domain.processes.rules import validate_graph
-from uc_bib_solv.modules.bpm.process_modeling.adapters.outbound.persistence import ProcessModelingPersistenceAdapter
+from uc_bib_solv.modules.bpm.adapters.outbound.bpm_persistence import BpmPostgresPersistenceAdapter
 
 
 class ProcessModelingLayerTests(unittest.TestCase):
@@ -20,7 +20,7 @@ class ProcessModelingLayerTests(unittest.TestCase):
         self.assertFalse(result["valid"])
 
     def test_persistence_adapter_requires_all_four_ports(self):
-        adapter = ProcessModelingPersistenceAdapter(processes="p", versions="v", nodes="n", transitions="t")
+        adapter = BpmPostgresPersistenceAdapter(processes="p", versions="v", nodes="n", transitions="t")
         self.assertEqual(("p", "v", "n", "t"), (adapter.processes, adapter.versions, adapter.nodes, adapter.transitions))
 
 

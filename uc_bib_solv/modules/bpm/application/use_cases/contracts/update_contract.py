@@ -1,4 +1,4 @@
-from uc_bib_solv.modules.bpm.domain.validators import validate_name
+from uc_bib_solv.modules.bpm.domain.contracts.rules import validate_name
 
 
 class UpdateContract:

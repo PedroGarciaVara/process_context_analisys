@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .validators import validate_machine_payload
+from .payload_rules import validate_machine_payload
 
 
 class Machine:
@@ -19,7 +19,10 @@ class Machine:
             "description": description,
             **fields,
         }
-        validated = validate_machine_payload({"name": name, "machine_type_id": machine_type_id, **fields}, partial=True)
+        machine_payload = {"name": name, **fields}
+        if machine_type_id is not None:
+            machine_payload["machine_type_id"] = machine_type_id
+        validated = validate_machine_payload(machine_payload, partial=True)
         self.machine_id = machine_id
         self.name = validated["name"]
         self.machine_type_id = validated.get("machine_type_id")

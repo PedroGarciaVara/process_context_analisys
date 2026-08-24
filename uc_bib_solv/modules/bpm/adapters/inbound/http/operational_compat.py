@@ -20,8 +20,8 @@ from uc_bib_solv.modules.bpm.infrastructure.wiring import (
     update_process,
 )
 from uc_bib_solv.utils.http import error, ok
-from uc_bib_solv.modules.bpm.domain.exceptions import OperationalModelError
-from uc_bib_solv.modules.bpm.process_modeling.infrastructure.wiring import create_process_modeling_handlers
+from uc_bib_solv.modules.bpm.domain.shared.exceptions import BpmDomainError
+from uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring import create_process_modeling_handlers
 
 
 bp = Blueprint("operational", __name__)
@@ -36,7 +36,7 @@ def _json_payload() -> dict:
 def operational_catalog():
     try:
         return ok(get_operational_catalog(request.args.get("version_id")))
-    except (ValueError, OperationalModelError) as exc:
+    except (ValueError, BpmDomainError) as exc:
         return error(str(exc), status_code=400)
 
 
@@ -44,7 +44,7 @@ def operational_catalog():
 def operational_page(page: str):
     try:
         payload = get_operational_page_payload(page, request.args.to_dict(flat=True))
-    except (ValueError, OperationalModelError) as exc:
+    except (ValueError, BpmDomainError) as exc:
         return error(str(exc), status_code=400)
     return ok(payload)
 
@@ -95,7 +95,7 @@ def operational_contracts():
 def operational_contract_create():
     try:
         return ok({"status": "ok", "data": create_contract(_json_payload())}, status_code=201)
-    except (ValueError, OperationalModelError) as exc:
+    except (ValueError, BpmDomainError) as exc:
         return error(str(exc), status_code=400)
 
 
@@ -103,7 +103,7 @@ def operational_contract_create():
 def operational_contract_update(contract_id: str):
     try:
         return ok({"status": "ok", "data": update_contract(contract_id, _json_payload())})
-    except (ValueError, OperationalModelError) as exc:
+    except (ValueError, BpmDomainError) as exc:
         return error(str(exc), status_code=400)
 
 
@@ -163,7 +163,7 @@ def operational_machines():
 def operational_machine_create():
     try:
         return ok({"status": "ok", "data": create_machine(_json_payload())}, status_code=201)
-    except (OperationalModelError, ValueError) as exc:
+    except (BpmDomainError, ValueError) as exc:
         return error(str(exc), status_code=400, code=getattr(exc, "code", "invalid_input"), field=getattr(exc, "field", None))
 
 
@@ -171,7 +171,7 @@ def operational_machine_create():
 def operational_machine_update(machine_id: str):
     try:
         return ok({"status": "ok", "data": update_machine(machine_id, _json_payload())})
-    except (OperationalModelError, ValueError) as exc:
+    except (BpmDomainError, ValueError) as exc:
         return error(str(exc), status_code=400, code=getattr(exc, "code", "invalid_input"), field=getattr(exc, "field", None))
     except Exception:
         return error("No se pudo actualizar la máquina", status_code=409, code="persistence_error")
@@ -229,7 +229,7 @@ def operational_machine_configurations(machine_id: str):
 def operational_machine_configuration_create(machine_id: str):
     try:
         from uc_bib_solv.modules.bpm.infrastructure.wiring import create_configuration
-        from uc_bib_solv.modules.bpm.domain.validators import validate_configuration_payload
+        from uc_bib_solv.modules.bpm.domain.machines.validators import validate_configuration_payload
 
         payload = dict(_json_payload())
         payload["machine_id"] = int(machine_id)

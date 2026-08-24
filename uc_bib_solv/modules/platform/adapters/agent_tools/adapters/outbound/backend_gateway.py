@@ -10,7 +10,7 @@ class ExistingBackendGateway:
     def __post_init__(self) -> None:
         from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_service
         from uc_bib_solv.modules.bpm.infrastructure.wiring import operational_service
-        from uc_bib_solv.modules.bpm.process_modeling.infrastructure.wiring import create_process_modeling_handlers
+        from uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring import create_process_modeling_handlers
 
         operational = operational_service()
         self._causas = build_rca_tree_service()

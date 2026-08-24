@@ -1,32 +1,39 @@
 from ..adapters.outbound.analysis_postgres import RcaTreeAnalysisPostgresAdapter
 from ..adapters.outbound.transaction_postgres import PostgresTransactionAdapter
-from ..application.analysis_use_cases import AnalysisUseCases
-
-
-class RcaTreeAnalysisService:
-    def __init__(self, use_cases): self.use_cases = use_cases
-    def list_recent(self, *args): return self.use_cases.list_recent(*args)
-    def list_templates(self, *args): return self.use_cases.list_templates(*args)
-    def create(self, payload): return self.use_cases.create(payload)
-    def get(self, analysis_id): return self.use_cases.get(analysis_id)
-    def update(self, analysis_id, payload): return self.use_cases.update(analysis_id, payload)
-    def save_result(self, analysis_id, payload): return self.use_cases.save_result(analysis_id, payload)
+from ..application.use_cases import (
+    CreateAnalysis,
+    GetAnalysis,
+    ListAnalyses,
+    ListAnalysisTemplates,
+    SaveAnalysisResult,
+    UpdateAnalysis,
+)
+from .analysis_application import RcaTreeAnalysisApplication
 
 
 def build_rca_tree_analysis_persistence():
     return RcaTreeAnalysisPostgresAdapter(PostgresTransactionAdapter())
 
 
-def build_rca_tree_analysis_service(*, persistence=None):
+def build_rca_tree_analysis_application(*, persistence=None):
     persistence = persistence or build_rca_tree_analysis_persistence()
-    return RcaTreeAnalysisService(AnalysisUseCases(
-        persistence,
-        ParticipantAdapter(persistence),
-        ResultAdapter(persistence),
-    ))
+    participants = ParticipantAdapter(persistence)
+    results = ResultAdapter(persistence)
+    get_analysis = GetAnalysis(persistence, participants, results)
+    return RcaTreeAnalysisApplication(
+        list_analyses=ListAnalyses(persistence),
+        list_templates=ListAnalysisTemplates(persistence),
+        create_analysis=CreateAnalysis(persistence, participants),
+        get_analysis=get_analysis,
+        update_analysis=UpdateAnalysis(persistence, get_analysis),
+        save_result=SaveAnalysisResult(results),
+    )
 
 
-build_causal_analysis_service = build_rca_tree_analysis_service
+build_rca_tree_analysis_service = build_rca_tree_analysis_application
+
+
+build_causal_analysis_service = build_rca_tree_analysis_application
 
 
 class ParticipantAdapter:

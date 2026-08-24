@@ -1,5 +1,5 @@
-from uc_bib_solv.modules.bpm.domain.entities import Contract
-from uc_bib_solv.modules.bpm.domain.validators import validate_contract_payload
+from uc_bib_solv.modules.bpm.domain.contracts.entities import Contract
+from uc_bib_solv.modules.bpm.domain.contracts.rules import validate_contract_payload
 
 
 class CreateContract:

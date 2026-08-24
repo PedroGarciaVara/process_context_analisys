@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..exceptions import BpmDomainError
-from ..value_objects import require_positive_int, require_text, require_uuid
+from ..shared.exceptions import BpmDomainError
+from ..shared.value_objects import require_positive_int, require_text, require_uuid
 
 
 @dataclass(frozen=True)

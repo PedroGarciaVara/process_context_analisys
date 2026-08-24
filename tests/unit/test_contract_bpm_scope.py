@@ -1,7 +1,7 @@
 import unittest
 
-from uc_bib_solv.modules.bpm.domain.exceptions import OperationalModelError
-from uc_bib_solv.modules.bpm.domain.validators import validate_contract_payload
+from uc_bib_solv.modules.bpm.domain.shared.exceptions import BpmDomainError
+from uc_bib_solv.modules.bpm.domain.contracts.rules import validate_contract_payload
 
 
 class ContractBpmScopeTests(unittest.TestCase):
@@ -20,7 +20,7 @@ class ContractBpmScopeTests(unittest.TestCase):
             {"name": "Contrato"},
             {"name": "Contrato", "bpmProcessId": "process-1", "bpmNodeId": "node-1"},
         ):
-            with self.assertRaises(OperationalModelError):
+            with self.assertRaises(BpmDomainError):
                 validate_contract_payload(payload)
 
 

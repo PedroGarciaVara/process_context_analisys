@@ -5,8 +5,8 @@ from flask import Flask
 from uc_bib_solv.modules.bpm.adapters.outbound.operational_compat import OperationalPersistenceAdapter
 from uc_bib_solv.modules.bpm.application.ports import BpmContextPort, BpmOperationalPort
 from uc_bib_solv.modules.bpm.application import BpmOperationalApplication
-from uc_bib_solv.modules.bpm.domain.exceptions import OperationalModelError
-from uc_bib_solv.modules.bpm.domain.validators import validate_machine_payload
+from uc_bib_solv.modules.bpm.domain.shared.exceptions import BpmDomainError
+from uc_bib_solv.modules.bpm.domain.machines.payload_rules import validate_machine_payload
 from uc_bib_solv.modules.bpm.infrastructure.wiring import build_operational_service
 
 
@@ -56,7 +56,7 @@ class OperationalModelingT8Tests(unittest.TestCase):
         self.assertEqual(backend.calls[0][0], "create_machine")
 
     def test_process_payload_does_not_include_operational_state_or_owner(self):
-        from uc_bib_solv.modules.bpm.domain.validators import validate_process_payload
+        from uc_bib_solv.modules.bpm.domain.processes.payload_rules import validate_process_payload
 
         result = validate_process_payload({"name": "Proceso", "status": "active", "status_proceso": "activo", "owner": "legacy"})
         self.assertEqual(result, {"name": "Proceso"})
@@ -74,7 +74,7 @@ class OperationalModelingT8Tests(unittest.TestCase):
     def test_contract_scope_is_validated_by_bpm_entity_before_persistence(self):
         backend = FakeBackend()
         backend.create_contract = lambda payload: payload
-        with self.assertRaises(OperationalModelError):
+        with self.assertRaises(BpmDomainError):
             BpmOperationalApplication(OperationalPersistenceAdapter(backend)).create_contract({"name": "Sin alcance"})
 
     def test_machine_contract_associations_are_validated_by_bpm_entity(self):
