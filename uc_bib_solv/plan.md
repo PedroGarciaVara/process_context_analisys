@@ -1865,6 +1865,26 @@ Cada archivo de `use_cases/` debe contener una única clase con nombre de intenc
 
 Esta fase es únicamente de auditoría y diseño. No se modificará código hasta recibir exactamente `inicia implementacion`.
 
+## Implementación — normalización de `rca_tree/application`
+
+- Se creó `application/use_cases/` organizado por capacidades: `tree`, `causes`, `hypotheses`, `reusable_nodes` y `analyses`.
+- Cada caso de uso tiene una única clase con método `execute(...)`.
+- Se crearon DTO/helpers de normalización en `application/dto`.
+- Los ports se segregaron en `application/ports/inbound` y `application/ports/outbound`, separando persistencia causal, consultas de árbol, análisis, contexto BPM y transacciones.
+- Se eliminaron los agregadores planos `application/use_cases.py`, `application/analysis_use_cases.py` y `application/service.py`.
+- La composición se trasladó a `rca_tree/infrastructure/application.py` y `analysis_application.py`; `infrastructure/wiring.py` solo instancia adapters y casos de uso.
+- Se eliminaron aliases genéricos de ports (`CausePort`, `AnalysisPort`, etc.) del API público de `rca_tree.application`.
+- Se actualizaron tests y consumidores al naming explícito.
+
+### Gates de implementación
+
+- Tests focalizados BPM/RCA_TREE y arquitectura: `22/22` correctos.
+- Suite unittest disponible: `15/15` correctos.
+- Validadores de estructura, naming, dependencias e implementaciones concretas: correctos.
+- Auditoría de aplicación/backend: sin rutas o renderizadores desconectados, sin errores de parseo ni adapters inbound ausentes en runtime.
+- Se añadieron gates para exigir módulos de caso de uso con `execute(...)`, ports segregados y ausencia de los agregadores legacy.
+- No se modificaron PostgreSQL, esquema ni datos.
+
 ## Cierre — retirada física de `bpm/process_modeling`
 
 - Se confirmó que no existían archivos fuente ni referencias activas al namespace `uc_bib_solv.modules.bpm.process_modeling`.

@@ -12,15 +12,6 @@ from .outbound import (
     TreeQueryPort,
 )
 
-# Public names retained for the transition from the former generic port names.
-CausePort = CauseRepositoryPort
-HypothesisPort = HypothesisRepositoryPort
-NodePort = NodeRepositoryPort
-RelationshipPort = RelationshipRepositoryPort
-AnalysisPort = AnalysisRepositoryPort
-ParticipantPort = ParticipantRepositoryPort
-ResultPort = ResultRepositoryPort
-
 __all__ = [
     "UseCase",
     "AnalysisRepositoryPort",
@@ -33,11 +24,4 @@ __all__ = [
     "ResultRepositoryPort",
     "TransactionPort",
     "TreeQueryPort",
-    "CausePort",
-    "HypothesisPort",
-    "NodePort",
-    "RelationshipPort",
-    "AnalysisPort",
-    "ParticipantPort",
-    "ResultPort",
 ]

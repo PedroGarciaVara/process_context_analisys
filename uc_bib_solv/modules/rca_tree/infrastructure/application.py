@@ -4,8 +4,6 @@ This module contains no business rules. It only groups independently wired
 use cases behind the existing HTTP-facing application contract.
 """
 
-from typing import Any
-
 from ..application.use_cases import (
     CreateCause,
     CreateContractNode,

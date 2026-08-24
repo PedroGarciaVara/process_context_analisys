@@ -36,6 +36,37 @@ class ExplicitDomainArchitectureTests(unittest.TestCase):
                 for layer in ("domain", "application", "adapters", "infrastructure"):
                     self.assertTrue((MODULES / context / layer).is_dir(), f"missing {context}/{layer}")
 
+    def test_rca_tree_application_uses_named_use_case_modules(self):
+        application = MODULES / "rca_tree" / "application"
+        self.assertTrue((application / "use_cases").is_dir())
+        self.assertTrue((application / "ports" / "inbound").is_dir())
+        self.assertTrue((application / "ports" / "outbound").is_dir())
+        for legacy_file in ("service.py", "use_cases.py", "analysis_use_cases.py"):
+            self.assertFalse((application / legacy_file).exists(), f"legacy application file remains: {legacy_file}")
+
+        for path in (application / "use_cases").rglob("*.py"):
+            if path.name == "__init__.py":
+                continue
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+            self.assertEqual(1, len(classes), f"use case module must define one class: {path}")
+            methods = {node.name for node in classes[0].body if isinstance(node, ast.FunctionDef)}
+            self.assertIn("execute", methods, f"use case must expose execute: {path}")
+
+    def test_rca_tree_application_does_not_import_adapters_or_infrastructure(self):
+        forbidden = (".adapters", ".infrastructure", "flask", "psycopg")
+        for path in (MODULES / "rca_tree" / "application").rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    targets = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    targets = [node.module or ""]
+                else:
+                    continue
+                for target in targets:
+                    self.assertFalse(any(word in target.lower() for word in forbidden), f"application import: {path}: {target}")
+
     def test_bpm_domain_has_no_flat_compatibility_artifacts(self):
         domain = MODULES / "bpm" / "domain"
         deprecated_files = (
