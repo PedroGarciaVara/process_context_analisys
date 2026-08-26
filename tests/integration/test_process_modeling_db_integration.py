@@ -31,7 +31,7 @@ class ProcessModelingPostgresIntegrationTests(TestCase):
 
     def tearDown(self):
         with db_cursor() as cursor:
-            cursor.execute("DELETE FROM pm_process_definition WHERE process_id = %s", (self.process["process_id"],))
+            cursor.execute("DELETE FROM bpm_process WHERE process_id = %s", (self.process["process_id"],))
 
     def test_process_version_graph_survives_closed_transactions(self):
         version_response = self.client.post(

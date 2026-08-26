@@ -6,7 +6,7 @@ from uc_bib_solv.modules.bpm.application.use_cases.catalog import GetOperational
 from uc_bib_solv.modules.bpm.application.use_cases.contracts import CreateContract
 from uc_bib_solv.modules.bpm.application.use_cases.machines import CreateMachine
 from uc_bib_solv.modules.bpm.application.use_cases.operations import ListOperations
-from uc_bib_solv.modules.bpm.application.use_cases.processes import ListProcesses
+from uc_bib_solv.modules.bpm.application.use_cases.processes import ListOperationalProcesses
 
 
 class FakePersistence:
@@ -19,7 +19,7 @@ class FakePersistence:
 
 class BpmUseCaseStructureTests(unittest.TestCase):
     def test_use_cases_are_grouped_by_bpm_capability(self):
-        self.assertEqual(ListProcesses(FakePersistence()).execute(), [{"id": 1, "name": "Proceso"}])
+        self.assertEqual(ListOperationalProcesses(FakePersistence()).execute(), [{"id": 1, "name": "Proceso"}])
         self.assertEqual(ListOperations(FakePersistence()).execute(), [{"id": "op-1"}])
         self.assertIsInstance(GetOperationalCatalog(FakePersistence()), GetOperationalCatalog)
         self.assertIsInstance(CreateContract, type)

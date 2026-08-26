@@ -1,33 +1,25 @@
 """Process application use cases, grouped by BPM capability."""
 
-from .create_process import CreateProcess
-from .delete_process import DeleteProcess
-from .list_processes import ListProcesses
-from .update_process import UpdateProcess
-from .create_process_definition import CreateProcessDefinition
+from .create_bpm_process import CreateProcess
+from .delete_operational_process import DeleteOperationalProcess
+from .list_bpm_processes import ListProcesses
+from .update_bpm_process import UpdateProcess
+from .create_operational_process import CreateOperationalProcess
+from .list_operational_processes import ListOperationalProcesses
+from .update_operational_process import UpdateOperationalProcess
 from .create_version import CreateProcessVersion
-from .get_process_definition import GetProcessDefinition
-from .list_process_definitions import ListProcessDefinitions
+from .get_process import GetProcess
 from .list_versions import ListProcessVersions
-from .update_process_definition import UpdateProcessDefinition
 
 __all__ = [
     "CreateProcess",
-    "CreateProcessDefinition",
+    "CreateOperationalProcess",
     "CreateProcessVersion",
-    "DeleteProcess",
-    "GetProcessDefinition",
-    "ListProcessDefinitions",
+    "DeleteOperationalProcess",
+    "GetProcess",
     "ListProcessVersions",
     "ListProcesses",
     "UpdateProcess",
-    "UpdateProcessDefinition",
+    "ListOperationalProcesses",
+    "UpdateOperationalProcess",
 ]
-"""Operational BPM process use cases."""
-
-from .create_process import CreateProcess
-from .delete_process import DeleteProcess
-from .list_processes import ListProcesses
-from .update_process import UpdateProcess
-
-__all__ = ["CreateProcess", "DeleteProcess", "ListProcesses", "UpdateProcess"]

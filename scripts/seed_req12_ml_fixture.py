@@ -123,7 +123,7 @@ def contract_snapshot() -> dict:
         "version_id": VERSION_ID,
         "seed": SEED,
         "generic_tables": [
-            "pm_process_definition", "pm_process_version", "pm_process_node",
+            "bpm_process", "pm_process_version", "pm_process_node",
             "pm_process_transition", "pm_process_node_metadata",
             "pm_context_record", "proceso", "maquina", "contrato",
             "contrato_maquina", "machine_operation_configuration",
@@ -153,13 +153,13 @@ def envelope(context_type: str, context_id: str, family: str, data: dict, sectio
 
 
 def _target(cur, create: bool = True) -> dict:
-    cur.execute("SELECT * FROM pm_process_definition WHERE process_code = %s FOR UPDATE", (PROCESS_CODE,))
+    cur.execute("SELECT * FROM bpm_process WHERE process_code = %s FOR UPDATE", (PROCESS_CODE,))
     process = cur.fetchone()
     if process is None:
         if not create:
             return {"process": {"process_id": PROCESS_ID, "process_code": PROCESS_CODE, "name": PROCESS_NAME, "status": "draft", "prospective": True},
                     "version": {"version_id": VERSION_ID, "process_id": PROCESS_ID, "version_number": 1, "status": "draft", "prospective": True}}
-        cur.execute("""INSERT INTO pm_process_definition (process_id, process_code, name, description, status)
+        cur.execute("""INSERT INTO bpm_process (process_id, process_code, name, description, status)
                        VALUES (%s, %s, %s, %s, 'draft') RETURNING *""", (PROCESS_ID, PROCESS_CODE, PROCESS_NAME, PROCESS_DESCRIPTION))
         process = cur.fetchone()
     elif str(process["process_id"]) != PROCESS_ID:
@@ -167,7 +167,7 @@ def _target(cur, create: bool = True) -> dict:
     elif process["name"] != PROCESS_NAME:
         raise RuntimeError("La definición existente no conserva el nombre exacto requerido")
     if create:
-        cur.execute("""UPDATE pm_process_definition SET description = %s, updated_at = NOW()
+        cur.execute("""UPDATE bpm_process SET description = %s, updated_at = NOW()
                        WHERE process_id = %s""", (PROCESS_DESCRIPTION, PROCESS_ID))
     cur.execute("SELECT * FROM pm_process_version WHERE version_id = %s FOR UPDATE", (VERSION_ID,))
     version = cur.fetchone()
@@ -305,7 +305,7 @@ def load(cur, target: dict | None = None) -> dict:
         nodes[code] = _insert_node(cur, code, node_type, name, section, ids)
     for transition in TRANSITIONS:
         _insert_transition(cur, *transition, nodes)
-    _context(cur, "declaration", "process", PROCESS_ID, "process_definition", {"process_code": PROCESS_CODE, "name": PROCESS_NAME, "description": PROCESS_DESCRIPTION, "fixture_version": "test"}, "§0-§1", key="process-definition")
+        _context(cur, "declaration", "process", PROCESS_ID, "bpm_process", {"process_code": PROCESS_CODE, "name": PROCESS_NAME, "description": PROCESS_DESCRIPTION, "fixture_version": "test"}, "§0-§1", key="bpm-process")
     _context(cur, "declaration", "version", VERSION_ID, "methodology", {"fixture_scope": "coverage_and_gap_discovery", "levels": ["PLC/Autómata", "MES/SCADA", "PI-AVEVA"], "causal_chain": "contract -> analysis -> methodology -> cause -> hypothesis -> evidence -> conclusion"}, "§9-§10", key="methodology")
     _context(cur, "declaration", "version", VERSION_ID, "fixture_gaps", {"gaps": GAPS}, "§11-§13", key="gaps")
     _context(cur, "fact", "version", VERSION_ID, "execution", {"event": "fixture_loaded", "telemetry_ingested": False, "node_count": len(NODE_SPECS)}, "§9", key="execution")

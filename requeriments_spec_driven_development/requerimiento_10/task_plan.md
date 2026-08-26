@@ -164,7 +164,7 @@ Ejecutar tests automáticos, smoke UI si está disponible, no regresión de ruta
   - FR-01..FR-06, FR-10, modelo de datos y AC-02/AC-03.
   - `db/schema.sql`, `app/persistence/db.py` y convenciones de tests existentes.
 - Actions:
-  - Definir `pm_process_definition`, `pm_process_version`, `pm_process_node` y `pm_process_transition` con UUID, FKs, estados, unicidades, checks, `JSONB` solo para propiedades e índices solicitados.
+  - Definir `bpm_process`, `pm_process_version`, `pm_process_node` y `pm_process_transition` con UUID, FKs, estados, unicidades, checks, `JSONB` solo para propiedades e índices solicitados.
   - Garantizar `ON DELETE` coherente, SQL parametrizable desde repositorios y transacciones atómicas.
   - Preparar fixture/estrategia de limpieza que no borre ni modifique tablas del árbol causal.
   - Ejecutar el primer test de creación/lectura de proceso y versión tras inicializar el esquema.

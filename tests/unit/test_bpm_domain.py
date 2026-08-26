@@ -18,7 +18,7 @@ class BpmDomainTests(unittest.TestCase):
         version_id = str(uuid4())
         operation_id = str(uuid4())
 
-        process = Process(process_id=process_id, name="Proceso")
+        process = Process(process_id=process_id, process_code="PROC-01", name="Proceso")
         operation = Operation(operation_id, version_id, "OP-01", "Operación")
         machine = Machine(1, "M-01", 2)
         contract = Contract(3, "Contrato", bpm_process_id=process_id)

@@ -19,7 +19,7 @@ def main(process_id: str) -> int:
     process_uuid = str(UUID(process_id))
     allowed_patterns = [f"{prefix}%" for prefix in ALLOWED_TEST_PROCESS_PREFIXES]
     with db_cursor() as cursor:
-        cursor.execute("SELECT process_code FROM pm_process_definition WHERE process_id = %s", (process_uuid,))
+        cursor.execute("SELECT process_code FROM bpm_process WHERE process_id = %s", (process_uuid,))
         row = cursor.fetchone()
         if row is None:
             print(f"process {process_uuid} already absent (idempotent)")
@@ -27,7 +27,7 @@ def main(process_id: str) -> int:
         if not any(str(row["process_code"]).startswith(prefix) for prefix in ALLOWED_TEST_PROCESS_PREFIXES):
             raise RuntimeError("cleanup rechazado: el proceso no pertenece a la allowlist TEST_PM")
         cursor.execute(
-            "DELETE FROM pm_process_definition "
+            "DELETE FROM bpm_process "
             "WHERE process_id = %s AND process_code LIKE ANY(%s)",
             (process_uuid, allowed_patterns),
         )

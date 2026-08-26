@@ -53,7 +53,7 @@ Para aplicar el esquema de forma idempotente y comprobar las tablas de process m
 python3 scripts/check_postgres_pm.py --apply-schema
 ```
 
-El esquema incluye el modelo operativo/causal (`proceso`, `contrato`, `maquina`, `causa`, `hipotesis`, análisis y grafo canónico) y el bounded context de modelado de procesos (`pm_process_definition`, `pm_process_version`, `pm_process_node`, `pm_process_transition`).
+El esquema incluye el modelo operativo/causal (`proceso`, `contrato`, `maquina`, `causa`, `hipotesis`, análisis y grafo canónico) y el bounded context de modelado de procesos (`bpm_process`, `pm_process_version`, `pm_process_node`, `pm_process_transition`).
 
 ## Arranque
 

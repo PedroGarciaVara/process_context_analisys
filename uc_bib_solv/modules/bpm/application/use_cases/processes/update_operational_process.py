@@ -1,7 +1,7 @@
 from uc_bib_solv.modules.bpm.domain.processes.payload_rules import validate_process_payload
 
 
-class UpdateProcess:
+class UpdateOperationalProcess:
     """Update a process through the BPM persistence port."""
 
     def __init__(self, persistence):

@@ -1,14 +1,14 @@
 from uc_bib_solv.modules.bpm.application.dto.serialization import jsonable
 from uc_bib_solv.modules.bpm.application.use_cases.process_modeling_dependencies import ProcessModelingDependencies
-from uc_bib_solv.modules.bpm.domain.processes.entities import ProcessDefinition
+from uc_bib_solv.modules.bpm.domain.processes.entities import Process
 from uc_bib_solv.modules.bpm.domain.processes.exceptions import NotFoundError, ProcessModelingError
-from .get_process_definition import GetProcessDefinition
+from .get_process import GetProcess
 
 
-class UpdateProcessDefinition:
+class UpdateProcess:
     def __init__(self, dependencies: ProcessModelingDependencies):
         self.dependencies = dependencies
-        self.get_process = GetProcessDefinition(dependencies)
+        self.get_process = GetProcess(dependencies)
 
     def execute(self, process_id, data):
         current = self.get_process.execute(process_id)
@@ -21,7 +21,7 @@ class UpdateProcessDefinition:
             "parent_process_id": data.get("parent_process_id", current.get("parent_process_id")),
             "status": data.get("status", current.get("status", "draft")),
         }
-        entity = ProcessDefinition(**values)
+        entity = Process(**values)
         if entity.parent_process_id:
             parent = self.dependencies.processes.get(entity.parent_process_id)
             if not parent:

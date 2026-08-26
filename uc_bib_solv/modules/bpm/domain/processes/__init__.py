@@ -1,7 +1,7 @@
-"""Process aggregate: definitions, versions, graph nodes and rules."""
+"""Process aggregate: processes, versions, graph nodes and rules."""
 
 from .context import ContextDetail, ContextRecord, calculate_kpi
-from .entities import Process, ProcessDefinition, ProcessNode, ProcessTransition, ProcessVersion
+from .entities import Process, ProcessNode, ProcessTransition, ProcessVersion
 from .exceptions import NotDraftError, NotFoundError, ProcessModelingError
 from .rules import validate_graph, validate_hierarchy
 
@@ -11,7 +11,6 @@ __all__ = [
     "NotDraftError",
     "NotFoundError",
     "Process",
-    "ProcessDefinition",
     "ProcessModelingError",
     "ProcessNode",
     "ProcessTransition",

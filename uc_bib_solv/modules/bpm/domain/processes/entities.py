@@ -18,32 +18,33 @@ from .value_objects import (
 )
 
 
-@dataclass(frozen=True)
+@dataclass
 class Process:
-    """Canonical process identity used by operational BPM projections."""
+    """Canonical BPM process aggregate root."""
 
-    process_id: str
-    name: str
-    process_code: str | None = None
+    process_id: str = field(default_factory=lambda: str(uuid4()))
+    process_code: str = ""
+    name: str = ""
     description: str | None = None
     parent_process_id: str | None = None
     abstraction_level: int = 0
     status: str = "draft"
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "process_id", bpm_require_uuid(self.process_id, "process_id"))
-        object.__setattr__(self, "name", bpm_require_text(self.name, "name"))
-        if self.process_code is not None:
-            object.__setattr__(self, "process_code", bpm_require_text(self.process_code, "process_code"))
+        self.process_id = require_uuid(self.process_id, "process_id")
+        self.process_code = ProcessCode(self.process_code).value
+        self.name = require_text(self.name, "name")
         if self.parent_process_id is not None:
             parent = bpm_require_uuid(self.parent_process_id, "parent_process_id")
             if parent == self.process_id:
                 raise BpmDomainError("Un proceso no puede ser su propio padre", "hierarchy_cycle", "parent_process_id")
-            object.__setattr__(self, "parent_process_id", parent)
-        if isinstance(self.abstraction_level, bool) or not isinstance(self.abstraction_level, int) or self.abstraction_level < 0:
-            raise BpmDomainError("abstraction_level debe ser un entero no negativo", "invalid_integer", "abstraction_level")
-        if self.status not in {"draft", "active"}:
-            raise BpmDomainError("Estado BPM no permitido", "invalid_status", "status")
+            self.parent_process_id = parent
+        self.abstraction_level = require_non_negative_int(self.abstraction_level, "abstraction_level")
+        if self.status not in PROCESS_STATUSES:
+            raise ProcessModelingError("status de proceso no permitido", "invalid_process_status")
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.__dict__.copy()
 
 
 @dataclass(frozen=True)
@@ -79,30 +80,6 @@ class Stage:
         object.__setattr__(self, "name", bpm_require_text(self.name, "name"))
         if isinstance(self.sequence, bool) or not isinstance(self.sequence, int) or self.sequence < 0:
             raise BpmDomainError("sequence debe ser un entero no negativo", "invalid_integer", "sequence")
-
-
-@dataclass
-class ProcessDefinition:
-    process_id: str = field(default_factory=lambda: str(uuid4()))
-    process_code: str = ""
-    name: str = ""
-    description: str | None = None
-    abstraction_level: int = 0
-    parent_process_id: str | None = None
-    status: str = "draft"
-
-    def __post_init__(self):
-        self.process_id = require_uuid(self.process_id, "process_id")
-        self.process_code = ProcessCode(self.process_code).value
-        self.name = require_text(self.name, "name")
-        self.abstraction_level = require_non_negative_int(self.abstraction_level, "abstraction_level")
-        if self.parent_process_id is not None:
-            self.parent_process_id = require_uuid(self.parent_process_id, "parent_process_id")
-        if self.status not in PROCESS_STATUSES:
-            raise ProcessModelingError("status de proceso no permitido", "invalid_process_status")
-
-    def to_dict(self) -> dict[str, Any]:
-        return self.__dict__.copy()
 
 
 @dataclass

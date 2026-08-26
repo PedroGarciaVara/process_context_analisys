@@ -1,7 +1,7 @@
 from uc_bib_solv.modules.bpm.domain.processes.payload_rules import validate_process_payload
 
 
-class CreateProcess:
+class CreateOperationalProcess:
     """Create a process after applying BPM payload rules."""
 
     def __init__(self, persistence):

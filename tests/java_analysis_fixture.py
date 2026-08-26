@@ -36,7 +36,7 @@ def build_fixture() -> dict[str, int | str]:
         version_id = str(uuid.uuid4())
         operation_id = str(uuid.uuid4())
         cur.execute(
-            """INSERT INTO pm_process_definition(process_id, process_code, name, status)
+            """INSERT INTO bpm_process(process_id, process_code, name, status)
                VALUES (%s, %s, %s, 'draft')""",
             (bpm_process_id, f"{prefix}_BPM", f"{prefix} BPM"),
         )

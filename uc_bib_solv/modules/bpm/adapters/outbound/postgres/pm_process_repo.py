@@ -70,12 +70,12 @@ def _node_values(data):
 class ProcessRepository:
     def list(self):
         with db_cursor() as cur:
-            cur.execute("""SELECT * FROM pm_process_definition ORDER BY process_code, process_id""")
+            cur.execute("""SELECT * FROM bpm_process ORDER BY process_code, process_id""")
             return [dict(row) for row in cur.fetchall()]
 
     def get(self, process_id):
         with db_cursor() as cur:
-            cur.execute("SELECT * FROM pm_process_definition WHERE process_id = %s", (_uuid(process_id),))
+            cur.execute("SELECT * FROM bpm_process WHERE process_id = %s", (_uuid(process_id),))
             row = cur.fetchone()
             if not row:
                 return None
@@ -87,7 +87,7 @@ class ProcessRepository:
     def create(self, data):
         with db_cursor() as cur:
             cur.execute("""
-                INSERT INTO pm_process_definition
+                INSERT INTO bpm_process
                     (process_id, process_code, name, description, abstraction_level, parent_process_id, status)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING *
@@ -111,7 +111,7 @@ class ProcessRepository:
         assignments = ", ".join(f"{key} = %s" for key in fields)
         values = list(fields.values()) + [_uuid(process_id)]
         with db_cursor() as cur:
-            cur.execute(f"UPDATE pm_process_definition SET {assignments}, updated_at = NOW() WHERE process_id = %s RETURNING *", values)
+            cur.execute(f"UPDATE bpm_process SET {assignments}, updated_at = NOW() WHERE process_id = %s RETURNING *", values)
             row = cur.fetchone()
             if row and "name" in fields:
                 cur.execute(
@@ -132,7 +132,7 @@ class VersionRepository:
             cur.execute("""
                 SELECT v.*, p.process_code, p.name AS process_name, p.description AS process_description,
                        p.abstraction_level, p.parent_process_id, p.status AS process_status
-                FROM pm_process_version v JOIN pm_process_definition p ON p.process_id = v.process_id
+                FROM pm_process_version v JOIN bpm_process p ON p.process_id = v.process_id
                 WHERE v.version_id = %s
             """, (_uuid(version_id),))
             row = cur.fetchone()

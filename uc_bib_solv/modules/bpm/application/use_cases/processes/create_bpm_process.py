@@ -1,18 +1,18 @@
 from uc_bib_solv.modules.bpm.application.dto.serialization import jsonable
 from uc_bib_solv.modules.bpm.application.use_cases.process_modeling_dependencies import ProcessModelingDependencies
-from uc_bib_solv.modules.bpm.domain.processes.entities import ProcessDefinition
+from uc_bib_solv.modules.bpm.domain.processes.entities import Process
 from uc_bib_solv.modules.bpm.domain.processes.exceptions import NotFoundError, ProcessModelingError
 
 
-class CreateProcessDefinition:
+class CreateProcess:
     def __init__(self, dependencies: ProcessModelingDependencies):
         self.dependencies = dependencies
 
     def execute(self, data):
-        entity = ProcessDefinition(**{
+        entity = Process(**{
             key: value
             for key, value in data.items()
-            if key in ProcessDefinition.__dataclass_fields__ and key != "process_id"
+            if key in Process.__dataclass_fields__ and key != "process_id"
         })
         if entity.parent_process_id:
             parent = self.dependencies.processes.get(entity.parent_process_id)

@@ -96,7 +96,7 @@ def _operations_by_machine() -> dict[int, list[dict]]:
               LEFT JOIN contrato c ON c.id = moc.contract_id
               JOIN pm_process_node n ON n.node_id = moc.operation_id
               JOIN pm_process_version v ON v.version_id = moc.process_version_id
-              JOIN pm_process_definition p ON p.process_id = moc.process_id
+              JOIN bpm_process p ON p.process_id = moc.process_id
              WHERE n.node_type = 'operation'
              ORDER BY moc.machine_id, p.name, v.version_number, n.node_code, moc.operation_id
             """
@@ -158,7 +158,7 @@ def _contract_scope_options() -> dict:
         cur.execute(
             """
             SELECT p.process_id, p.name, lp.id AS legacy_process_id
-              FROM pm_process_definition p
+              FROM bpm_process p
               JOIN proceso lp ON lp.bpm_process_id = p.process_id
              ORDER BY p.name, p.process_id
             """
@@ -173,7 +173,7 @@ def _contract_scope_options() -> dict:
                    p.name AS process_name, lp.id AS process_id
               FROM pm_process_node n
               JOIN pm_process_version v ON v.version_id = n.version_id
-              JOIN pm_process_definition p ON p.process_id = v.process_id
+              JOIN bpm_process p ON p.process_id = v.process_id
               JOIN proceso lp ON lp.bpm_process_id = p.process_id
              WHERE n.node_type = 'operation'
              ORDER BY p.name, n.name, n.node_id
@@ -203,7 +203,7 @@ def _resolve_contract_scope(payload: dict) -> tuple[int, str]:
             cur.execute(
                 """
                 SELECT lp.id, p.name
-                  FROM pm_process_definition p
+                  FROM bpm_process p
                   JOIN proceso lp ON lp.bpm_process_id = p.process_id
                  WHERE p.process_id=%s
                 """,
@@ -215,7 +215,7 @@ def _resolve_contract_scope(payload: dict) -> tuple[int, str]:
                 SELECT lp.id, n.name
                   FROM pm_process_node n
                   JOIN pm_process_version v ON v.version_id=n.version_id
-                  JOIN pm_process_definition p ON p.process_id=v.process_id
+                  JOIN bpm_process p ON p.process_id=v.process_id
                   JOIN proceso lp ON lp.bpm_process_id=p.process_id
                  WHERE n.node_id=%s AND n.node_type='operation'
                 """,
@@ -810,7 +810,7 @@ def _bpm_identity(version_id: str | None) -> dict | None:
             """SELECT v.version_id, v.process_id AS bpm_process_id,
                       v.version_number, p.process_code, p.name, p.description
                  FROM pm_process_version v
-                 JOIN pm_process_definition p ON p.process_id = v.process_id
+                 JOIN bpm_process p ON p.process_id = v.process_id
                 WHERE v.version_id = %s""",
             (version_uuid,),
         )

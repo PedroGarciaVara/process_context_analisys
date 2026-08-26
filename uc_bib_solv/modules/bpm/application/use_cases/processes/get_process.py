@@ -3,7 +3,7 @@ from uc_bib_solv.modules.bpm.application.use_cases.process_modeling_dependencies
 from uc_bib_solv.modules.bpm.domain.processes.exceptions import NotFoundError, ProcessModelingError
 
 
-class GetProcessDefinition:
+class GetProcess:
     def __init__(self, dependencies: ProcessModelingDependencies):
         self.dependencies = dependencies
 

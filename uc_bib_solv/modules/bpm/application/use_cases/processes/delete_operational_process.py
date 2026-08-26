@@ -1,4 +1,4 @@
-class DeleteProcess:
+class DeleteOperationalProcess:
     """Delete a process through the BPM persistence port."""
 
     def __init__(self, persistence):

@@ -26,7 +26,7 @@ python3 scripts/seed_req12_ml_fixture.py --contract
 
 La proyección generalista prevista contiene 12 nodos BPM, 17 transiciones,
 26 referencias de recursos, 7 nodos de operación y 12 gaps explícitos. La
-rutina de carga reutiliza exclusivamente `pm_process_definition`,
+rutina de carga reutiliza exclusivamente `bpm_process`,
 `pm_process_version`, `pm_process_node`, `pm_process_transition`,
 `pm_process_node_metadata`, `pm_context_record`, `proceso`, `maquina`,
 `contrato`, `contrato_maquina` y `machine_operation_configuration`.

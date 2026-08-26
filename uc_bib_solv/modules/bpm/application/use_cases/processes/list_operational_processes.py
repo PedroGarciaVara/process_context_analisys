@@ -1,4 +1,4 @@
-class ListProcesses:
+class ListOperationalProcesses:
     """List the canonical operational BPM processes."""
 
     def __init__(self, persistence):

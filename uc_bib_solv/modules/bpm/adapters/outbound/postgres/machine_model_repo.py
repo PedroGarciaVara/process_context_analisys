@@ -68,7 +68,7 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
               FROM machine_operation_configuration moc
               JOIN pm_process_node n ON n.node_id = moc.operation_id
               JOIN pm_process_version v ON v.version_id = moc.process_version_id
-              JOIN pm_process_definition p ON p.process_id = v.process_id
+              JOIN bpm_process p ON p.process_id = v.process_id
               LEFT JOIN contrato c ON c.id = moc.contract_id
              WHERE {' AND '.join(clauses)}
              ORDER BY moc.process_version_id, moc.operation_id, moc.id

@@ -121,7 +121,7 @@ BU/MACBU y sin sustituir las relaciones BPM o causales por JSON/JSONB.
   especializados. Si una no representabilidad del fixture exige una decisión
   de contrato generalista, se registrará como gap y se escalará antes de crear
   un artefacto que cambie el alcance.
-- `pm_process_definition`, `pm_process_version`, `pm_process_node`,
+- `bpm_process`, `pm_process_version`, `pm_process_node`,
   `pm_process_transition` y el mecanismo existente de metadatos JSON/JSONB son
   la fuente de verdad del BPM ya validado; las relaciones estructurales no se
   trasladan a JSON.

@@ -196,7 +196,7 @@ EL SISTEMA DEBERÁ exponer desde la UI la plantilla común, el prompt común y l
 
 ### Relacional BPM y causal
 
-Se preservan las tablas/modelos BPM existentes (`pm_process_definition`, `pm_process_version`, `pm_process_node`, `pm_process_transition` y sus metadatos/relaciones) y las estructuras actuales de `contrato`, `analisis_causas`, `analisis_causas_detalle`, causas e hipótesis. La implementación deberá mapear legado y grafo sin duplicar la semántica.
+Se preservan las tablas/modelos BPM existentes (`bpm_process`, `pm_process_version`, `pm_process_node`, `pm_process_transition` y sus metadatos/relaciones) y las estructuras actuales de `contrato`, `analisis_causas`, `analisis_causas_detalle`, causas e hipótesis. La implementación deberá mapear legado y grafo sin duplicar la semántica.
 
 ### JSON/JSONB generalista
 

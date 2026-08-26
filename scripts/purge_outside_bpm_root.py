@@ -32,7 +32,7 @@ def _ensure_process_relation(cur) -> None:
         BEGIN
             ALTER TABLE proceso ADD CONSTRAINT proceso_bpm_process_fk
                 FOREIGN KEY (bpm_process_id)
-                REFERENCES pm_process_definition(process_id) ON DELETE CASCADE;
+                REFERENCES bpm_process(process_id) ON DELETE CASCADE;
         EXCEPTION WHEN duplicate_object THEN NULL;
         END $$;
         """
@@ -71,7 +71,7 @@ def _build_allowed_processes(cur, version_id: str) -> str:
             """
             INSERT INTO allowed_bpm_processes(process_id)
             SELECT p.process_id
-            FROM pm_process_definition p
+            FROM bpm_process p
             JOIN allowed_bpm_processes a ON a.process_id=p.parent_process_id
             ON CONFLICT DO NOTHING
             """
@@ -94,7 +94,7 @@ def _build_allowed_processes(cur, version_id: str) -> str:
     cur.execute(
         """
         SELECT p.process_id, p.process_code, p.name
-        FROM pm_process_definition p
+        FROM bpm_process p
         JOIN allowed_bpm_processes a ON a.process_id=p.process_id
         ORDER BY p.process_code
         """
@@ -109,7 +109,7 @@ def _sync_canonical_processes(cur) -> None:
     cur.execute(
         """
         SELECT p.process_id, p.process_code, p.name
-        FROM pm_process_definition p
+                  FROM bpm_process p
         JOIN allowed_bpm_processes a ON a.process_id=p.process_id
         ORDER BY p.process_code
         """
@@ -170,10 +170,10 @@ def _delete_outside_bpm(cur) -> None:
     while True:
         cur.execute(
             """
-            DELETE FROM pm_process_definition p
+            DELETE FROM bpm_process p
             WHERE p.process_id NOT IN (SELECT process_id FROM allowed_bpm_processes)
               AND NOT EXISTS (
-                  SELECT 1 FROM pm_process_definition child
+                  SELECT 1 FROM bpm_process child
                   WHERE child.parent_process_id=p.process_id
                     AND child.process_id NOT IN (SELECT process_id FROM allowed_bpm_processes)
               )
@@ -183,7 +183,7 @@ def _delete_outside_bpm(cur) -> None:
             break
 
     cur.execute(
-        "SELECT process_id FROM pm_process_definition WHERE process_id NOT IN (SELECT process_id FROM allowed_bpm_processes)"
+        "SELECT process_id FROM bpm_process WHERE process_id NOT IN (SELECT process_id FROM allowed_bpm_processes)"
     )
     if cur.fetchone():
         raise ValueError("No se pudieron eliminar todas las definiciones BPM externas")
@@ -336,7 +336,7 @@ def _delete_outside_bpm(cur) -> None:
 
 def _counts(cur) -> dict[str, int]:
     queries = {
-        "bpm_definitions": "SELECT COUNT(*) FROM pm_process_definition",
+        "bpm_processes": "SELECT COUNT(*) FROM bpm_process",
         "bpm_versions": "SELECT COUNT(*) FROM pm_process_version",
         "canonical_processes": "SELECT COUNT(*) FROM proceso",
         "contracts": "SELECT COUNT(*) FROM contrato",
@@ -365,7 +365,7 @@ def purge(version_id: str) -> dict:
                 _delete_outside_bpm(cur)
                 cur.execute("ALTER TABLE proceso ALTER COLUMN bpm_process_id SET NOT NULL")
                 cur.execute(
-                    "SELECT COUNT(*) FROM pm_process_definition WHERE process_id NOT IN (SELECT process_id FROM allowed_bpm_processes)"
+                    "SELECT COUNT(*) FROM bpm_process WHERE process_id NOT IN (SELECT process_id FROM allowed_bpm_processes)"
                 )
                 if cur.fetchone()["count"] != 0:
                     raise ValueError("Quedan procesos BPM fuera de la subárbol permitida")

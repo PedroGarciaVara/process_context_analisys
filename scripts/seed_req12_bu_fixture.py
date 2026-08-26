@@ -324,7 +324,7 @@ def _assert_target(cur) -> dict:
     cur.execute("""SELECT v.version_id, v.process_id, v.version_number, v.status,
                           p.process_code, p.name AS process_name
                    FROM pm_process_version v
-                   JOIN pm_process_definition p ON p.process_id = v.process_id
+                   JOIN bpm_process p ON p.process_id = v.process_id
                    WHERE v.version_id = %s""", (TARGET_VERSION_ID,))
     version = cur.fetchone()
     if not version:
@@ -335,7 +335,7 @@ def _assert_target(cur) -> dict:
     # existing process identity, while making the fixture-derived description
     # available through the existing process contract.
     cur.execute(
-        """UPDATE pm_process_definition
+        """UPDATE bpm_process
               SET description = %s, updated_at = NOW()
             WHERE process_id = %s""",
         (PROCESS_DESCRIPTION, version["process_id"]),

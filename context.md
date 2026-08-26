@@ -112,7 +112,7 @@ El cliente calcula medidas, layout y conectores sin persistir geometría. Soport
 
 ### Process modeling
 
-- `pm_process_definition`
+- `bpm_process`
 - `pm_process_version`
 - `pm_process_node`
 - `pm_process_transition`

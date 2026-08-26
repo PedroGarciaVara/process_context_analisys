@@ -5,12 +5,12 @@ from .use_cases.nodes import CreateProcessNode, DeleteProcessNode, GetNodeMetada
 from .use_cases.operations import CreateProcessOperation, DeleteProcessOperation, GetProcessOperation, UpdateProcessOperationStages
 from .use_cases.process_modeling_dependencies import ProcessModelingDependencies
 from .use_cases.processes import (
-    CreateProcessDefinition,
+    CreateProcess,
     CreateProcessVersion,
-    GetProcessDefinition,
-    ListProcessDefinitions,
+    GetProcess,
+    ListProcesses,
     ListProcessVersions,
-    UpdateProcessDefinition,
+    UpdateProcess,
 )
 from .use_cases.transitions.transitions import CreateTransition, DeleteTransition
 from .use_cases.versions.versions import GetVersion, UpdateVersion, ValidateVersion
@@ -21,10 +21,10 @@ class ProcessModelingApplication:
 
     def __init__(self, persistence):
         dependencies = ProcessModelingDependencies(persistence)
-        self._list_processes = ListProcessDefinitions(dependencies)
-        self._get_process = GetProcessDefinition(dependencies)
-        self._create_process = CreateProcessDefinition(dependencies)
-        self._update_process = UpdateProcessDefinition(dependencies)
+        self._list_processes = ListProcesses(dependencies)
+        self._get_process = GetProcess(dependencies)
+        self._create_process = CreateProcess(dependencies)
+        self._update_process = UpdateProcess(dependencies)
         self._list_versions = ListProcessVersions(dependencies)
         self._create_version = CreateProcessVersion(dependencies)
         self._get_version = GetVersion(dependencies)

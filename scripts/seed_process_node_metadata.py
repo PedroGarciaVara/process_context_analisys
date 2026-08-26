@@ -104,7 +104,7 @@ def main():
         cursor.execute("""SELECT n.node_id, n.node_code, n.name, v.process_id, p.process_code
                          FROM pm_process_node n
                          JOIN pm_process_version v ON v.version_id = n.version_id
-                         JOIN pm_process_definition p ON p.process_id = v.process_id
+                         JOIN bpm_process p ON p.process_id = v.process_id
                          WHERE n.node_type = 'operation'
                          ORDER BY p.process_code, n.node_code""")
         operations = cursor.fetchall()

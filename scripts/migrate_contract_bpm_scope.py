@@ -13,7 +13,7 @@ def main() -> None:
                    p.process_id AS bpm_process_id, lp.id AS proceso_id
               FROM pm_process_node n
               JOIN pm_process_version v ON v.version_id=n.version_id
-              JOIN pm_process_definition p ON p.process_id=v.process_id
+              JOIN bpm_process p ON p.process_id=v.process_id
               JOIN proceso lp ON lp.bpm_process_id=p.process_id
              WHERE n.node_type='operation'
                AND (n.properties->'canonical_ids'->>'contrato_id') IS NOT NULL
@@ -51,7 +51,7 @@ def main() -> None:
             """
             ALTER TABLE contrato
               ADD CONSTRAINT contrato_bpm_process_fk
-              FOREIGN KEY (bpm_process_id) REFERENCES pm_process_definition(process_id) ON DELETE RESTRICT
+              FOREIGN KEY (bpm_process_id) REFERENCES bpm_process(process_id) ON DELETE RESTRICT
             """
         )
         cur.execute(

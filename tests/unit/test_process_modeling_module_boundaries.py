@@ -12,7 +12,7 @@ from uc_bib_solv.modules.bpm.application.ports.process_ports import (
     TransitionRepositoryPort as TransitionPort,
     VersionRepositoryPort as VersionPort,
 )
-from uc_bib_solv.modules.bpm.domain.processes.entities import ProcessDefinition
+from uc_bib_solv.modules.bpm.domain.processes.entities import Process
 from uc_bib_solv.modules.bpm.domain.processes.rules import validate_graph
 from uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring import build_process_modeling
 
@@ -20,7 +20,7 @@ from uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring import build
 class ProcessModelingModuleBoundaryTests(unittest.TestCase):
     def test_domain_is_framework_free_and_preserves_validation(self):
         with self.assertRaises(ValueError):
-            ProcessDefinition(process_code="", name="invalid")
+            Process(process_code="", name="invalid")
         node_id, other_id = str(uuid4()), str(uuid4())
         result = validate_graph(
             [{"node_id": node_id, "node_code": "A"}, {"node_id": other_id, "node_code": "A"}],

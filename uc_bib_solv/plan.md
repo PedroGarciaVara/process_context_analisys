@@ -1885,6 +1885,29 @@ Esta fase es únicamente de auditoría y diseño. No se modificará código hast
 - Se añadieron gates para exigir módulos de caso de uso con `execute(...)`, ports segregados y ausencia de los agregadores legacy.
 - No se modificaron PostgreSQL, esquema ni datos.
 
+## Nueva auditoría — estándar arquitectónico normativo
+
+### Objetivo
+
+Auditar el repositorio real conforme a Domain-oriented Modular Monolith, Clean Architecture, Domain-First y Hexagonal Architecture, usando el estándar proporcionado por el usuario.
+
+### Alcance
+
+- Mapa real de dominios, capas, entry points, ports, adapters, persistencia y wiring.
+- Dependency Rule y dependencias entre BPM, RCA_TREE y Platform.
+- Domain, Application/use cases, adapters, infrastructure, modular boundaries y naming.
+- Detección de violations y architectural smells con severidad y confianza.
+- Propuesta de arquitectura objetivo mínima y plan de refactorización priorizado.
+- Reglas automatizables y decisiones que requieren validación humana.
+
+### Entregable
+
+Crear un documento de auditoría con las doce secciones normativas solicitadas, sin modificar código de producción, PostgreSQL, configuración runtime ni tests funcionales.
+
+### Restricción
+
+Esta fase es exclusivamente de inspección y documentación. No se implementarán correcciones hasta recibir una autorización explícita posterior.
+
 ## Cierre — retirada física de `bpm/process_modeling`
 
 - Se confirmó que no existían archivos fuente ni referencias activas al namespace `uc_bib_solv.modules.bpm.process_modeling`.

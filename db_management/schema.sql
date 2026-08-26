@@ -253,15 +253,19 @@ CREATE INDEX IF NOT EXISTS idx_machine_type ON maquina(maquinas_tipo_id);
 
 -- Process modeling bounded context (requerimiento_10). These tables are
 -- intentionally independent from the legacy causal graph tables above.
+-- Existing installations require a controlled migration that renames
+-- the legacy process table to bpm_process and recreates/updates every FK
+-- before applying this source schema. This schema intentionally does not
+-- execute that data migration implicitly.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE IF NOT EXISTS pm_process_definition (
+CREATE TABLE IF NOT EXISTS bpm_process (
     process_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     process_code TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     description TEXT,
     abstraction_level INTEGER NOT NULL DEFAULT 0 CHECK (abstraction_level >= 0),
-    parent_process_id UUID REFERENCES pm_process_definition(process_id) ON DELETE RESTRICT,
+    parent_process_id UUID REFERENCES bpm_process(process_id) ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -276,7 +280,7 @@ BEGIN
     ALTER TABLE proceso
         ADD CONSTRAINT proceso_bpm_process_fk
         FOREIGN KEY (bpm_process_id)
-        REFERENCES pm_process_definition(process_id)
+        REFERENCES bpm_process(process_id)
         ON DELETE CASCADE;
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
@@ -284,7 +288,7 @@ ALTER TABLE proceso ALTER COLUMN bpm_process_id SET NOT NULL;
 
 CREATE TABLE IF NOT EXISTS pm_process_version (
     version_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    process_id UUID NOT NULL REFERENCES pm_process_definition(process_id) ON DELETE CASCADE,
+    process_id UUID NOT NULL REFERENCES bpm_process(process_id) ON DELETE CASCADE,
     version_number INTEGER NOT NULL CHECK (version_number > 0),
     change_description TEXT,
     status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'review', 'approved', 'published', 'obsolete')),
@@ -300,7 +304,7 @@ CREATE TABLE IF NOT EXISTS pm_process_node (
     node_type TEXT NOT NULL CHECK (node_type IN ('input', 'output', 'operation', 'subprocess', 'decision', 'stock')),
     name TEXT NOT NULL,
     description TEXT,
-    child_process_id UUID REFERENCES pm_process_definition(process_id) ON DELETE RESTRICT,
+    child_process_id UUID REFERENCES bpm_process(process_id) ON DELETE RESTRICT,
     output_role TEXT CHECK (output_role IN ('normal', 'waste')),
     stock_capacity INTEGER,
     stock_initial_quantity INTEGER,
@@ -337,7 +341,7 @@ CREATE TABLE IF NOT EXISTS machine_operation_configuration (
     machine_id INT NOT NULL REFERENCES maquina(id) ON DELETE CASCADE,
     operation_id UUID NOT NULL REFERENCES pm_process_node(node_id) ON DELETE RESTRICT,
     process_version_id UUID NOT NULL REFERENCES pm_process_version(version_id) ON DELETE RESTRICT,
-    process_id UUID NOT NULL REFERENCES pm_process_definition(process_id) ON DELETE RESTRICT,
+    process_id UUID NOT NULL REFERENCES bpm_process(process_id) ON DELETE RESTRICT,
     contract_id INT REFERENCES contrato(id) ON DELETE SET NULL,
     specific_description TEXT,
     additional_inputs JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -423,7 +427,7 @@ CREATE TABLE IF NOT EXISTS pm_process_transition (
     CONSTRAINT pm_transition_self_chk CHECK (source_node_id <> target_node_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_pm_process_parent ON pm_process_definition(parent_process_id);
+CREATE INDEX IF NOT EXISTS idx_pm_process_parent ON bpm_process(parent_process_id);
 CREATE INDEX IF NOT EXISTS idx_pm_version_process ON pm_process_version(process_id);
 CREATE INDEX IF NOT EXISTS idx_pm_node_code ON pm_process_node(node_code);
 CREATE INDEX IF NOT EXISTS idx_pm_node_child_process ON pm_process_node(child_process_id);
@@ -435,7 +439,7 @@ BEGIN
     ALTER TABLE contrato
         ADD CONSTRAINT contrato_bpm_process_fk
         FOREIGN KEY (bpm_process_id)
-        REFERENCES pm_process_definition(process_id)
+        REFERENCES bpm_process(process_id)
         ON DELETE RESTRICT;
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;

@@ -1,6 +1,6 @@
 # Fixture/estructuración del proceso ML de Fabricación de Mezclas de Caucho — cobertura y desglose BPM para requerimiento_12
 
-> **Clasificación obligatoria:** este documento es una estructuración formal del proceso de fabricación de mezclas de caucho (`proceso_ML.md`) para validar la cobertura del contexto estructurado generalista de `requerimiento_12`. **NO sustituye el esquema generalista relacional ni crea un bounded context o tablas exclusivas de ML.** Sus conceptos y nodos se mapean directamente al BPM relacional (`pm_process_definition`, `pm_process_version`, `pm_process_node`, `pm_process_transition`) y al detalle JSON/JSONB generalista compartido por todos los procesos del sistema.
+> **Clasificación obligatoria:** este documento es una estructuración formal del proceso de fabricación de mezclas de caucho (`proceso_ML.md`) para validar la cobertura del contexto estructurado generalista de `requerimiento_12`. **NO sustituye el esquema generalista relacional ni crea un bounded context o tablas exclusivas de ML.** Sus conceptos y nodos se mapean directamente al BPM relacional (`bpm_process`, `pm_process_version`, `pm_process_node`, `pm_process_transition`) y al detalle JSON/JSONB generalista compartido por todos los procesos del sistema.
 
 ---
 
@@ -283,7 +283,7 @@ La introducción se desencadena por **tiempo de ciclo**, **temperatura de masa**
 
 ## 10. Modelo de conocimiento recomendado
 
-1. **Definición Versionada BPM:** Registro formal del diagrama de procesos, operaciones, stocks y salidas en `pm_process_definition`, `pm_process_version`, `pm_process_node` y `pm_process_transition`.
+1. **Definición Versionada BPM:** Registro formal del diagrama de procesos, operaciones, stocks y salidas en `bpm_process`, `pm_process_version`, `pm_process_node` y `pm_process_transition`.
 2. **Detalle Semántico por Nodo (JSONB):** Descripción detallada de parámetros ($v_{\max}, v_{\min}, K$, respiros de pilón, 60 °C en aceite), objetivos y equipos asignados en `pm_process_node_metadata`.
 3. **Contexto de Ejecución y Evidencia:** Captura estructurada de ejecuciones de mezcla, lotes de caucho/negro, desviaciones y paradas mediante `pm_context_record`.
 
@@ -334,7 +334,7 @@ La introducción se desencadena por **tiempo de ciclo**, **temperatura de masa**
 - Proceso BPM esperado: `process_code=PROCESO_ML_FABRICACION`, `name=PROCESO_ML_FABRICACION`.
 - Versión determinista de test: `version_number=1`, estado `draft`, con UUID derivado del seed `R12_ML_FIXTURE_V1`.
 - Comandos previstos: `python3 scripts/seed_req12_ml_fixture.py --dry-run --json` y `python3 scripts/seed_req12_ml_fixture.py --json`.
-- La carga usa únicamente `pm_process_definition`, `pm_process_version`, `pm_process_node`, `pm_process_transition`, `pm_process_node_metadata`, `pm_context_record`, `proceso`, `maquina`, `contrato`, `contrato_maquina` y `machine_operation_configuration`.
+- La carga usa únicamente `bpm_process`, `pm_process_version`, `pm_process_node`, `pm_process_transition`, `pm_process_node_metadata`, `pm_context_record`, `proceso`, `maquina`, `contrato`, `contrato_maquina` y `machine_operation_configuration`.
 - La limpieza está acotada a la versión determinista y a la procedencia `R12_ML_FIXTURE_V1`; no borra contratos, máquinas ni datos ajenos.
 
 ### Resultado de ejecución en esta sesión

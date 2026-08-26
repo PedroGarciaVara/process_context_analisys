@@ -103,7 +103,7 @@ def cleanup_fixture(fixture: dict[str, Any] | None = None, *, prefix: str | None
                 if process_ids:
                     cur.execute("DELETE FROM proceso WHERE id = ANY(%s)", (process_ids,)); deleted["processes"] = cur.rowcount
                 cur.execute("DELETE FROM maquinas_tipo WHERE nombre LIKE %s AND NOT EXISTS (SELECT 1 FROM maquina WHERE maquina.maquinas_tipo_id = maquinas_tipo.id)", (like,)); deleted["machine_types"] = cur.rowcount
-                cur.execute("DELETE FROM pm_process_definition WHERE process_code LIKE %s", (like,)); deleted["pm_processes"] = cur.rowcount
+                cur.execute("DELETE FROM bpm_process WHERE process_code LIKE %s", (like,)); deleted["bpm_processes"] = cur.rowcount
                 cur.execute("SELECT COUNT(*) FROM node WHERE code LIKE %s OR name LIKE %s", (like, like))
                 remaining_nodes = cur.fetchone()[0]
                 if remaining_nodes:

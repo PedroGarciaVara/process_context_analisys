@@ -295,12 +295,12 @@ Las relaciones deberán almacenarse mediante claves foráneas y tipos controlado
 
 # 6. Modelo relacional propuesto
 
-## 6.1. Tabla `process_definition`
+## 6.1. Tabla `bpm_process`
 
 Representa el proceso canónico.
 
 ```sql
-CREATE TABLE process_definition (
+CREATE TABLE bpm_process (
     process_id UUID PRIMARY KEY,
     process_code VARCHAR(100) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -314,7 +314,7 @@ CREATE TABLE process_definition (
     updated_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_process_parent
         FOREIGN KEY (parent_process_id)
-        REFERENCES process_definition(process_id)
+        REFERENCES bpm_process(process_id)
 );
 ```
 
@@ -336,7 +336,7 @@ CREATE TABLE process_version (
     published_at TIMESTAMPTZ,
     UNIQUE (process_id, version_number),
     FOREIGN KEY (process_id)
-        REFERENCES process_definition(process_id)
+        REFERENCES bpm_process(process_id)
 );
 ```
 
@@ -370,7 +370,7 @@ CREATE TABLE process_node (
     FOREIGN KEY (process_version_id)
         REFERENCES process_version(process_version_id),
     FOREIGN KEY (child_process_id)
-        REFERENCES process_definition(process_id)
+        REFERENCES bpm_process(process_id)
 );
 ```
 
@@ -552,7 +552,7 @@ CREATE TABLE process_variant (
     priority INTEGER NOT NULL DEFAULT 0,
     status VARCHAR(30) NOT NULL,
     FOREIGN KEY (base_process_id)
-        REFERENCES process_definition(process_id)
+        REFERENCES bpm_process(process_id)
 );
 ```
 
@@ -717,7 +717,7 @@ CREATE TABLE process_implementation (
     valid_to TIMESTAMPTZ,
     status VARCHAR(30) NOT NULL,
     FOREIGN KEY (process_id)
-        REFERENCES process_definition(process_id),
+        REFERENCES bpm_process(process_id),
     FOREIGN KEY (equipment_class_id)
         REFERENCES equipment_class(equipment_class_id),
     FOREIGN KEY (equipment_model_id)

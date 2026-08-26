@@ -26,17 +26,17 @@ from .use_cases.machines import (
     UpdateMachine,
 )
 from .use_cases.operations import ListOperations
-from .use_cases.processes import CreateProcess, DeleteProcess, ListProcesses, UpdateProcess
+from .use_cases.processes import CreateOperationalProcess, DeleteOperationalProcess, ListOperationalProcesses, UpdateOperationalProcess
 
 
 class BpmOperationalApplication:
     """Compose named BPM use cases without containing domain logic."""
 
     def __init__(self, persistence):
-        self.list_processes_use_case = ListProcesses(persistence)
-        self.create_process_use_case = CreateProcess(persistence)
-        self.update_process_use_case = UpdateProcess(persistence)
-        self.delete_process_use_case = DeleteProcess(persistence)
+        self.list_processes_use_case = ListOperationalProcesses(persistence)
+        self.create_process_use_case = CreateOperationalProcess(persistence)
+        self.update_process_use_case = UpdateOperationalProcess(persistence)
+        self.delete_process_use_case = DeleteOperationalProcess(persistence)
         self.list_operations_use_case = ListOperations(persistence)
         self.get_operational_catalog_use_case = GetOperationalCatalog(persistence)
         self.get_operational_page_use_case = GetOperationalPage(persistence)

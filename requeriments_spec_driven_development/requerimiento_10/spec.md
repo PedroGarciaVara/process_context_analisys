@@ -249,7 +249,7 @@ La fuente de verdad será PostgreSQL. Para mantener aislado el bounded context, 
 
 El modelo mínimo será:
 
-- `pm_process_definition`: proceso canónico y relación padre opcional;
+- `bpm_process`: proceso canónico y relación padre opcional;
 - `pm_process_version`: versión y estado;
 - `pm_process_node`: nodos de una versión y `child_process_id` opcional;
 - `pm_process_transition`: relaciones dirigidas de una versión.

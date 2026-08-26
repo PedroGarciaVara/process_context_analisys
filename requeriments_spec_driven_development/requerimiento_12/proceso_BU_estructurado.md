@@ -335,7 +335,7 @@ Para técnicos y agentes conviene separar:
 6. Trazabilidad causal: vínculo explícito entre nodo BPM, puesto, medición, incidente, hipótesis, evidencia, causa y conclusión.
 7. Conocimiento técnico: significado del parámetro, ajuste, síntomas de deriva, comprobación y evidencia esperada.
 
-La aplicación actual ofrece soporte implementado para procesos versionados, nodos, relaciones explícitas y análisis causal. La continuidad obligatoria reutiliza `pm_process_definition`, `pm_process_version`, `pm_process_node`, `pm_process_transition` y `pm_process_node_metadata`; requerimiento_12 solo asegura las relaciones correctas y el detalle semántico por nodo. No se crea un modelo persistente paralelo de MACBU/BU ni se ha localizado ingestión de Nivel 1, Nivel 2 o PI.
+La aplicación actual ofrece soporte implementado para procesos versionados, nodos, relaciones explícitas y análisis causal. La continuidad obligatoria reutiliza `bpm_process`, `pm_process_version`, `pm_process_node`, `pm_process_transition` y `pm_process_node_metadata`; requerimiento_12 solo asegura las relaciones correctas y el detalle semántico por nodo. No se crea un modelo persistente paralelo de MACBU/BU ni se ha localizado ingestión de Nivel 1, Nivel 2 o PI.
 
 ## 11. Necesidades prioritarias para requerimiento_12
 

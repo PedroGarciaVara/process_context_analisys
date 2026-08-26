@@ -1,14 +1,14 @@
 import unittest
 from uuid import uuid4
 
-from uc_bib_solv.modules.bpm.domain.processes.entities import ProcessDefinition, ProcessNode, ProcessTransition, ProcessVersion
+from uc_bib_solv.modules.bpm.domain.processes.entities import Process, ProcessNode, ProcessTransition, ProcessVersion
 from uc_bib_solv.modules.bpm.domain.processes.exceptions import ProcessModelingError
 from uc_bib_solv.modules.bpm.domain.processes.rules import validate_graph, validate_hierarchy
 
 
 class ProcessModelingDomainTests(unittest.TestCase):
     def test_entities_are_framework_free_and_serializable(self):
-        process = ProcessDefinition(process_code="PROC-01", name="Proceso 1")
+        process = Process(process_code="PROC-01", name="Proceso 1")
         version = ProcessVersion(process_id=process.process_id)
         node = ProcessNode(version_id=version.version_id, node_code="N-01", node_type="input", name="Entrada")
         other = ProcessNode(version_id=version.version_id, node_code="N-02", node_type="output", name="Salida")

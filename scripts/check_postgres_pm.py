@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 from uc_bib_solv.modules.platform.infrastructure.postgres import get_connection  # noqa: E402
 
 EXPECTED_TABLES = {
-    "pm_process_definition",
+    "bpm_process",
     "pm_process_version",
     "pm_process_node",
     "pm_process_transition",
