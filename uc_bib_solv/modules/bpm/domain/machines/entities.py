@@ -103,3 +103,15 @@ class MachineOperationConfiguration:
         validated = validate_configuration_payload(self.__dict__)
         for key, value in validated.items():
             setattr(self, key, value)
+
+    def change_validation_status(self, status: str) -> None:
+        """Change lifecycle status through the configuration aggregate."""
+        validated = validate_configuration_payload(
+            {"machine_id": self.machine_id, "operation_id": self.operation_id,
+             "process_id": self.process_id, "validation_status": status}
+        )
+        self.validation_status = validated["validation_status"]
+
+    def to_create_payload(self) -> dict[str, Any]:
+        """Return only the normalized writable state for persistence."""
+        return {key: value for key, value in self.__dict__.items() if key != "id"}

@@ -1,4 +1,4 @@
--- Canonical graph tables are created first because legacy records reference them.
+-- Canonical graph tables are created first because entity tables reference them.
 CREATE TABLE IF NOT EXISTS node (
     id BIGSERIAL PRIMARY KEY,
     node_type VARCHAR(50) NOT NULL,
@@ -6,12 +6,9 @@ CREATE TABLE IF NOT EXISTS node (
     name TEXT NOT NULL,
     description TEXT,
     status VARCHAR(50),
-    legacy_table VARCHAR(50),
-    legacy_id INT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    CONSTRAINT node_legacy_unq UNIQUE (legacy_table, legacy_id)
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS relationship (

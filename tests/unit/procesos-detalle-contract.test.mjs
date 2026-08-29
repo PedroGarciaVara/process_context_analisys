@@ -25,8 +25,9 @@ test("el detalle BPM carga y guarda nombre y descripción", () => {
   assert.match(detailSource, /renderPageAlert/);
 });
 
-test("la ficha BPM muestra identificación, jerarquía, estado y versiones", () => {
-  for (const field of ["process-page-code", "Identificador BPM", "process-page-parent", "process-page-level", "process-page-status", "Versiones existentes"]) {
+test("la ficha BPM muestra identificación, jerarquía y estado sin versiones", () => {
+  for (const field of ["process-page-code", "Identificador BPM", "process-page-parent", "process-page-level", "process-page-status"]) {
     assert.match(detailSource, new RegExp(field));
   }
+  assert.doesNotMatch(detailSource, /Versiones existentes|version_id|versionId/);
 });

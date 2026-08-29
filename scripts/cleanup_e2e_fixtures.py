@@ -88,16 +88,16 @@ def cleanup_fixture(fixture: dict[str, Any] | None = None, *, prefix: str | None
                     cur.execute("DELETE FROM hypothesis_expected_evidence WHERE hypothesis_node_id IN (SELECT node_id FROM hipotesis WHERE causa_id IN (SELECT id FROM causa WHERE contrato_id = ANY(%s)))", (contract_ids,)); deleted["hypothesis_expected_evidence"] = cur.rowcount
                     cur.execute("DELETE FROM analisis_causas_detalle WHERE causa_id IN (SELECT id FROM causa WHERE contrato_id = ANY(%s)) OR hipotesis_id IN (SELECT id FROM hipotesis WHERE causa_id IN (SELECT id FROM causa WHERE contrato_id = ANY(%s)))", (contract_ids, contract_ids)); deleted["analysis_details"] = cur.rowcount
                     cur.execute("DELETE FROM analisis_resultado WHERE causa_id IN (SELECT id FROM causa WHERE contrato_id = ANY(%s)) OR hipotesis_id IN (SELECT id FROM hipotesis WHERE causa_id IN (SELECT id FROM causa WHERE contrato_id = ANY(%s)))", (contract_ids, contract_ids)); deleted["causal_results"] = cur.rowcount
-                    cur.execute("DELETE FROM node WHERE legacy_table = 'hipotesis' AND legacy_id IN (SELECT id FROM hipotesis WHERE causa_id IN (SELECT id FROM causa WHERE contrato_id = ANY(%s)))", (contract_ids,)); deleted["hypothesis_nodes"] = cur.rowcount
-                    cur.execute("DELETE FROM node WHERE legacy_table = 'causa' AND legacy_id IN (SELECT id FROM causa WHERE contrato_id = ANY(%s))", (contract_ids,)); deleted["cause_nodes"] = cur.rowcount
-                    cur.execute("DELETE FROM node WHERE legacy_table = 'contrato' AND legacy_id = ANY(%s)", (contract_ids,)); deleted["contract_nodes"] = cur.rowcount
+                    cur.execute("DELETE FROM node WHERE id IN (SELECT node_id FROM hipotesis WHERE causa_id IN (SELECT id FROM causa WHERE contrato_id = ANY(%s)))", (contract_ids,)); deleted["hypothesis_nodes"] = cur.rowcount
+                    cur.execute("DELETE FROM node WHERE id IN (SELECT node_id FROM causa WHERE contrato_id = ANY(%s))", (contract_ids,)); deleted["cause_nodes"] = cur.rowcount
+                    cur.execute("DELETE FROM node WHERE id IN (SELECT node_id FROM contrato WHERE id = ANY(%s))", (contract_ids,)); deleted["contract_nodes"] = cur.rowcount
                     cur.execute("DELETE FROM hipotesis WHERE causa_id IN (SELECT id FROM causa WHERE contrato_id = ANY(%s))", (contract_ids,)); deleted["hypotheses"] = cur.rowcount
                     cur.execute("DELETE FROM relationship WHERE parent_node_id IN (SELECT node_id FROM causa WHERE contrato_id = ANY(%s)) OR child_node_id IN (SELECT node_id FROM causa WHERE contrato_id = ANY(%s))", (contract_ids, contract_ids)); deleted["relationships"] = cur.rowcount
                     cur.execute("DELETE FROM causa WHERE contrato_id = ANY(%s)", (contract_ids,)); deleted["causes"] = cur.rowcount
                     cur.execute("DELETE FROM contrato_maquina WHERE contrato_id = ANY(%s)", (contract_ids,)); deleted["contract_machine_by_contract"] = cur.rowcount
                 if machine_ids:
                     cur.execute("DELETE FROM maquina WHERE id = ANY(%s)", (machine_ids,)); deleted["machines"] = cur.rowcount
-                    cur.execute("DELETE FROM node WHERE legacy_table = 'maquina' AND legacy_id = ANY(%s)", (machine_ids,)); deleted["machine_nodes"] = cur.rowcount
+                    cur.execute("DELETE FROM node WHERE id IN (SELECT node_id FROM maquina WHERE id = ANY(%s))", (machine_ids,)); deleted["machine_nodes"] = cur.rowcount
                 if contract_ids:
                     cur.execute("DELETE FROM contrato WHERE id = ANY(%s)", (contract_ids,)); deleted["contracts"] = cur.rowcount
                 if process_ids:

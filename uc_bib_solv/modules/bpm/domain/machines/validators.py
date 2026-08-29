@@ -176,6 +176,9 @@ def validate_configuration_payload(payload: dict, *, partial: bool = False) -> d
     if status not in OPERATION_STATUSES:
         raise MachineModelError("validation_status no permitido", "invalid_validation_status")
     result["validation_status"] = status
+    for field in ("additional_inputs", "specific_controls", "available_measurements", "specific_safety_rules"):
+        if result.get(field) is None:
+            result[field] = []
     _valid_json_contract(result, frozenset({"additional_inputs", "specific_controls", "available_measurements", "specific_safety_rules"}))
     valid_from = payload.get("valid_from")
     valid_to = payload.get("valid_to")

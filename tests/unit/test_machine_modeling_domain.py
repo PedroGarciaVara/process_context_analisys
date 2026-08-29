@@ -47,6 +47,19 @@ class MachineModelingDomainTests(unittest.TestCase):
         machine.assign_contract(None)
         self.assertIsNone(machine.contract_id)
 
+    def test_configuration_exposes_normalized_state_and_domain_status_change(self):
+        configuration = MachineOperationConfiguration(
+            machine_id=1,
+            operation_id=str(uuid4()),
+            process_id=str(uuid4()),
+            additional_inputs=None,
+        )
+        self.assertEqual(configuration.to_create_payload()["additional_inputs"], [])
+        configuration.change_validation_status("validated")
+        self.assertEqual(configuration.validation_status, "validated")
+        with self.assertRaises(MachineModelError):
+            configuration.change_validation_status("published")
+
 
 if __name__ == "__main__":
     unittest.main()

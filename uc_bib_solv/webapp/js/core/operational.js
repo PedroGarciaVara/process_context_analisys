@@ -67,10 +67,9 @@ export function getOperations(state) {
         byKey.set(key, {
           id: key,
           operationId: operation.operation_id,
-          processId: operation.process_id,
-          // The machine page selects the legacy numeric process. Keep the BPM
-          // UUID separately so it can be sent as the canonical operation scope.
-          processId: operation.legacy_process_id ?? operation.processId ?? null,
+          // The machine page selects the operational numeric process. Keep the
+          // BPM UUID separately as the canonical operation scope.
+          processId: operation.operational_process_id ?? null,
           bpmProcessId: operation.process_id,
           name: displayName(operation, "Operación sin nombre"),
           nodeCode: operation.node_code,

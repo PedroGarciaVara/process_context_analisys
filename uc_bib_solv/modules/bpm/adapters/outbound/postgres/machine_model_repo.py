@@ -64,7 +64,7 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
                    n.properties AS operation_properties,
                    n.process_id, p.name AS process_name,
                    c.nombre AS configuration_contract_name,
-                   c.proceso_id AS configuration_legacy_process_id
+                   c.proceso_id AS configuration_operational_process_id
               FROM machine_operation_configuration moc
               JOIN pm_process_node n ON n.node_id = moc.operation_id
               JOIN bpm_process p ON p.process_id = n.process_id
@@ -109,7 +109,7 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
         "contract_id": effective_contract_id,
         "process_id": selected_configuration.get("process_id") if selected_configuration else None,
         "operation_id": selected_configuration.get("operation_id") if selected_configuration else None,
-        "legacy_process_id": selected_configuration.get("configuration_legacy_process_id") if selected_configuration else None,
+        "operational_process_id": selected_configuration.get("configuration_operational_process_id") if selected_configuration else None,
     }
     return {
         "operation": _operation_block(configurations, operation_id, process_id),

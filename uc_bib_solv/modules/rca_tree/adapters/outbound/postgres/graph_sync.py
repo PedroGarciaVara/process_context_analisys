@@ -78,7 +78,7 @@ def sync_contract_graph(contrato_id: int) -> dict | None:
             int(contract_node["id"]),
             int(process_node["id"]),
             "BELONGS_TO",
-            metadata={"source": "legacy"},
+            metadata={"source": "graph_sync"},
             is_primary=True,
         )
 
@@ -89,7 +89,7 @@ def sync_contract_graph(contrato_id: int) -> dict | None:
                 int(contract_node["id"]),
                 int(machine_node["id"]),
                 "BELONGS_TO",
-                metadata={"source": "legacy"},
+                metadata={"source": "graph_sync"},
                 is_primary=False,
             )
 
@@ -235,42 +235,3 @@ def sync_hypothesis_graph(hipotesis_id: int) -> dict | None:
             is_primary=True,
         )
     return hypothesis_node
-
-
-def sync_existing_legacy_graph() -> None:
-    with db_cursor() as cur:
-        cur.execute("SELECT id FROM proceso ORDER BY id")
-        process_ids = [int(row["id"]) for row in cur.fetchall()]
-        cur.execute("SELECT id FROM maquina ORDER BY id")
-        machine_ids = [int(row["id"]) for row in cur.fetchall()]
-        cur.execute("SELECT id FROM contrato ORDER BY id")
-        contract_ids = [int(row["id"]) for row in cur.fetchall()]
-        cur.execute("SELECT id FROM causa ORDER BY id")
-        cause_ids = [int(row["id"]) for row in cur.fetchall()]
-        cur.execute("SELECT id FROM hipotesis ORDER BY id")
-        hypothesis_ids = [int(row["id"]) for row in cur.fetchall()]
-
-    for process_id in process_ids:
-        _sync_process_node(process_id)
-    for machine_id in machine_ids:
-        _sync_machine_node(machine_id)
-    for contract_id in contract_ids:
-        sync_contract_graph(contract_id)
-    for cause_id in cause_ids:
-        sync_causa_graph(cause_id)
-    for hypothesis_id in hypothesis_ids:
-        sync_hypothesis_graph(hypothesis_id)
-
-    with db_cursor() as cur:
-        cur.execute(
-            """
-            UPDATE analisis_causas_detalle acd
-            SET node_id = n.id
-            FROM node n
-            WHERE acd.node_id IS NULL
-              AND (
-                    (acd.tipo_elemento='causa' AND n.legacy_table='causa' AND n.legacy_id=acd.causa_id)
-                 OR (acd.tipo_elemento='hipotesis' AND n.legacy_table='hipotesis' AND n.legacy_id=acd.hipotesis_id)
-              )
-            """
-        )

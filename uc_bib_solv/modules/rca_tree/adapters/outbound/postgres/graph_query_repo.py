@@ -21,7 +21,7 @@ def _flatten_tree(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _contract_node(contrato_id: int) -> dict[str, Any]:
-    contract_node = node_repo.get_by_legacy_ref("contrato", int(contrato_id))
+    contract_node = node_repo.get_for_contract(int(contrato_id))
     if not contract_node:
         raise ValueError(f"Contrato {contrato_id} no migrado al grafo.")
     return contract_node
@@ -67,8 +67,8 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
                 gw.child_node_id,
                 gw.relationship_type,
                 parent.node_type AS parent_node_type,
-                parent.legacy_table AS parent_legacy_table,
-                parent.legacy_id AS parent_legacy_id,
+                parent_contract.id AS parent_contract_id,
+                parent_cause.id AS parent_cause_id,
                 parent.name AS parent_name,
                 child.id AS node_id,
                 child.node_type,
@@ -76,13 +76,17 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
                 child.name,
                 child.description,
                 child.status,
-                child.legacy_table,
-                child.legacy_id,
+                child_contract.id AS child_contract_id,
+                child_cause.id AS child_cause_id,
                 child.metadata,
                 gw.depth
             FROM graph_walk gw
             JOIN node parent ON parent.id = gw.parent_node_id
             JOIN node child ON child.id = gw.child_node_id
+            LEFT JOIN contrato parent_contract ON parent_contract.node_id = parent.id
+            LEFT JOIN causa parent_cause ON parent_cause.node_id = parent.id
+            LEFT JOIN contrato child_contract ON child_contract.node_id = child.id
+            LEFT JOIN causa child_cause ON child_cause.node_id = child.id
             ORDER BY gw.depth, gw.parent_node_id, gw.child_node_id
             """,
             (int(contract_node_id), int(contract_id)),
@@ -98,15 +102,15 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
         graph_child_id = int(row["child_node_id"])
         metadata = _normalize_metadata(row.get("metadata"))
         node_type = row.get("node_type") or row.get("child_node_type")
-        legacy_id = row.get("legacy_id")
+        child_business_id = row.get("child_cause_id") or row.get("child_contract_id")
         if node_type == "CAUSE":
-            business_id = int(legacy_id) if legacy_id is not None else graph_child_id
+            business_id = int(child_business_id) if child_business_id is not None else graph_child_id
             nombre = row["name"]
             descripcion = row.get("description")
             categoria = metadata.get("categoria") or metadata.get("category")
-            tipo = metadata.get("legacy_tipo") or metadata.get("type") or "causa"
+            tipo = metadata.get("type") or "causa"
         elif node_type == "CONTRACT":
-            business_id = int(legacy_id) if legacy_id is not None else graph_child_id
+            business_id = int(child_business_id) if child_business_id is not None else graph_child_id
             nombre = row["name"]
             descripcion = row.get("description")
             categoria = "contrato"
@@ -118,7 +122,7 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
             categoria = node_type.lower()
             tipo = node_type.lower()
 
-        parent_business_id = row.get("parent_legacy_id")
+        parent_business_id = row.get("parent_cause_id") or row.get("parent_contract_id")
         if parent_business_id is None:
             parent_business_id = int(contract_id)
 
@@ -133,8 +137,6 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
             "categoria": categoria,
             "status": row.get("status"),
             "node_type": node_type,
-            "legacy_table": row.get("legacy_table"),
-            "legacy_id": int(legacy_id) if legacy_id is not None else None,
             "parent_id": int(parent_business_id) if parent_business_id is not None else None,
             "parent_node_id": int(row["parent_node_id"]),
             "relationship_type": row["relationship_type"],
@@ -146,8 +148,8 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
             int(row["parent_node_id"]) == int(contract_node_id)
             or (
                 row.get("parent_node_type") == "CONTRACT"
-                and row.get("parent_legacy_id") is not None
-                and int(row["parent_legacy_id"]) == int(contract_id)
+                and row.get("parent_contract_id") is not None
+                and int(row["parent_contract_id"]) == int(contract_id)
             )
         ):
             root_ids.append(graph_child_id)
@@ -200,15 +202,10 @@ def get_cause_record(causa_id: int) -> dict[str, Any] | None:
                 n.status,
                 n.metadata,
                 (
-                    SELECT parent_contract.legacy_id
+                    SELECT parent_contract.id
                     FROM relationship r
                     JOIN node parent_node ON parent_node.id = r.parent_node_id
-                    LEFT JOIN LATERAL (
-                        SELECT n2.legacy_id
-                        FROM node n2
-                        WHERE n2.id = parent_node.id
-                          AND n2.legacy_table = 'contrato'
-                    ) AS parent_contract ON TRUE
+                    JOIN contrato parent_contract ON parent_contract.node_id = parent_node.id
                     WHERE r.child_node_id = c.node_id
                       AND r.relationship_type IN ('DEPENDS_ON', 'CAUSES')
                     ORDER BY CASE WHEN parent_node.node_type = 'CONTRACT' THEN 0 ELSE 1 END, r.id
@@ -226,7 +223,7 @@ def get_cause_record(causa_id: int) -> dict[str, Any] | None:
         output = dict(row)
         output["metadata"] = _normalize_metadata(output.get("metadata"))
         output["contrato_id"] = output.get("canonical_contract_id") or output.get("contrato_id")
-        output["reused"] = get_structural_incoming_count_by_legacy("causa", int(causa_id)) > 1
+        output["reused"] = get_structural_incoming_count_for_cause(int(causa_id)) > 1
         return output
 
 
@@ -444,8 +441,8 @@ def get_incoming_relationship_count(node_id: int) -> int:
         return int(cur.fetchone()["total"])
 
 
-def get_structural_incoming_count_by_legacy(legacy_table: str, legacy_id: int) -> int:
-    mapped = node_repo.get_by_legacy_ref(legacy_table, int(legacy_id))
+def get_structural_incoming_count_for_cause(cause_id: int) -> int:
+    mapped = node_repo.get_for_cause(int(cause_id))
     if not mapped:
         return 0
     return get_structural_incoming_count(int(mapped["id"]))
@@ -491,10 +488,9 @@ def search_reusable_nodes(node_type: str, text: str | None = None, *, limit: int
                 n.name,
                 n.description,
                 n.status,
-                n.legacy_table,
-                n.legacy_id,
                 n.metadata,
                 contract.id AS contract_id,
+                cause.id AS cause_id,
                 contract.nombre AS contract_name,
                 contract.metrica AS contract_metric,
                 contract.objetivo AS contract_goal,
@@ -513,21 +509,17 @@ def search_reusable_nodes(node_type: str, text: str | None = None, *, limit: int
                       AND incoming.relationship_type IN ('DEPENDS_ON', 'CAUSES')
                 ) AS incoming_relationships
             FROM node n
-            LEFT JOIN contrato contract
-              ON n.legacy_table = 'contrato'
-             AND contract.id = n.legacy_id
+            LEFT JOIN contrato contract ON contract.node_id = n.id
             LEFT JOIN proceso process
               ON process.id = contract.proceso_id
-            LEFT JOIN causa cause
-              ON n.legacy_table = 'causa'
-             AND cause.id = n.legacy_id
+            LEFT JOIN causa cause ON cause.node_id = n.id
             LEFT JOIN contrato owner_contract
               ON owner_contract.id = COALESCE(cause.contrato_id, (
-                    SELECT parent_node.legacy_id
+                    SELECT parent_contract.id
                     FROM relationship rel
                     JOIN node parent_node ON parent_node.id = rel.parent_node_id
+                    JOIN contrato parent_contract ON parent_contract.node_id = parent_node.id
                     WHERE rel.child_node_id = n.id
-                      AND parent_node.legacy_table = 'contrato'
                       AND rel.relationship_type IN ('DEPENDS_ON', 'CAUSES')
                     LIMIT 1
               ))

@@ -117,8 +117,13 @@ class GraphDbIntegrationTests(TestCase):
         self.created_causa_ids.append(int(cause["id"]))
         return cause
 
-    def _legacy_node(self, legacy_table: str, legacy_id: int) -> dict:
-        node = node_repo.get_by_legacy_ref(legacy_table, int(legacy_id))
+    def _owned_node(self, owner: str, entity_id: int) -> dict:
+        loader = {
+            "contrato": node_repo.get_for_contract,
+            "causa": node_repo.get_for_cause,
+            "hipotesis": node_repo.get_for_hypothesis,
+        }[owner]
+        node = loader(int(entity_id))
         self.assertIsNotNone(node)
         return node
 
@@ -173,6 +178,19 @@ class GraphDbIntegrationTests(TestCase):
 
     def tearDown(self):
         with db_cursor() as cur:
+            node_ids: list[int] = []
+            if self.created_process_ids:
+                cur.execute("SELECT node_id FROM proceso WHERE id = ANY(%s) AND node_id IS NOT NULL", (self.created_process_ids,))
+                node_ids.extend(int(row["node_id"]) for row in cur.fetchall())
+            if self.created_contract_ids:
+                cur.execute("SELECT node_id FROM contrato WHERE id = ANY(%s) AND node_id IS NOT NULL", (self.created_contract_ids,))
+                node_ids.extend(int(row["node_id"]) for row in cur.fetchall())
+            if self.created_causa_ids:
+                cur.execute("SELECT node_id FROM causa WHERE id = ANY(%s) AND node_id IS NOT NULL", (self.created_causa_ids,))
+                node_ids.extend(int(row["node_id"]) for row in cur.fetchall())
+            if self.created_hypothesis_ids:
+                cur.execute("SELECT node_id FROM hipotesis WHERE id = ANY(%s) AND node_id IS NOT NULL", (self.created_hypothesis_ids,))
+                node_ids.extend(int(row["node_id"]) for row in cur.fetchall())
             if self.created_analysis_ids:
                 cur.execute("DELETE FROM analisis_causas WHERE id = ANY(%s)", (self.created_analysis_ids,))
             if self.created_hypothesis_ids:
@@ -185,40 +203,14 @@ class GraphDbIntegrationTests(TestCase):
             if self.created_process_ids:
                 cur.execute("DELETE FROM bpm_process WHERE process_id = ANY(%s::uuid[])", (self.created_bpm_process_ids,))
 
-            node_ids: list[int] = []
-            if self.created_process_ids:
-                cur.execute(
-                    "SELECT id FROM node WHERE legacy_table='proceso' AND legacy_id = ANY(%s)",
-                    (self.created_process_ids,),
-                )
-                node_ids.extend(int(row["id"]) for row in cur.fetchall())
-            if self.created_contract_ids:
-                cur.execute(
-                    "SELECT id FROM node WHERE legacy_table='contrato' AND legacy_id = ANY(%s)",
-                    (self.created_contract_ids,),
-                )
-                node_ids.extend(int(row["id"]) for row in cur.fetchall())
-            if self.created_causa_ids:
-                cur.execute(
-                    "SELECT id FROM node WHERE legacy_table='causa' AND legacy_id = ANY(%s)",
-                    (self.created_causa_ids,),
-                )
-                node_ids.extend(int(row["id"]) for row in cur.fetchall())
-            if self.created_hypothesis_ids:
-                cur.execute(
-                    "SELECT id FROM node WHERE legacy_table='hipotesis' AND legacy_id = ANY(%s)",
-                    (self.created_hypothesis_ids,),
-                )
-                node_ids.extend(int(row["id"]) for row in cur.fetchall())
-
             if node_ids:
                 cur.execute("DELETE FROM relationship WHERE parent_node_id = ANY(%s) OR child_node_id = ANY(%s)", (node_ids, node_ids))
                 cur.execute("DELETE FROM node WHERE id = ANY(%s)", (node_ids,))
 
     def test_graph_nodes_and_relationships_are_created_from_legacy_writes(self):
-        root_node = node_repo.get_by_legacy_ref("causa", int(self.root_cause["id"]))
-        child_node = node_repo.get_by_legacy_ref("causa", int(self.child_cause["id"]))
-        hypothesis_node = node_repo.get_by_legacy_ref("hipotesis", int(self.hypothesis["id"]))
+        root_node = node_repo.get_for_cause(int(self.root_cause["id"]))
+        child_node = node_repo.get_for_cause(int(self.child_cause["id"]))
+        hypothesis_node = node_repo.get_for_hypothesis(int(self.hypothesis["id"]))
 
         self.assertIsNotNone(root_node)
         self.assertIsNotNone(child_node)
@@ -271,8 +263,8 @@ class GraphDbIntegrationTests(TestCase):
             categoria="categoria-a",
             parent_id=int(self.root_cause["id"]),
         )
-        root_node = self._legacy_node("causa", int(self.root_cause["id"]))
-        leaf_node = self._legacy_node("causa", int(leaf["id"]))
+        root_node = self._owned_node("causa", int(self.root_cause["id"]))
+        leaf_node = self._owned_node("causa", int(leaf["id"]))
         self._assert_relationship_exists(int(root_node["id"]), int(leaf_node["id"]), "CAUSES")
 
         updated_name = f"IT GRAPH CRUD LEAF UPDATED {self.stamp}"
@@ -295,7 +287,7 @@ class GraphDbIntegrationTests(TestCase):
         self.assertEqual(persisted_cause["tipo"], "efecto")
         self.assertEqual(persisted_cause["categoria"], "categoria-b")
 
-        persisted_node = self._legacy_node("causa", int(leaf["id"]))
+        persisted_node = self._owned_node("causa", int(leaf["id"]))
         self.assertEqual(persisted_node["name"], updated_name)
         self.assertEqual(persisted_node["description"], "updated description")
         self.assertEqual(persisted_node["metadata"]["legacy_tipo"], "efecto")
@@ -307,7 +299,7 @@ class GraphDbIntegrationTests(TestCase):
         leaf_node_id = int(persisted_node["id"])
         self.assertTrue(causa_repo.delete(int(leaf["id"])))
         self.assertIsNone(causa_repo.get_by_id(int(leaf["id"])))
-        self.assertIsNone(node_repo.get_by_legacy_ref("causa", int(leaf["id"])))
+        self.assertIsNone(node_repo.get_for_cause(int(leaf["id"])))
         self.assertEqual(relationship_repo.get_by_child(leaf_node_id, "CAUSES"), [])
 
         projected_after_delete = graph_query_repo.get_projected_causes_for_contract(int(self.contract["id"]))
@@ -316,11 +308,11 @@ class GraphDbIntegrationTests(TestCase):
     def test_contract_projection_supports_three_level_cause_hierarchy(self):
         contract, causes = self._build_depth_three_contract("IT GRAPH DEPTH3")
 
-        root_node = self._legacy_node("causa", int(causes["root"]["id"]))
-        child_a_node = self._legacy_node("causa", int(causes["child_a"]["id"]))
-        child_b_node = self._legacy_node("causa", int(causes["child_b"]["id"]))
+        root_node = self._owned_node("causa", int(causes["root"]["id"]))
+        child_a_node = self._owned_node("causa", int(causes["child_a"]["id"]))
+        child_b_node = self._owned_node("causa", int(causes["child_b"]["id"]))
         grandchild_nodes = {
-            key: self._legacy_node("causa", int(value["id"]))
+            key: self._owned_node("causa", int(value["id"]))
             for key, value in causes.items()
             if key.startswith("grandchild_")
         }
@@ -375,8 +367,8 @@ class GraphDbIntegrationTests(TestCase):
         _, parent_contract = self._create_process_and_contract("IT GRAPH PARENT CONTRACT")
 
         graph_sync.sync_contract_graph(int(parent_contract["id"]))
-        parent_node = self._legacy_node("contrato", int(parent_contract["id"]))
-        child_node = self._legacy_node("contrato", int(child_contract["id"]))
+        parent_node = self._owned_node("contrato", int(parent_contract["id"]))
+        child_node = self._owned_node("contrato", int(child_contract["id"]))
 
         relationship = relationship_repo.create(
             int(parent_node["id"]),
@@ -405,7 +397,7 @@ class GraphDbIntegrationTests(TestCase):
         )
 
         reusable_contracts = graph_query_repo.search_reusable_nodes("contract", text=child_contract["nombre"])
-        self.assertTrue(any(int(row["legacy_id"]) == int(child_contract["id"]) for row in reusable_contracts))
+        self.assertTrue(any(int(row["contract_id"]) == int(child_contract["id"]) for row in reusable_contracts))
 
         child_projection = graph_query_repo.get_projected_causes_for_contract(int(child_contract["id"]))
         self.assertEqual(len(child_projection["rows"]), 7)
@@ -430,11 +422,11 @@ class GraphDbIntegrationTests(TestCase):
         created_contract_id = int(created["contract"]["id"])
         self.created_contract_ids.append(created_contract_id)
 
-        parent_node = self._legacy_node("contrato", int(parent_contract["id"]))
-        created_node = self._legacy_node("contrato", created_contract_id)
+        parent_node = self._owned_node("contrato", int(parent_contract["id"]))
+        created_node = self._owned_node("contrato", created_contract_id)
         self._assert_relationship_exists(int(parent_node["id"]), int(created_node["id"]), "DEPENDS_ON")
 
-        existing_node = self._legacy_node("contrato", int(existing_contract["id"]))
+        existing_node = self._owned_node("contrato", int(existing_contract["id"]))
         linked = java_causas_repository.link_reusable_node(
             contract_id=created_contract_id,
             child_node_id=int(existing_node["id"]),

@@ -110,8 +110,6 @@ def _build_search_result_item(row: dict, *, already_linked: bool) -> dict:
     return {
         "node_id": int(row["id"]),
         "node_type": node_type,
-        "legacy_id": int(row["legacy_id"]) if row.get("legacy_id") is not None else None,
-        "legacy_table": row.get("legacy_table"),
         "code": row.get("code"),
         "name": row.get("name"),
         "description": row.get("description"),
@@ -229,9 +227,9 @@ def search_reusable_nodes(
 
     items: list[dict] = []
     for row in rows:
-        if node_type.upper() == "CONTRACT" and active_contract_id is not None and int(row.get("legacy_id") or 0) == int(active_contract_id):
+        if node_type.upper() == "CONTRACT" and active_contract_id is not None and int(row.get("contract_id") or 0) == int(active_contract_id):
             continue
-        if node_type.upper() == "CAUSE" and active_parent_id is not None and int(row.get("legacy_id") or 0) == int(active_parent_id):
+        if node_type.upper() == "CAUSE" and active_parent_id is not None and int(row.get("cause_id") or 0) == int(active_parent_id):
             continue
         already_linked = int(row["id"]) in existing_child_ids
         items.append(_build_search_result_item(row, already_linked=already_linked))
@@ -279,13 +277,10 @@ def link_reusable_node(
         "parent": {
             "node_id": int(parent_node["id"]),
             "node_type": parent_node["node_type"],
-            "legacy_id": int(parent_node["legacy_id"]) if parent_node.get("legacy_id") is not None else None,
         },
         "child": {
             "node_id": int(child_node["id"]),
             "node_type": child_node["node_type"],
-            "legacy_id": int(child_node["legacy_id"]) if child_node.get("legacy_id") is not None else None,
-            "legacy_table": child_node.get("legacy_table"),
             "name": child_node.get("name"),
         },
         "contract_id": active_contract_id,

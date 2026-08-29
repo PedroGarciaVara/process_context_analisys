@@ -25,7 +25,6 @@ class RcaTreePostgresAdapter:
     def update_hypothesis(self, hypothesis_id, description, kind, validation_criterion, status, **extra): return self.hypothesis_repo.update(int(hypothesis_id), description, kind, validation_criterion, status, **extra)
     def delete_hypothesis(self, hypothesis_id): return self.hypothesis_repo.delete(int(hypothesis_id))
     def get_node(self, node_id): return self.node_repo.get_by_id(int(node_id))
-    def get_by_legacy_ref(self, table, legacy_id): return self.node_repo.get_by_legacy_ref(table, int(legacy_id))
     def create_relationship(self, parent_node_id, child_node_id, relationship_type, **kwargs): return self.relationship_repo.create(int(parent_node_id), int(child_node_id), relationship_type, **kwargs)
     def list_structural_edges(self): return self.tree_repo.get_structural_edges()
     def tree_payload(self, view="arbol", selected_cause_id=None, zoom=1.0, contract_id=None):
@@ -59,7 +58,6 @@ class HypothesisRepositoryAdapter:
 class NodeRepositoryAdapter:
     def __init__(self, persistence): self.persistence = persistence
     def get(self, node_id): return self.persistence.get_node(node_id)
-    def get_by_legacy_ref(self, table, legacy_id): return self.persistence.get_by_legacy_ref(table, legacy_id)
 
 
 class RelationshipRepositoryAdapter:

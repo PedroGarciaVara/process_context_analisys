@@ -10,5 +10,5 @@ class CreateConfiguration:
 
     def execute(self, payload):
         command = ConfigurationCommand.from_payload(payload)
-        MachineOperationConfiguration(**command.to_dict())
-        return self.configuration_port.create_configuration(payload)
+        configuration = MachineOperationConfiguration(**command.to_dict())
+        return self.configuration_port.create_configuration(configuration.to_create_payload())

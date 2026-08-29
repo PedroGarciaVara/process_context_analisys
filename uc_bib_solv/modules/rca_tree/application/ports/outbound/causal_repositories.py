@@ -59,7 +59,6 @@ class HypothesisRepositoryPort(Protocol):
 class NodeRepositoryPort(Protocol):
     def get(self, node_id: int) -> dict[str, Any] | None: ...
 
-    def get_by_legacy_ref(self, table: str, legacy_id: int) -> dict[str, Any] | None: ...
 
 
 class RelationshipRepositoryPort(Protocol):

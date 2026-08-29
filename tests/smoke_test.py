@@ -46,8 +46,8 @@ def run_smoke_test():
     hipotesis_repo.update_status(hip["id"], "validada")
     updated = hipotesis_repo.get_by_id(hip["id"])
     assert updated and updated["estado"] == "validada"
-    assert node_repo.get_by_legacy_ref("causa", int(raiz["id"])) is not None
-    assert node_repo.get_by_legacy_ref("hipotesis", int(hip["id"])) is not None
+    assert node_repo.get_for_cause(int(raiz["id"])) is not None
+    assert node_repo.get_for_hypothesis(int(hip["id"])) is not None
 
     analisis = analysis_repository.create(
         contrato["id"],

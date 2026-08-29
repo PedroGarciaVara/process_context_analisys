@@ -45,7 +45,7 @@ class T9BoundaryTests(unittest.TestCase):
         self.assertEqual(
             hashlib.sha256(schema.read_bytes()).hexdigest(),
             # Baseline of the current intentional db_management schema.
-            "c3c052862f69e6c25e9541e3a257abb7d271ee49b1255696a9dbb776ef19f30c",
+            "18ebe6a415343735869cfd241ed88e6cecd4b2ef391ac8b2a1753c3ecb6b57d2",
         )
 
     def test_http_alias_registry_has_been_removed(self):

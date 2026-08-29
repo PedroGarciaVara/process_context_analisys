@@ -26,8 +26,6 @@ def create(
     code: str | None = None,
     description: str | None = None,
     status: str | None = None,
-    legacy_table: str | None = None,
-    legacy_id: int | None = None,
     metadata: dict | None = None,
 ) -> dict:
     normalized_type = normalize_node_type(node_type)
@@ -38,10 +36,10 @@ def create(
         cur.execute(
             """
             INSERT INTO node(
-                node_type, code, name, description, status, legacy_table, legacy_id, metadata
+                node_type, code, name, description, status, metadata
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id, node_type, code, name, description, status, legacy_table, legacy_id, metadata
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id, node_type, code, name, description, status, metadata
             """,
             (
                 normalized_type,
@@ -49,55 +47,6 @@ def create(
                 name.strip(),
                 description,
                 status,
-                legacy_table,
-                legacy_id,
-                _metadata_payload(metadata),
-            ),
-        )
-        return dict(cur.fetchone())
-
-
-def upsert_legacy_node(
-    node_type: str,
-    legacy_table: str,
-    legacy_id: int,
-    name: str,
-    *,
-    code: str | None = None,
-    description: str | None = None,
-    status: str | None = None,
-    metadata: dict | None = None,
-) -> dict:
-    normalized_type = normalize_node_type(node_type)
-    if not name or not name.strip():
-        raise ValueError("El nombre del nodo es obligatorio.")
-
-    with db_cursor() as cur:
-        cur.execute(
-            """
-            INSERT INTO node(
-                node_type, code, name, description, status, legacy_table, legacy_id, metadata
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (legacy_table, legacy_id)
-            DO UPDATE SET
-                node_type = EXCLUDED.node_type,
-                code = EXCLUDED.code,
-                name = EXCLUDED.name,
-                description = EXCLUDED.description,
-                status = EXCLUDED.status,
-                metadata = EXCLUDED.metadata,
-                updated_at = NOW()
-            RETURNING id, node_type, code, name, description, status, legacy_table, legacy_id, metadata
-            """,
-            (
-                normalized_type,
-                _node_code(normalized_type, code=code or f"{normalized_type}:{legacy_id}"),
-                name.strip(),
-                description,
-                status,
-                legacy_table,
-                int(legacy_id),
                 _metadata_payload(metadata),
             ),
         )
@@ -108,7 +57,7 @@ def get_by_id(node_id: int) -> dict | None:
     with db_cursor() as cur:
         cur.execute(
             """
-            SELECT id, node_type, code, name, description, status, legacy_table, legacy_id, metadata
+            SELECT id, node_type, code, name, description, status, metadata
             FROM node
             WHERE id=%s
             """,
@@ -160,20 +109,6 @@ def get_for_hypothesis(hypothesis_id: int) -> dict | None:
         return dict(row) if row else None
 
 
-def get_by_legacy_ref(legacy_table: str, legacy_id: int) -> dict | None:
-    with db_cursor() as cur:
-        cur.execute(
-            """
-            SELECT id, node_type, code, name, description, status, legacy_table, legacy_id, metadata
-            FROM node
-            WHERE legacy_table=%s AND legacy_id=%s
-            """,
-            (legacy_table, legacy_id),
-        )
-        row = cur.fetchone()
-        return dict(row) if row else None
-
-
 def update(
     node_id: int,
     *,
@@ -200,7 +135,7 @@ def update(
                 metadata=%s,
                 updated_at=NOW()
             WHERE id=%s
-            RETURNING id, node_type, code, name, description, status, legacy_table, legacy_id, metadata
+            RETURNING id, node_type, code, name, description, status, metadata
             """,
             (
                 str(next_name).strip(),
@@ -220,7 +155,7 @@ def search_candidates(node_type: str, text: str | None = None, *, limit: int = 2
             pattern = f"%{text.strip()}%"
             cur.execute(
                 """
-                SELECT id, node_type, code, name, description, status, legacy_table, legacy_id, metadata
+                SELECT id, node_type, code, name, description, status, metadata
                 FROM node
                 WHERE node_type=%s
                   AND (name ILIKE %s OR code ILIKE %s OR COALESCE(description, '') ILIKE %s)
@@ -232,7 +167,7 @@ def search_candidates(node_type: str, text: str | None = None, *, limit: int = 2
         else:
             cur.execute(
                 """
-                SELECT id, node_type, code, name, description, status, legacy_table, legacy_id, metadata
+                SELECT id, node_type, code, name, description, status, metadata
                 FROM node
                 WHERE node_type=%s
                 ORDER BY name, id

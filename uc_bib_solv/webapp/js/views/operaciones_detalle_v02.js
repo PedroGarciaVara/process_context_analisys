@@ -10,18 +10,18 @@ function params() { return readHashParams(); }
 
 export async function loadOperationDetail(processId, nodeId) {
   const response = await getProcess(processId);
-  const { data: payload, version } = normalizeProcessPayload(response, processId);
+  const payload = normalizeProcessPayload(response);
   const node = (payload.nodes || []).find((item) => String(item.node_id) === String(nodeId));
   if (!node || node.node_type !== "operation") throw new Error("La selección no corresponde a una operación BPM.");
   const metadataResponse = await getNodeMetadata(nodeId).catch(() => ({ data: { metadata: node.metadata || {} } }));
-  return { ...node, metadata: metadataResponse?.data?.metadata || node.metadata || {}, process: payload.process, version };
+  return { ...node, metadata: metadataResponse?.data?.metadata || node.metadata || {}, process: payload.process };
 }
 
 async function saveOperation(operation, form) {
   const data = readOperationForm(form);
   await updateNode(operation.node_id, { node_code: data.node_code, name: data.name, description: data.description });
   await updateNodeMetadata(operation.node_id, data.metadata);
-  await updateOperationStages(operation.node_id, operation.version.process_id, data.stages);
+  await updateOperationStages(operation.node_id, operation.process_id, data.stages);
 }
 
 export function renderOperacionesDetalleV02(state, bus) {
@@ -40,7 +40,7 @@ export function renderOperacionesDetalleV02(state, bus) {
     const right = mountRoot.querySelector("[data-shell-right]");
     if (!processId || !nodeId) { if (main) main.innerHTML = '<div class="max-w-5xl mx-auto"><p class="text-red-700">Faltan los identificadores de proceso y operación.</p></div>'; return; }
     loadOperationDetail(processId, nodeId).then((operation) => {
-      if (main) main.innerHTML = `<div class="max-w-5xl mx-auto space-y-xl">${renderDetailHeader({ eyebrow: "Ficha de operación", title: operation.name, description: "Información editable de la operación BPM.", backHref: "#/operaciones_v02", backLabel: "Volver a operaciones" })}<div id="operation-detail-alert" class="hidden rounded-lg border px-md py-sm text-[12px]"></div><form id="operation-detail-form" class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg space-y-lg" novalidate>${operationFormBody(operation, { processName: operation.process?.name, versionLabel: `v${operation.version?.version_number || "—"}` })}<div class="flex justify-end gap-sm"><button type="submit" id="operation-detail-save" data-action="operation-detail-save" class="px-lg py-sm bg-primary text-on-primary text-label-md font-label-md rounded">Guardar cambios</button></div></form></div>`;
+      if (main) main.innerHTML = `<div class="max-w-5xl mx-auto space-y-xl">${renderDetailHeader({ eyebrow: "Ficha de operación", title: operation.name, description: "Información editable de la operación BPM.", backHref: "#/operaciones_v02", backLabel: "Volver a operaciones" })}<div id="operation-detail-alert" class="hidden rounded-lg border px-md py-sm text-[12px]"></div><form id="operation-detail-form" class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg space-y-lg" novalidate>${operationFormBody(operation, { processName: operation.process?.name })}<div class="flex justify-end gap-sm"><button type="submit" id="operation-detail-save" data-action="operation-detail-save" class="px-lg py-sm bg-primary text-on-primary text-label-md font-label-md rounded">Guardar cambios</button></div></form></div>`;
       if (right) right.innerHTML = `<div class="p-lg"><p class="font-label-md text-label-md text-secondary uppercase tracking-widest">Operación seleccionada</p><h2 class="font-headline-md text-headline-md text-primary mt-xs">${escapeHtml(operation.name)}</h2><p class="text-[12px] text-on-surface-variant mt-sm">${escapeHtml(operation.process?.name || "Proceso BPM")}</p></div>`;
       const form = mountRoot.querySelector("#operation-detail-form");
       const alert = mountRoot.querySelector("#operation-detail-alert");

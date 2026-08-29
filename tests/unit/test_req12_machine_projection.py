@@ -26,7 +26,7 @@ class Req12MachineProjectionTests(unittest.TestCase):
             "operation_id": "op-b",
             "process_id": "bpm-process",
             "contract_id": 12,
-            "legacy_process_id": 8,
+            "operational_process_id": 8,
         }]
         contracts = [
             {"id": 11, "processId": 7, "name": "Contrato histórico"},

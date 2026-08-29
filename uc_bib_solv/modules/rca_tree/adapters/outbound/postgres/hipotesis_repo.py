@@ -53,7 +53,7 @@ def create(
         status=estado,
         metadata={
             "source": "app",
-            "legacy_tipo": tipo,
+            "type": tipo,
         },
     )
     with db_cursor() as cur:
@@ -210,7 +210,7 @@ def update(
             status=estado,
             metadata={
                 **(current.get("metadata") or {}),
-                "legacy_tipo": tipo,
+                "type": tipo,
             },
         )
         _replace_collection("hypothesis_required_data", int(current["node_id"]), required_data or [])

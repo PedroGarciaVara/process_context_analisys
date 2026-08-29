@@ -38,9 +38,9 @@ class GraphQueryRepoTests(TestCase):
                 "name": "Causa raiz hija",
                 "description": "desc root",
                 "status": "active",
-                "legacy_id": 501,
+                "child_cause_id": 501,
                 "metadata": {"legacy_tipo": "causa", "categoria": "causa"},
-                "parent_legacy_id": 42,
+                "parent_contract_id": 42,
             },
             {
                 "parent_node_id": 301,
@@ -53,9 +53,9 @@ class GraphQueryRepoTests(TestCase):
                 "name": "Causa nieta",
                 "description": "desc child",
                 "status": "active",
-                "legacy_id": 502,
+                "child_cause_id": 502,
                 "metadata": {"legacy_tipo": "causa", "categoria": "causa"},
-                "parent_legacy_id": 501,
+                "parent_cause_id": 501,
             },
         ]
         cursor = _FakeCursor(rows)

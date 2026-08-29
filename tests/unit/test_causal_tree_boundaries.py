@@ -15,7 +15,6 @@ class CausalTreeBoundaryTests(unittest.TestCase):
 
     def test_tree_wiring_accepts_fake_persistence(self):
         fake = type("Persistence", (), {
-            "get_by_legacy_ref": lambda self, *args: None,
             "get": lambda self, *args: None,
             "get_hypothesis": lambda self, *args: None,
             "list_for_cause": lambda self, *args: [],

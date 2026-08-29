@@ -88,7 +88,7 @@ def _operations_by_machine() -> dict[int, list[dict]]:
         cur.execute(
             """
             SELECT moc.machine_id, moc.operation_id,
-                   moc.process_id, moc.contract_id, c.proceso_id AS legacy_process_id,
+                   moc.process_id, moc.contract_id, c.proceso_id AS operational_process_id,
                    n.node_code, n.name, n.description,
                    n.properties->'etapas' AS stage_payload,
                    p.name AS process_name
@@ -106,7 +106,7 @@ def _operations_by_machine() -> dict[int, list[dict]]:
             item["operation_id"] = str(item["operation_id"])
             item["process_id"] = str(item["process_id"])
             item["contract_id"] = int(item["contract_id"]) if item["contract_id"] is not None else None
-            item["legacy_process_id"] = int(item["legacy_process_id"]) if item["legacy_process_id"] is not None else None
+            item["operational_process_id"] = int(item["operational_process_id"]) if item["operational_process_id"] is not None else None
             stage_payload = item.pop("stage_payload", None)
             if isinstance(stage_payload, dict):
                 stage_payload = stage_payload.get("etapas", [])
@@ -155,14 +155,14 @@ def _contract_scope_options() -> dict:
     with db_cursor() as cur:
         cur.execute(
             """
-            SELECT p.process_id, p.name, lp.id AS legacy_process_id
+            SELECT p.process_id, p.name, lp.id AS operational_process_id
               FROM bpm_process p
               JOIN proceso lp ON lp.bpm_process_id = p.process_id
              ORDER BY p.name, p.process_id
             """
         )
         processes = [
-            {"id": str(row["process_id"]), "name": row["name"], "processId": int(row["legacy_process_id"])}
+            {"id": str(row["process_id"]), "name": row["name"], "processId": int(row["operational_process_id"])}
             for row in cur.fetchall()
         ]
         cur.execute(
@@ -309,7 +309,7 @@ def _decorate_machine(
                 "process_id": item["process_id"],
                 "process_id": item["process_id"],
                 "contract_id": item["contract_id"],
-                "legacy_process_id": item["legacy_process_id"],
+                "operational_process_id": item["operational_process_id"],
                 "etapas": validate_stages(item.get("etapas") or []),
                 "etapas_schema_version": item.get("etapas_schema_version", 1),
             }
@@ -365,7 +365,7 @@ def _filter_machines(
         with db_cursor() as cur:
             cur.execute(
                 """
-                SELECT moc.process_id, c.proceso_id AS legacy_process_id
+                SELECT moc.process_id, c.proceso_id AS operational_process_id
                   FROM machine_operation_configuration moc
                   LEFT JOIN contrato c ON c.id = moc.contract_id
                  WHERE moc.operation_id = %s
@@ -379,8 +379,8 @@ def _filter_machines(
             raise ValueError("La operación BPM no existe o no tiene una configuración canónica.")
         if bpm_process_id and str(operation_scope["process_id"]) != str(bpm_process_id):
             raise ValueError("process_id BPM no coincide con la operación seleccionada.")
-        if process_id and operation_scope["legacy_process_id"] is not None and int(process_id) != int(operation_scope["legacy_process_id"]):
-            raise ValueError("processId legacy no coincide con la operación BPM seleccionada.")
+        if process_id and operation_scope["operational_process_id"] is not None and int(process_id) != int(operation_scope["operational_process_id"]):
+            raise ValueError("processId operativo no coincide con la operación BPM seleccionada.")
     machines = [dict(item) for item in maquina_repo.get_all()]
     records = [
         _decorate_machine(
@@ -445,7 +445,7 @@ def _decorate_page_payload(page: str, payload: dict, params: dict[str, str] | No
     if page not in pages:
         raise ValueError(f"Unsupported operational page: {page}")
 
-    process_id = params.get("processId") or params.get("legacy_process_id") or None
+    process_id = params.get("processId") or None
     raw_process_id = params.get("process_id")
     if process_id is None and raw_process_id and _coerce_optional_int(raw_process_id) is not None:
         process_id = raw_process_id
