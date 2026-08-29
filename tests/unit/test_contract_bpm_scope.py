@@ -29,10 +29,18 @@ class ContractBpmScopeTests(unittest.TestCase):
         contract = Contract(contract_id=None, name="Inicial", bpm_process_id=str(uuid4()))
         contract.rename("Actualizado")
         node_id = str(uuid4())
-        contract.change_scope(bpm_node_id=node_id)
+        contract.change_scope(bpm_node_id=node_id, process_id=3)
         self.assertEqual(contract.name, "Actualizado")
         self.assertEqual(contract.bpm_node_id, node_id)
         self.assertIsNone(contract.bpm_process_id)
+        self.assertEqual(contract.process_id, 3)
+
+    def test_contract_validates_operational_process_when_changed(self):
+        contract = Contract(contract_id=None, name="Inicial", bpm_process_id=str(uuid4()))
+        contract.change_process(3)
+        self.assertEqual(contract.process_id, 3)
+        with self.assertRaises(BpmDomainError):
+            contract.change_process(0)
 
 
 if __name__ == "__main__":

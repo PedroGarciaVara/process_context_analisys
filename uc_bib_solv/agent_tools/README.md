@@ -12,11 +12,11 @@ from uc_bib_solv.modules.platform.adapters.agent_tools import build_default_regi
 
 registry = build_default_registry()
 registry.manifest()                 # descubrimiento
-result = registry.invoke("bpm.version", version_id="...")
+result = registry.invoke("bpm.process", process_id="...")
 result.to_dict()                    # data + trace
 ```
 
-Tools incluidos: `process.catalog`, `process.get`, `bpm.version`,
+Tools incluidos: `process.catalog`, `process.get`, `bpm.process`,
 `context.get`, `causal.tree`, `machine.context`, `contract.list` y
 `kpi.calculate`. Las entradas son validadas antes de llegar al gateway. El
 gateway de producción reutiliza `process_modeling_service`, `causas_repository`,

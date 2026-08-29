@@ -115,3 +115,7 @@ class MachineOperationConfiguration:
     def to_create_payload(self) -> dict[str, Any]:
         """Return only the normalized writable state for persistence."""
         return {key: value for key, value in self.__dict__.items() if key != "id"}
+
+    def identity_key(self) -> tuple[int, str, str]:
+        """Return the database uniqueness identity for this configuration."""
+        return (int(self.machine_id), self.process_id, self.operation_id)

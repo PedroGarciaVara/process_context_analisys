@@ -1,4 +1,5 @@
 import unittest
+import inspect
 from pathlib import Path
 
 from uc_bib_solv.modules.bpm.application import BpmOperationalApplication
@@ -14,8 +15,8 @@ class FakePersistence:
     def list_processes(self):
         return [{"id": 1, "name": "Proceso"}]
 
-    def get_operational_catalog(self, version_id=None):
-        return {"data": {"contractScopes": {"operations": [{"id": "op-1"}]}}}
+    def list_operations(self, process_id=None):
+        return [{"id": "op-1"}]
 
 
 class BpmUseCaseStructureTests(unittest.TestCase):
@@ -24,20 +25,28 @@ class BpmUseCaseStructureTests(unittest.TestCase):
             def list_processes(self): return [{"id": 7}]
 
         class Operations:
-            def get_operational_catalog(self, version_id=None): return {"data": {"contractScopes": {"operations": []}}}
+            def list_operations(self, process_id=None): return []
 
         ports = {
-            "processes": Processes(), "operations": Operations(), "contracts": object(),
-            "associations": object(), "machines": object(), "machine_context": object(),
-            "configurations": object(), "catalog": Operations(), "pages": object(),
+            "processes": Processes(), "operations": Operations(), "contract_queries": Operations(), "contract_commands": Operations(),
+            "association_queries": Operations(), "association_commands": Operations(), "machine_queries": Operations(), "machine_commands": Operations(), "machine_context": object(),
+            "configuration_queries": Operations(), "configuration_commands": Operations(), "catalog": Operations(), "pages": object(),
         }
         application = BpmOperationalApplication(BpmOperationalDependencies(**ports))
 
         self.assertEqual(application.list_processes_use_case.process_port._methods, {"list_processes"})
-        self.assertEqual(application.list_operations_use_case.operations_port._methods, {"get_operational_catalog"})
-        self.assertEqual(application.get_contract_use_case.contract_port._methods, {"get_contract", "list_contracts"})
+        self.assertEqual(application.list_operations_use_case.operations_port._methods, {"list_operations"})
+        self.assertEqual(application.get_contract_use_case.contract_port._methods, {"get_contract"})
+        self.assertEqual(application.create_contract_use_case.contract_port._methods, {"create_contract"})
         self.assertEqual(application.list_machines_use_case.machine_port._methods, {"list_machines"})
+        self.assertEqual(application.create_machine_use_case.machine_port._methods, {"create_machine"})
+        self.assertEqual(application.list_configurations_use_case.configuration_port._methods, {"list_configurations"})
+        self.assertEqual(application.get_contract_machines_use_case.association_port._methods, {"get_contract_machines"})
         self.assertEqual(application.list_processes(), [{"id": 7}])
+        self.assertEqual(
+            list(inspect.signature(application.list_machines).parameters),
+            ["process_id", "contract_id", "operation_id", "bpm_process_id"],
+        )
 
     def test_use_cases_are_grouped_by_bpm_capability(self):
         self.assertEqual(ListOperationalProcesses(FakePersistence()).execute(), [{"id": 1, "name": "Proceso"}])

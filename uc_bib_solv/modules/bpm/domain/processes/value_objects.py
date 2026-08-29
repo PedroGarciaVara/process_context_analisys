@@ -10,9 +10,6 @@ from .exceptions import ProcessModelingError
 NODE_TYPES = frozenset({"input", "output", "operation", "subprocess", "decision", "stock"})
 TRANSITION_TYPES = frozenset({"sequence", "branch"})
 PROCESS_STATUSES = frozenset({"draft", "active"})
-VERSION_STATUSES = frozenset({"draft", "review", "approved", "published", "obsolete"})
-
-
 def require_uuid(value: str | UUID, field: str) -> str:
     try:
         return str(UUID(str(value)))

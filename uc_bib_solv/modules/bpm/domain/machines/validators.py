@@ -158,7 +158,10 @@ def validate_machine_payload(payload: dict, *, partial: bool = False) -> dict:
     if not partial or "machine_type_id" in payload:
         if payload.get("machine_type_id") is None:
             raise MachineModelError("machine_type_id es obligatorio", "machine_type_required")
-        result["machine_type_id"] = int(payload["machine_type_id"])
+        machine_type_id = payload["machine_type_id"]
+        if isinstance(machine_type_id, bool) or not isinstance(machine_type_id, int) or machine_type_id <= 0:
+            raise MachineModelError("machine_type_id debe ser un entero positivo", "invalid_machine_type_id")
+        result["machine_type_id"] = machine_type_id
     _valid_json_contract(result, JSON_LIST_FIELDS | {"differences_from_machine_type"})
     return result
 
@@ -176,6 +179,11 @@ def validate_configuration_payload(payload: dict, *, partial: bool = False) -> d
     if status not in OPERATION_STATUSES:
         raise MachineModelError("validation_status no permitido", "invalid_validation_status")
     result["validation_status"] = status
+    contract_id = payload.get("contract_id")
+    if contract_id is not None:
+        if isinstance(contract_id, bool) or not isinstance(contract_id, int) or contract_id <= 0:
+            raise MachineModelError("contract_id debe ser un entero positivo", "invalid_contract_id")
+        result["contract_id"] = contract_id
     for field in ("additional_inputs", "specific_controls", "available_measurements", "specific_safety_rules"):
         if result.get(field) is None:
             result[field] = []

@@ -3,7 +3,28 @@
 Fecha: 2026-08-29  
 Base: `AUDITORIA_ARQUITECTURA.md`  
 Modo: implementación incremental fuera del flujo SDD  
-Estado: pendiente de aprobación humana
+Estado: en progreso
+
+## Progreso actual
+
+- Fase 0 — línea base: completada.
+- Fase 1 — consolidación de migraciones PostgreSQL: completada.
+- Fase 2 — segregación de ports BPM: en progreso.
+  - Port de catálogo separado y consulta individual de contratos: completado.
+  - Retirada de mutaciones operativas inválidas: completado.
+  - Retirada de la fachada `BpmOperationalService`: completado.
+  - Unificación del filtro de máquinas (`bpm_process_id` como único identificador BPM): completado.
+  - Firma explícita de `BpmOperationalApplication.list_machines`: completado.
+  - Port específico `OperationalOperationsPort`: completado.
+  - Separación de ports de consulta y comando de máquinas: completado.
+  - Separación de ports de consulta y comando de contratos: completado.
+  - Separación de ports de consulta y comando de asociaciones contrato–máquina: completado.
+  - Separación de ports de consulta y comando de configuraciones: completado.
+  - Retirada del port monolítico `BpmOperationalPort` sin consumidores: completado.
+  - Sustitución de `ExistingBackendGateway` por `BackendToolsAdapter`: completado.
+- Fase 4 — limpieza RCA_TREE: completada.
+  - Eliminación de nomenclatura y APIs de compatibilidad de referencias de contrato: completada.
+- Próximo subincremento: segregar las capacidades BPM restantes y formalizar los límites de agregado.
 
 ## Objetivo
 
@@ -12,10 +33,10 @@ Cerrar de forma definitiva los puntos ARC-006, ARC-007 y ARC-009, consolidar las
 ## Estado de partida verificado
 
 - ARC-001, ARC-002, ARC-003, ARC-004, ARC-005 y ARC-008: cerrados.
-- ARC-006, ARC-007 y ARC-009: abiertos de forma controlada.
+- ARC-009: abierto de forma controlada; ARC-006 y ARC-007 cerrados.
 - Backend: 20/20 tests Python.
 - Frontend: 54/54 tests JavaScript.
-- Runtime: 68 endpoints declarados y 68 rutas disponibles, sin duplicados.
+- Runtime: 65 endpoints declarados y 65 rutas disponibles, sin duplicados.
 - PostgreSQL configurado: `solve_ishikawa`.
 - `pm_process_version`: ausente.
 - Columnas legacy de `node`: ausentes.
@@ -66,8 +87,8 @@ Objetivo: que la historia de migraciones no permita ejecutar por error una migra
 
 Acciones:
 
-- Revisar `scripts/migrate_rca_tree_node_ownership.sql` y las migraciones posteriores.
-- Separar claramente migraciones históricas ya ejecutadas de migraciones aplicables a una base nueva.
+- Retirar migraciones RCA_TREE intermedias que dependían de columnas ya eliminadas.
+- Mantener una única migración final aplicable a la base de desarrollo local.
 - Crear, si es necesario, una migración final idempotente que:
   - compruebe las precondiciones;
   - asegure `node_id` en propietarios;
@@ -142,13 +163,13 @@ Acciones:
 Criterio de paso:
 
 - Cero referencias internas al nombre retirado.
-- 68 endpoints runtime siguen disponibles.
+- 65 endpoints runtime siguen disponibles.
 - No aparecen aliases nuevos.
 - Suite completa verde.
 
 ### Fase 4 — Limpieza de adaptadores RCA_TREE
 
-Cierra ARC-007.
+Cierra ARC-007. Estado: completada.
 
 Objetivo: que los adaptadores outbound solo traduzcan entre ports y PostgreSQL, sin preparar formularios ni contener lógica de aplicación.
 
@@ -168,7 +189,7 @@ Acciones:
   - transacciones.
 - Migrar consumidores internos a nombres canónicos.
 - Eliminar los adaptadores compatibility sin consumidores.
-- Mantener únicamente traducciones de IDs que sean necesarias en el borde, documentándolas.
+- Verificado: la API canónica usa `contract_id`/`as_int()` y no quedan referencias activas a `legacy_contract_id`/`as_legacy_int()`.
 
 Criterio de paso:
 
@@ -183,13 +204,27 @@ Cierra ARC-009.
 
 Objetivo: que las invariantes centrales estén en entidades/agregados, sin convertir el dominio en una capa artificial.
 
+Avance realizado:
+
+- `Process.assert_graph_consistent()` rechaza nodos y transiciones pertenecientes a otro proceso antes de persistir el grafo.
+- `MachineOperationConfiguration` queda definida una sola vez en `domain.machines.entities`; se elimina la implementación duplicada de `domain.configurations`.
+- `Contract.change_process()` valida la identidad positiva del proceso operativo y `apply_update()` la aplica de forma explícita.
+- `Contract.change_scope()` actualiza conjuntamente el alcance BPM y el propietario operativo con validación atómica del estado de la entidad.
+- `Machine` rechaza `machine_type_id` cero, negativo o booleano antes de persistir.
+- `MachineOperationConfiguration` valida `contract_id` y expone `identity_key()` para la unicidad contextual `(machine_id, process_id, operation_id)`.
+
 Límites definitivos:
 
 - `Process`: raíz del grafo de nodos y transiciones.
 - `Machine`: atributos permanentes de máquina.
 - `MachineOperationConfiguration`: entidad contextual con referencias canónicas a máquina, operación, proceso y contrato.
 - `Contract`: alcance BPM, estado y datos propios.
-- `Operation` y `Stage`: parte del modelo BPM de operaciones, sin versionado.
+- `ProcessNode(node_type="operation")` es la identidad BPM única de operación; `Stage` conserva únicamente el detalle ordenado de etapas.
+- `ProcessRef` y `OperationRef` se mantienen únicamente como referencias compartidas en `platform.application.ports`.
+- `ProcessModelingError` y `MachineModelError` heredan de `BpmDomainError`, centralizando la raíz de errores sin perder códigos específicos.
+- La validación de payload de `Machine` queda centralizada en `machines.validators`; se elimina `machines.payload_rules`.
+- El repositorio de process modeling reutiliza `domain.shared.require_uuid` y elimina su implementación UUID duplicada.
+- Retirados los scripts históricos `migrate_arc009_remove_process_versions.sql`, `migrate_rca_tree_node_ownership.sql` y `migrate_rca_tree_remove_legacy_node_identity.sql`; no quedan migraciones ejecutables que creen o transformen versionado BPM ni identidades legacy.
 
 Acciones:
 
@@ -227,7 +262,7 @@ Acciones:
 
 Criterio de cierre:
 
-- ARC-006, ARC-007 y ARC-009 pasan a CERRADO.
+- ARC-007 pasa a CERRADO; ARC-006 y ARC-009 quedan pendientes de sus incrementos específicos.
 - No existen aliases sin consumidor justificado.
 - La auditoría y README no contradicen el código.
 - Suite backend/frontend, validadores, T9 y verificación PostgreSQL local pasan.
@@ -281,4 +316,3 @@ Cada fase debe limitar sus cambios a sus archivos y migraciones identificados. A
 ## Resultado esperado
 
 Una arquitectura sin duplicidad de entidades, sin versionado BPM persistente, con ports estrechos, adaptadores tecnológicos puros, migraciones PostgreSQL seguras y un dominio BPM que contenga sus invariantes reales sin sobreingeniería.
-

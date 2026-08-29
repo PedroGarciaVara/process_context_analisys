@@ -7,7 +7,6 @@ from typing import Any
 from uuid import uuid4
 
 from ..shared.exceptions import BpmDomainError
-from ..shared.value_objects import require_text as bpm_require_text
 from ..shared.value_objects import require_uuid as bpm_require_uuid
 from .exceptions import ProcessModelingError
 from .value_objects import (
@@ -69,6 +68,15 @@ class Process:
         """Guard the process graph before a node or transition is persisted."""
         from .rules import validate_graph
 
+        def owner(item: Any) -> str:
+            return str(getattr(item, "process_id", None) if hasattr(item, "process_id") else item.get("process_id"))
+
+        foreign_nodes = [node for node in nodes if owner(node) != self.process_id]
+        if foreign_nodes:
+            raise ProcessModelingError("El grafo contiene un nodo de otro proceso", "node_process_mismatch")
+        foreign_transitions = [transition for transition in transitions if owner(transition) != self.process_id]
+        if foreign_transitions:
+            raise ProcessModelingError("El grafo contiene una transición de otro proceso", "transition_process_mismatch")
         result = validate_graph(nodes, transitions)
         if result["valid"]:
             return

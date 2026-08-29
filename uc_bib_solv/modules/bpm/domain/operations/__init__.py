@@ -1,5 +1,5 @@
-"""Operation aggregate entities and rules."""
+"""Operation-specific value objects."""
 
-from .entities import Operation, Stage
+from .entities import Stage
 
-__all__ = ["Operation", "Stage"]
+__all__ = ["Stage"]

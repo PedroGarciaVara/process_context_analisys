@@ -2,7 +2,7 @@
 
 1. Descubre primero `ToolRegistry.manifest()` y usa únicamente nombres
    registrados.
-2. Selecciona un `version_id` BPM antes de pedir `context.get`; filtra por
+2. Selecciona un `process_id` BPM antes de pedir `context.get`; filtra por
    `node_id`, `family` o `record_type` cuando sea posible.
 3. Trata `process`, `version`, `node`, `transition` y las relaciones causales
    como identificadores estructurales. No reconstruyas relaciones a partir de

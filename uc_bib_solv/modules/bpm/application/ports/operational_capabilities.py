@@ -6,33 +6,42 @@ from typing import Any, Protocol
 
 class OperationalProcessPort(Protocol):
     def list_processes(self) -> list[dict[str, Any]]: ...
-    def create_process(self, payload: dict[str, Any]) -> dict[str, Any]: ...
-    def update_process(self, process_id: int, payload: dict[str, Any]) -> dict[str, Any]: ...
-    def delete_process(self, process_id: int) -> bool: ...
+
+
+class OperationalCatalogPort(Protocol):
+    def get_operational_catalog(self, process_id: str | None = None) -> dict[str, Any]: ...
 
 
 class OperationalOperationsPort(Protocol):
-    def get_operational_catalog(self, process_id: str | None = None) -> dict[str, Any]: ...
-    def update_operation_stages(self, operation_id, payload): ...
+    def list_operations(self, process_id: str | None = None) -> list[dict[str, Any]]: ...
 
 
-class OperationalContractPort(Protocol):
+class OperationalContractQueryPort(Protocol):
     def list_contracts(self, process_id=None, status=None) -> list[dict[str, Any]]: ...
     def get_contract(self, contract_id): ...
+
+
+class OperationalContractCommandPort(Protocol):
     def create_contract(self, payload): ...
     def update_contract(self, contract_id, payload): ...
     def toggle_contract(self, contract_id): ...
     def delete_contract(self, contract_id): ...
 
 
-class OperationalAssociationPort(Protocol):
+class OperationalAssociationQueryPort(Protocol):
     def get_contract_machines(self, contract_id): ...
+
+
+class OperationalAssociationCommandPort(Protocol):
     def save_contract_machines(self, contract_id, payload): ...
 
 
-class OperationalMachinePort(Protocol):
+class OperationalMachineQueryPort(Protocol):
     def get_machine(self, machine_id): ...
-    def list_machines(self, process_id=None, contract_id=None, operation_id=None, process_id_bpm=None, bpm_process_id=None): ...
+    def list_machines(self, process_id=None, contract_id=None, operation_id=None, bpm_process_id=None): ...
+
+
+class OperationalMachineCommandPort(Protocol):
     def create_machine(self, payload): ...
     def update_machine(self, machine_id, payload): ...
     def delete_machine(self, machine_id): ...
@@ -42,8 +51,11 @@ class OperationalMachineContextPort(Protocol):
     def get_machine_context(self, machine_id, operation_id=None, process_id=None): ...
 
 
-class OperationalConfigurationPort(Protocol):
+class OperationalConfigurationQueryPort(Protocol):
     def list_configurations(self, machine_id): ...
+
+
+class OperationalConfigurationCommandPort(Protocol):
     def create_configuration(self, payload): ...
 
 
@@ -57,12 +69,16 @@ class BpmOperationalDependencies:
 
     processes: OperationalProcessPort
     operations: OperationalOperationsPort
-    contracts: OperationalContractPort
-    associations: OperationalAssociationPort
-    machines: OperationalMachinePort
+    contract_queries: OperationalContractQueryPort
+    contract_commands: OperationalContractCommandPort
+    association_queries: OperationalAssociationQueryPort
+    association_commands: OperationalAssociationCommandPort
+    machine_queries: OperationalMachineQueryPort
+    machine_commands: OperationalMachineCommandPort
     machine_context: OperationalMachineContextPort
-    configurations: OperationalConfigurationPort
-    catalog: OperationalOperationsPort
+    configuration_queries: OperationalConfigurationQueryPort
+    configuration_commands: OperationalConfigurationCommandPort
+    catalog: OperationalCatalogPort
     pages: OperationalPagePort
 
     @staticmethod

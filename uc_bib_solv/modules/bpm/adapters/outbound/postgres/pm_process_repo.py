@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 import json
-from uuid import UUID
 
 from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
 from uc_bib_solv.modules.bpm.domain.machines.validators import canonical_stages
-
-
-def _uuid(value: str) -> str:
-    return str(UUID(str(value)))
-
+from uc_bib_solv.modules.bpm.domain.shared.value_objects import require_uuid as _uuid
 
 def _node_record(row):
     result = dict(row)

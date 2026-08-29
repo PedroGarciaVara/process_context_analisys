@@ -5,12 +5,4 @@ class GetContract:
         self.contract_port = contract_port
 
     def execute(self, contract_id):
-        expected = str(contract_id)
-        return next(
-            (
-                item
-                for item in self.contract_port.list_contracts()
-                if str(item.get("id", item.get("contract_id"))) == expected
-            ),
-            None,
-        )
+        return self.contract_port.get_contract(contract_id)

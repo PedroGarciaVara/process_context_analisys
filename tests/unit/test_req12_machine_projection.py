@@ -41,7 +41,7 @@ class Req12MachineProjectionTests(unittest.TestCase):
              patch.object(operational_repository, "_links_by_machine", return_value={7: [11, 12]}), \
              patch.object(operational_repository, "_operations_by_machine", return_value={7: operations}):
             projected = operational_repository._decorate_machine(
-                machine, operation_id="op-b", process_id_bpm="bpm-process"
+                machine, operation_id="op-b", bpm_process_id="bpm-process"
             )
 
         self.assertEqual(projected["id"], 7)

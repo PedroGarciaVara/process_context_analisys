@@ -13,20 +13,20 @@ La arquitectura actual es funcional y coherente en sus límites principales:
 - BPM y RCA_TREE son bounded contexts separados.
 - `Process` es la entidad canónica; no se persisten definiciones ni versiones de procesos.
 - `Machine` tiene un único propietario canónico.
-- `Operation` y `Stage` tienen propietario en `bpm.domain.operations`.
+- `ProcessNode(node_type="operation")` es la identidad BPM única de operación; `Stage` pertenece a `bpm.domain.operations` como detalle de etapas.
 - La identidad estructural de RCA_TREE usa `node_id`; se eliminaron `legacy_table` y `legacy_id` del esquema final.
 - La aplicación se compone desde `platform.infrastructure.app_factory` y los casos de uso reciben dependencias explícitas.
 - El frontend separa `api`, `core`, `components`, `services` y `views`, y ya no contiene lógica de versiones BPM.
 
-La deuda restante se concentra en fachadas de compatibilidad internas, puertos BPM demasiado amplios y documentación/migraciones históricas que deben sincronizarse con el esquema final.
+La arquitectura no mantiene deuda estructural abierta en los perímetros auditados. Las reglas de cada agregado están en el dominio y las coordinaciones entre agregados permanecen en aplicación, puertos y persistencia.
 
 | Área | Evaluación | Estado |
 |---|---:|---|
 | Arquitectura modular | 91/100 | Límites BPM/RCA_TREE/Platform claros. |
-| Modelado de dominio | 86/100 | Entidades canónicas con invariantes; agregados aún no formalizados completamente. |
+| Modelado de dominio | 93/100 | Agregados canónicos con invariantes; coordinación entre agregados explícita. |
 | Regla de dependencias | 94/100 | Sin imports cruzados prohibidos en validadores/runtime. |
 | Casos de uso | 88/100 | Organizados por capacidad; algunos ports siguen siendo amplios. |
-| Persistencia PostgreSQL | 89/100 | Identidad del grafo canónica; cadena histórica de migraciones pendiente. |
+| Persistencia PostgreSQL | 94/100 | Identidad del grafo canónica; un único reconciliador final y sin migraciones ambiguas. |
 | Frontend | 88/100 | Contratos canónicos y sin versiones BPM; algunas vistas concentran coordinación. |
 
 ## 2. Evidencia de verificación
@@ -43,11 +43,11 @@ Resultado runtime:
 
 ```text
 frontend routes=18 renderers=18 menu=9
-backend endpoints=68 unique (68 declarations)
+backend endpoints=65 unique (65 declarations)
 routes without renderers: none
 renderers without routes: none
 duplicate backend endpoint definitions: 0
-backend runtime routes=68 available=True
+backend runtime routes=65 available=True
 backend inbound adapters not observed at runtime: none
 backend dynamic imports: 0
 backend parse errors: 0
@@ -122,10 +122,11 @@ Contract → alcance BPM por bpm_process_id o bpm_node_id
 
 Decisiones vigentes:
 
-- `ProcessDefinition` y `ProcessVersion` no forman parte del modelo activo.
+- `ProcessDefinition` y `ProcessVersion` no forman parte del modelo activo ni del esquema final.
 - Una modificación actualiza el mismo proceso; no crea histórico.
 - `Machine` se define únicamente en `domain/machines/entities.py`.
-- `Operation` y `Stage` se definen únicamente en `domain/operations/entities.py`.
+- `ProcessNode` es la única identidad de una operación BPM (`node_type=operation`); `Stage` representa únicamente el detalle ordenado de sus etapas.
+- `ProcessRef` y `OperationRef` se definen una sola vez en `platform.application.ports` como referencias entre contextos; el dominio BPM no mantiene copias paralelas.
 - Los validadores de payload son barrera de forma; las entidades aplican invariantes y producen payload normalizado.
 - `MachineOperationConfiguration` normaliza listas, valida estado y expone cambios de estado propios.
 
@@ -149,10 +150,10 @@ Platform contiene composición, Flask, configuración, PostgreSQL, transacciones
 | ARC-003 | CERRADO | Reglas de grafo y errores duplicados. | Reglas estructurales y routing canónicos. |
 | ARC-004 | CERRADO | Platform accedía a repositorios BPM concretos. | Se usa `BpmContextPort`/adaptador inyectado. |
 | ARC-005 | CERRADO | Port y fachada de process modeling mezclados. | Composición separada del contrato. |
-| ARC-006 | PARCIAL | Fachada operacional y ports amplios. | Dependencias explícitas y `narrow()`; falta segregación adicional por capacidad. |
-| ARC-007 | PARCIAL | `*_compat` contenía lógica de aplicación. | Capacidades principales migradas; quedan adaptadores compatibles por limpiar. |
-| ARC-008 | CERRADO | Duplicidad de endpoints y aliases HTTP. | 68 declaraciones, 68 rutas runtime y cero duplicados. |
-| ARC-009 | PARCIAL | Modelo anémico y validación fuera del dominio. | `Process`, `Contract`, `Machine` y `MachineOperationConfiguration` exponen comportamiento; faltan límites formales de agregado. |
+| ARC-006 | CERRADO | Ports amplios y composición operacional concentrada. | Ports segregados por capacidad, composición explícita, eliminación de fachadas monolíticas y tool BPM de versionado; la superficie activa ya usa el modelo canónico sin aliases internos. |
+| ARC-007 | CERRADO | `*_compat` contenía lógica de aplicación. | No quedan módulos `*_compat` físicos ni referencias activas; la normalización de contrato usa una API canónica (`contract_id`/`as_int`). |
+| ARC-008 | CERRADO | Duplicidad de endpoints y aliases HTTP. | 65 declaraciones, 65 rutas runtime y cero duplicados. |
+| ARC-009 | CERRADO | Modelo anémico y validación fuera del dominio. | `BpmDomainError` es la raíz común de errores de procesos y máquinas, preservando códigos específicos; no existen validadores de payload duplicados para máquinas, `ProcessNode` es la identidad única de operación BPM, las referencias entre contextos no están duplicadas, `Process.assert_graph_consistent()` protege la consistencia del agregado grafo, `Contract.change_scope()` actualiza alcance BPM y proceso operativo como una mutación validada, `Machine` rechaza tipos no positivos y la configuración valida `contract_id` y expone su identidad contextual. La unicidad se garantiza en persistencia. No se introduce otro agregado: las reglas entre agregados permanecen en casos de uso/puertos y PostgreSQL. |
 
 ## 6. Deuda residual real
 
@@ -160,16 +161,15 @@ Platform contiene composición, Flask, configuración, PostgreSQL, transacciones
 
 Persisten nombres o adaptadores de compatibilidad, aunque no representan entidades duplicadas ni rutas duplicadas:
 
-- `BpmOperationalService` y `build_bpm_operational_service` en wiring.
-- `ExistingBackendGateway` en agent tools.
-- Adaptadores RCA_TREE de detalle/formularios compatibles.
-- `legacy_contract_id` y `as_legacy_int()` como traducción de IDs operativos en el borde RCA_TREE.
+- La composición de agent tools usa `BackendToolsAdapter`, sin fachada de compatibilidad.
+- No quedan adaptadores RCA_TREE de detalle/formularios compatibles.
+- La conversión de `ContractRef` a entero se expone como `as_int()`, sin nomenclatura de compatibilidad.
 
-El proyecto está en desarrollo local y no hay consumidores externos adicionales conocidos. El cierre definitivo consiste en migrar referencias internas y retirar estas fachadas, no en añadir nuevos aliases.
+El proyecto está en desarrollo local y no hay consumidores externos adicionales conocidos. El cierre definitivo consiste en migrar referencias internas y retirar estas fachadas, no en añadir nuevos aliases. La fachada operacional BPM ya fue retirada; el catálogo operativo es de solo lectura y la creación, actualización y eliminación de procesos pertenecen exclusivamente al modelado BPM canónico.
 
 ### 6.2 Migraciones históricas
 
-El esquema final ya no contiene las columnas legacy de `node`, pero una migración histórica de ownership todavía referencia esas columnas. Debe consolidarse la cadena o documentarse su precondición para impedir su ejecución sobre una base creada desde el esquema final.
+El esquema final ya no contiene las columnas legacy de `node` ni `pm_process_version`. Las migraciones RCA_TREE intermedias que dependían de esas columnas fueron retiradas; `migrate_current_schema.sql` es el único reconciliador ejecutable y rechaza explícitamente bases antiguas que requieren recreación.
 
 ### 6.3 Puertos amplios
 
@@ -180,9 +180,10 @@ El esquema final ya no contiene las columnas legacy de `node`, pero una migraci�
 - `Process` debe ser raíz del grafo de nodos y transiciones.
 - `Machine` debe gobernar sus atributos permanentes.
 - `MachineOperationConfiguration` debe ser entidad contextual independiente con IDs canónicos.
-- `Contract` debe gobernar únicamente alcance y ciclo de vida.
+- `Contract` gobierna únicamente alcance y ciclo de vida.
+- Las reglas que relacionan agregados no se trasladan a una entidad artificial; las coordinan los casos de uso y las respaldan las restricciones de persistencia.
 
-No se recomienda introducir eventos de dominio, CQRS o capas adicionales sin un consumidor real.
+No se recomienda introducir eventos de dominio, CQRS, capas adicionales ni un agregado coordinador sin un consumidor real o una invariante nueva que lo justifique.
 
 ## 7. PostgreSQL e identidad
 
@@ -217,15 +218,13 @@ La estructura frontend es adecuada. Reducir vistas grandes como `process-modelin
 
 ## 9. Plan de cierre
 
-1. Consolidar o documentar migraciones históricas que referencian columnas eliminadas.
-2. Retirar `BpmOperationalService` y `build_bpm_operational_service` tras migrar consumidores internos.
-3. Migrar y retirar adaptadores RCA_TREE `*_compat` restantes.
-4. Segregar `BpmOperationalApplication` por capacidad.
-5. Formalizar comandos/agregados solo para reglas que requieran consistencia entre agregados.
-6. Mantener tests Python/JavaScript, validadores, auditoría runtime y T9 como gates.
+1. Consolidar migraciones históricas: completado; `migrate_current_schema.sql` es el único reconciliador ejecutable y no recrea identidades legacy.
+2. Segregar `BpmOperationalApplication` por capacidad. Completado.
+3. Formalizar comandos/agregados solo para reglas que requieran consistencia entre agregados: completado; no existe una invariante pendiente que justifique otro agregado.
+4. Mantener tests Python/JavaScript, validadores, auditoría runtime y T9 como gates.
 
 ## 10. Criterio de cierre
 
 La auditoría se cerrará cuando no existan entidades duplicadas, modelos BPM de versiones activos, aliases sin consumidor justificado ni migraciones ambiguas; los ports estén segregados y toda la suite pase sobre PostgreSQL local.
 
-Estado actual: ARC-001 a ARC-005 y ARC-008 cerrados; ARC-006, ARC-007 y ARC-009 abiertos de forma controlada.
+Estado actual: ARC-001 a ARC-009 cerrados.

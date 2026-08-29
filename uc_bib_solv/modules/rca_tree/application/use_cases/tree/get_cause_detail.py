@@ -1,6 +1,6 @@
 from typing import Any
 
-from ...dto import integer, legacy_contract_id
+from ...dto import contract_id as normalize_contract_id, integer
 from ...ports.outbound import CauseRepositoryPort, HypothesisRepositoryPort
 
 
@@ -38,7 +38,7 @@ class GetCauseDetail:
         self.hypotheses = hypotheses
 
     def execute(self, params: dict[str, Any]) -> dict[str, Any]:
-        contract_id = legacy_contract_id(params.get("contrato_id"))
+        contract_id = normalize_contract_id(params.get("contrato_id"))
         cause_id = integer(params.get("causa_id"))
         parent_id = integer(params.get("parent_id"))
         hypothesis_id = integer(params.get("hipotesis_id"))

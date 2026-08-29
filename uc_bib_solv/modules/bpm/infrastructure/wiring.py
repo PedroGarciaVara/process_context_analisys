@@ -7,51 +7,25 @@ from ..adapters.outbound.bpm_persistence import BpmPostgresPersistenceAdapter
 from ..application.ports.operational_capabilities import BpmOperationalDependencies
 
 
-class BpmOperationalService:
-    def __init__(self, use_cases):
-        self.use_cases = use_cases
-
-    def list_processes(self): return self.use_cases.list_processes()
-    def list_operations(self, process_id=None): return self.use_cases.list_operations(process_id)
-    def list_contracts(self, process_id=None, status=None): return self.use_cases.list_contracts(process_id, status)
-    def get_contract(self, contract_id): return self.use_cases.get_contract(contract_id)
-    def create_process(self, payload): return self.use_cases.create_process(payload)
-    def update_process(self, process_id, payload): return self.use_cases.update_process(process_id, payload)
-    def delete_process(self, process_id): return self.use_cases.delete_process(process_id)
-    def create_contract(self, payload): return self.use_cases.create_contract(payload)
-    def update_contract(self, contract_id, payload): return self.use_cases.update_contract(contract_id, payload)
-    def toggle_contract(self, contract_id): return self.use_cases.toggle_contract(contract_id)
-    def delete_contract(self, contract_id): return self.use_cases.delete_contract(contract_id)
-    def get_contract_machines(self, contract_id): return self.use_cases.get_contract_machines(contract_id)
-    def save_contract_machines(self, contract_id, payload): return self.use_cases.save_contract_machines(contract_id, payload)
-    def list_machines(self, process_id=None, contract_id=None, operation_id=None, process_id_bpm=None, bpm_process_id=None):
-        return self.use_cases.list_machines(process_id, contract_id, operation_id, process_id_bpm, bpm_process_id)
-    def create_machine(self, payload): return self.use_cases.create_machine(payload)
-    def update_machine(self, machine_id, payload): return self.use_cases.update_machine(machine_id, payload)
-    def delete_machine(self, machine_id): return self.use_cases.delete_machine(machine_id)
-    def get_machine_context(self, machine_id, operation_id=None, process_id=None):
-        return self.use_cases.get_machine_context(machine_id, operation_id, process_id)
-    def list_configurations(self, machine_id): return self.use_cases.list_configurations(machine_id)
-    def create_configuration(self, payload): return self.use_cases.create_configuration(payload)
-    def get_operational_catalog(self, process_id=None): return self.use_cases.get_operational_catalog(process_id)
-    def get_operational_page_payload(self, page, params=None): return self.use_cases.get_operational_page_payload(page, params)
-
-
-def build_bpm_operational_service(*, persistence=None):
+def build_bpm_operational_application(*, persistence=None):
     adapter = persistence or build_bpm_operational_postgres_adapter()
-    return BpmOperationalService(BpmOperationalApplication(_operational_dependencies(adapter)))
+    return BpmOperationalApplication(_operational_dependencies(adapter))
 
 
 def _operational_dependencies(adapter):
     narrow = BpmOperationalDependencies.narrow
     return BpmOperationalDependencies(
-        processes=narrow(adapter, "list_processes", "create_process", "update_process", "delete_process"),
-        operations=narrow(adapter, "get_operational_catalog"),
-        contracts=narrow(adapter, "list_contracts", "get_contract", "create_contract", "update_contract", "toggle_contract", "delete_contract"),
-        associations=narrow(adapter, "get_contract_machines", "save_contract_machines"),
-        machines=narrow(adapter, "get_machine", "list_machines", "create_machine", "update_machine", "delete_machine"),
+        processes=narrow(adapter, "list_processes"),
+        operations=narrow(adapter, "list_operations"),
+        contract_queries=narrow(adapter, "list_contracts", "get_contract"),
+        contract_commands=narrow(adapter, "create_contract", "get_contract", "update_contract", "toggle_contract", "delete_contract"),
+        association_queries=narrow(adapter, "get_contract_machines"),
+        association_commands=narrow(adapter, "save_contract_machines"),
+        machine_queries=narrow(adapter, "get_machine", "list_machines"),
+        machine_commands=narrow(adapter, "create_machine", "get_machine", "update_machine", "delete_machine"),
         machine_context=narrow(adapter, "get_machine_context"),
-        configurations=narrow(adapter, "list_configurations", "create_configuration"),
+        configuration_queries=narrow(adapter, "list_configurations"),
+        configuration_commands=narrow(adapter, "create_configuration"),
         catalog=narrow(adapter, "get_operational_catalog"),
         pages=narrow(adapter, "get_operational_page_payload"),
     )

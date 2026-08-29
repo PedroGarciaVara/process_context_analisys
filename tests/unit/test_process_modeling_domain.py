@@ -69,6 +69,13 @@ class ProcessModelingDomainTests(unittest.TestCase):
             process.assert_graph_consistent([node], [transition])
         self.assertEqual(context.exception.code, "node_reference_missing")
 
+    def test_process_rejects_nodes_from_another_process(self):
+        process = Process(process_code="PROC-01", name="Proceso")
+        foreign = ProcessNode(process_id=str(uuid4()), node_code="IN", node_type="input", name="Entrada")
+        with self.assertRaises(ProcessModelingError) as context:
+            process.assert_graph_consistent([foreign], [])
+        self.assertEqual(context.exception.code, "node_process_mismatch")
+
     def test_diagram_projection_removes_only_redundant_branch_relations(self):
         decision = str(uuid4())
         yes = str(uuid4())

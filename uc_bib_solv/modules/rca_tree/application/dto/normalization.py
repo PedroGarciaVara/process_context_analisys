@@ -13,10 +13,10 @@ def integer(value: Any) -> int | None:
     return int(value)
 
 
-def legacy_contract_id(value: Any) -> int | None:
+def contract_id(value: Any) -> int | None:
     if value in (None, "", "null", []):
         return None
-    return ContractRef.from_value(value).as_legacy_int()
+    return ContractRef.from_value(value).as_int()
 
 
 def normalize_cause_type(value: Any) -> str:
@@ -35,7 +35,7 @@ def normalize_tree_view(value: Any) -> str:
 
 
 def parse_query_string(search: str | None) -> dict[str, str]:
-    """Normalize a legacy query string at the application boundary."""
+    """Normalize query parameters at the application boundary."""
     if not search:
         return {}
     parsed = parse_qs(search.lstrip("?"), keep_blank_values=True)

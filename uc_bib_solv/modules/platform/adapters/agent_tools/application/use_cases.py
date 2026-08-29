@@ -60,9 +60,6 @@ def create_definitions(port: BackendToolPort) -> list[ToolDefinition]:
     def process(args, trace):
         required(args, "process_id")
         return port.process(args["process_id"])
-    def bpm_version(args, trace):
-        required(args, "process_id")
-        return port.process(args["process_id"])
     def structured_context(args, trace):
         required(args, "process_id")
         return port.context(args["process_id"], args.get("node_id"), args.get("family"), args.get("record_type"))
@@ -86,7 +83,7 @@ def create_definitions(port: BackendToolPort) -> list[ToolDefinition]:
     return [
         ToolDefinition("process.catalog", "Descubre procesos BPM disponibles.", {**common, "properties": {}}, process_catalog),
         ToolDefinition("process.get", "Obtiene un proceso y sus versiones.", {**common, "required": ["process_id"], "properties": {"process_id": {}}}, process),
-        ToolDefinition("bpm.process", "Recupera un proceso BPM con nodos, transiciones y relaciones.", {**common, "required": ["process_id"], "properties": {"process_id": {}}}, bpm_version),
+        ToolDefinition("bpm.process", "Recupera un proceso BPM con nodos, transiciones y relaciones.", {**common, "required": ["process_id"], "properties": {"process_id": {}}}, process),
         ToolDefinition("context.get", "Recupera contexto estructurado, detalles, metodología, hechos y evidencias.", {**common, "required": ["process_id"], "properties": {"process_id": {}, "node_id": {}, "family": {}, "record_type": {}}}, structured_context),
         ToolDefinition("causal.tree", "Consulta el árbol causal existente sin alterar su semántica.", {**common, "required": ["view"], "properties": {"view": {"enum": ["arbol", "analisis_causas_v2"]}, "contract_id": {"type": ["integer", "string"]}}}, causal_tree),
         ToolDefinition("machine.context", "Consulta máquina, operaciones BPM, contratos y asignaciones.", {**common, "required": ["machine_id"], "properties": {"machine_id": {}}}, machine),

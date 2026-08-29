@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from uuid import UUID
 
 from .exceptions import BpmDomainError
@@ -25,21 +24,3 @@ def require_positive_int(value: int, field: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise BpmDomainError(f"{field} debe ser un entero positivo", "invalid_id", field)
     return value
-
-
-@dataclass(frozen=True)
-class ProcessRef:
-    process_id: str
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "process_id", require_uuid(self.process_id, "process_id"))
-
-
-@dataclass(frozen=True)
-class OperationRef:
-    node_id: str
-    process_id: str
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "node_id", require_uuid(self.node_id, "node_id"))
-        object.__setattr__(self, "process_id", require_uuid(self.process_id, "process_id"))

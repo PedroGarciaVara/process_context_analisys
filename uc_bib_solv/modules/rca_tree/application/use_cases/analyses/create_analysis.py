@@ -27,7 +27,7 @@ class CreateAnalysis:
         indication = str(payload.get("indication") or payload.get("description") or "").strip()
         analysis = Analysis(
             None,
-            contract_ref.as_legacy_int(),
+            contract_ref.as_int(),
             int(process_ref.identifier) if process_ref is not None else None,
             payload.get("machine_id"),
             participants[0],

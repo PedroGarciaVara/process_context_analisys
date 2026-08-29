@@ -12,8 +12,8 @@ class BpmTreeReferenceTests(unittest.TestCase):
         with self.assertRaises((AttributeError, TypeError)):
             reference.identifier = "other"
 
-    def test_contract_reference_preserves_legacy_integer_boundary(self):
-        self.assertEqual(42, ContractRef.from_value("42").as_legacy_int())
+    def test_contract_reference_converts_to_storage_integer_at_boundary(self):
+        self.assertEqual(42, ContractRef.from_value("42").as_int())
 
     def test_context_port_and_tree_use_case_are_explicitly_available(self):
         self.assertIsNotNone(BpmContextPort)

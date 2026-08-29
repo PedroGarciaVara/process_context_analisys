@@ -1,9 +1,11 @@
-class ProcessModelingError(ValueError):
+from ..shared.exceptions import BpmDomainError
+
+
+class ProcessModelingError(BpmDomainError):
     """BPM process validation error with a stable application code."""
 
     def __init__(self, message: str, code: str = "invalid_process_model"):
-        super().__init__(message)
-        self.code = code
+        super().__init__(message, code)
 
 
 class NotFoundError(ProcessModelingError):

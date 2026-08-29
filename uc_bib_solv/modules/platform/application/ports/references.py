@@ -38,7 +38,7 @@ class MachineRef(BpmRef):
 
 
 class ContractRef(BpmRef):
-    def as_legacy_int(self) -> int:
+    def as_int(self) -> int:
         return int(self.identifier)
 
 

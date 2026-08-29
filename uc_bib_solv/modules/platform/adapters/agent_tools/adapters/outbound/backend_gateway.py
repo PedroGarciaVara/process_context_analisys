@@ -4,17 +4,16 @@ from dataclasses import dataclass
 
 
 @dataclass
-class ExistingBackendGateway:
-    """Concrete compatibility adapter for current backend services."""
+class BackendToolsAdapter:
+    """Concrete adapter composing the canonical services used by agent tools."""
 
     def __post_init__(self) -> None:
         from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_application
-        from uc_bib_solv.modules.bpm.infrastructure.wiring import build_bpm_operational_service
+        from uc_bib_solv.modules.bpm.infrastructure.wiring import build_bpm_operational_application
         from uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring import create_process_modeling_handlers
 
-        operational = build_bpm_operational_service()
+        operational = build_bpm_operational_application()
         self._causas = build_rca_tree_application()
-        self._machines = operational
         self._operational = operational
         self._process_modeling = create_process_modeling_handlers()
 
@@ -31,7 +30,7 @@ class ExistingBackendGateway:
         return self._causas.get_tree_payload(view=view, contract_id=contract_id)
 
     def machine_context(self, machine_id):
-        return self._machines.get_machine_context(machine_id)
+        return self._operational.get_machine_context(machine_id)
 
     def contracts(self, process_id=None):
         return self._operational.list_contracts(process_id=process_id)

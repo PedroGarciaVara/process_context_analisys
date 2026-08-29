@@ -1,4 +1,4 @@
-from .bpm_ports import BpmContextPort, BpmOperationalPort
+from .bpm_ports import BpmContextPort
 from .contract_context import ContractContextPort
 from .process_ports import (
     NodeRepositoryPort,
@@ -17,7 +17,6 @@ from .operational_capabilities import BpmOperationalDependencies
 
 __all__ = [
     "BpmContextPort",
-    "BpmOperationalPort",
     "ContractContextPort",
     "NodeRepositoryPort",
     "OperationRepositoryPort",

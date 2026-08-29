@@ -1843,7 +1843,7 @@ Proponer una estructura `rca_tree/application/use_cases/` alineada con BPM, indi
 - Los aliases `CausalTreeUseCases` y `CausalAnalysisUseCases` mantienen naming legacy dentro del núcleo canónico, en vez de quedar aislados en un adaptador de compatibilidad.
 - Los ports de persistencia describen repositorios con nombres genéricos y contratos amplios; falta segregación por capacidad (`causes`, `hypotheses`, `nodes`, `relationships`, `tree_queries`, `analyses`, `participants`, `results`).
 - `TransactionPort` existe pero no participa en la composición de los casos de uso auditados; la frontera transaccional queda implícita en el adaptador.
-- La aplicación importa referencias BPM correctamente a través de `platform.application.ports`, pero la conversión `ContractRef.as_legacy_int()` mantiene una decisión de compatibilidad dentro del caso de uso que debería quedar en un mapper/adaptador.
+- La aplicación importa referencias BPM correctamente a través de `platform.application.ports`; `ContractRef.as_int()` realiza la conversión explícita requerida por la persistencia sin una API de compatibilidad.
 
 ### Estructura objetivo propuesta
 

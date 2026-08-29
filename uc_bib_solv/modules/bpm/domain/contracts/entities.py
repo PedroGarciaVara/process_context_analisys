@@ -65,16 +65,36 @@ class Contract:
             self.metric = payload.get("metrica", payload.get("metric"))
         if "objetivo" in payload or "objective" in payload:
             self.objective = payload.get("objetivo", payload.get("objective"))
+        if "process_id" in payload or "processId" in payload or "proceso_id" in payload:
+            self.change_process(payload.get("process_id", payload.get("processId", payload.get("proceso_id"))))
         if any(key in payload for key in ("bpm_process_id", "bpmProcessId", "bpm_node_id", "bpmNodeId")):
             self.change_scope(
                 bpm_process_id=payload.get("bpm_process_id", payload.get("bpmProcessId")),
                 bpm_node_id=payload.get("bpm_node_id", payload.get("bpmNodeId")),
+                process_id=self.process_id,
             )
 
-    def change_scope(self, *, bpm_process_id: str | None = None, bpm_node_id: str | None = None) -> None:
+    def change_scope(
+        self,
+        *,
+        bpm_process_id: str | None = None,
+        bpm_node_id: str | None = None,
+        process_id: int | None = None,
+    ) -> None:
+        """Change BPM scope and operational owner as one validated mutation."""
         has_process = bool(bpm_process_id)
         has_operation = bool(bpm_node_id)
         if has_process == has_operation:
             raise BpmDomainError("El contrato requiere un proceso BPM o una operación BPM", "invalid_bpm_scope")
+        if process_id is not None:
+            process_id = require_positive_int(process_id, "process_id")
         self.bpm_process_id = require_uuid(bpm_process_id, "bpm_process_id") if has_process else None
         self.bpm_node_id = require_uuid(bpm_node_id, "bpm_node_id") if has_operation else None
+        self.process_id = process_id
+
+    def change_process(self, process_id: int | None) -> None:
+        """Change the operational owner while preserving a valid identity."""
+        if process_id is None:
+            self.process_id = None
+            return
+        self.process_id = require_positive_int(process_id, "process_id")

@@ -257,7 +257,7 @@ def _decorate_machine(
     machine: dict,
     preferred_contract_id: int | None = None,
     operation_id: str | None = None,
-    process_id_bpm: str | None = None,
+    bpm_process_id: str | None = None,
 ) -> dict:
     processes_by_id = {int(item["id"]): item for item in _process_records()}
     contracts_by_id = {int(item["id"]): item for item in _contract_records()}
@@ -275,7 +275,7 @@ def _decorate_machine(
         (
             item for item in operations
             if (not operation_id or item["operation_id"] == str(operation_id))
-            and (not process_id_bpm or item["process_id"] == str(process_id_bpm))
+            and (not bpm_process_id or item["process_id"] == str(bpm_process_id))
         ),
         None,
     )
@@ -357,7 +357,6 @@ def _filter_machines(
     process_id: int | None = None,
     contract_id: int | None = None,
     operation_id: str | None = None,
-    process_id_bpm: str | None = None,
     bpm_process_id: str | None = None,
 ) -> list[dict]:
     operation_scope = None
@@ -372,7 +371,7 @@ def _filter_machines(
                    AND (%s IS NULL OR moc.process_id = %s)
                  LIMIT 1
                 """,
-                (operation_id, process_id_bpm, process_id_bpm),
+                (operation_id, bpm_process_id, bpm_process_id),
             )
             operation_scope = cur.fetchone()
         if not operation_scope:
@@ -387,7 +386,7 @@ def _filter_machines(
             machine,
             preferred_contract_id=int(contract_id) if contract_id else None,
             operation_id=operation_id,
-            process_id_bpm=process_id_bpm,
+            bpm_process_id=bpm_process_id,
         )
         for machine in machines
     ]
@@ -400,7 +399,7 @@ def _filter_machines(
             item for item in records
             if any(
                 operation["operation_id"] == str(operation_id)
-                and (not process_id_bpm or operation["process_id"] == str(process_id_bpm))
+                and (not bpm_process_id or operation["process_id"] == str(bpm_process_id))
                 for operation in item["operations"]
             )
         ]
@@ -454,7 +453,6 @@ def _decorate_page_payload(page: str, payload: dict, params: dict[str, str] | No
     )
     contract_id = params.get("contract_id") or params.get("contractId") or None
     operation_id = params.get("operation_id") or params.get("operationId") or None
-    process_id_bpm = params.get("bpm_process_id") or None
     machine_id = params.get("machine_id") or params.get("machineId") or None
     status = params.get("status") or params.get("filter") or "all"
     process_id_int = _coerce_optional_int(process_id)
@@ -506,11 +504,11 @@ def _decorate_page_payload(page: str, payload: dict, params: dict[str, str] | No
 
     if page == "maquinas":
         result["data"] = {
-            "rows": _filter_machines(process_id_int, contract_id_int, operation_id, process_id_bpm, bpm_process_id),
+            "rows": _filter_machines(process_id_int, contract_id_int, operation_id, bpm_process_id),
             "selected_process_id": process_id_int,
             "selected_contract_id": contract_id_int,
             "selected_operation_id": operation_id,
-            "selected_bpm_process_id": process_id_bpm,
+            "selected_bpm_process_id": bpm_process_id,
             "selected_machine_id": machine_id_int,
         }
         return result
@@ -531,12 +529,11 @@ def list_machines(
     process_id: str | None = None,
     contract_id: str | None = None,
     operation_id: str | None = None,
-    process_id_bpm: str | None = None,
     bpm_process_id: str | None = None,
 ) -> list[dict]:
     process_id_int = _coerce_optional_int(process_id)
     contract_id_int = _coerce_optional_int(contract_id)
-    return _filter_machines(process_id_int, contract_id_int, operation_id, process_id_bpm, bpm_process_id)
+    return _filter_machines(process_id_int, contract_id_int, operation_id, bpm_process_id)
 
 
 def get_machine_context(machine_id: int, operation_id: str | None = None, process_id: str | None = None) -> dict | None:
@@ -544,20 +541,6 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
     from uc_bib_solv.modules.bpm.adapters.outbound.postgres.machine_model_repo import get_machine_context as load_machine_context
 
     return load_machine_context(int(machine_id), operation_id, process_id)
-
-
-def create_process(payload: dict) -> dict:
-    raise ValueError("Los procesos deben crearse desde el modelado BPM.")
-
-
-def update_process(process_id: str, payload: dict) -> dict:
-    name = str(payload.get("name") or "").strip()
-    proceso_repo.update(int(process_id), name)
-    return next(item for item in _process_records() if int(item["id"]) == int(process_id))
-
-
-def delete_process(process_id: str) -> dict:
-    raise ValueError("Los procesos se eliminan desde el modelado BPM.")
 
 
 def create_contract(payload: dict) -> dict:
@@ -852,6 +835,13 @@ def get_operational_catalog(process_id: str | None = None) -> dict:
     if process_id:
         payload["bpm"] = _bpm_identity(process_id)
     return payload
+
+
+def list_operations(process_id: str | None = None) -> list[dict]:
+    operations = _contract_scope_options()["operations"]
+    if process_id:
+        operations = [item for item in operations if item["bpmProcessId"] == str(process_id)]
+    return operations
 
 
 def get_operational_page_payload(page: str, params: dict[str, str] | None = None) -> dict:

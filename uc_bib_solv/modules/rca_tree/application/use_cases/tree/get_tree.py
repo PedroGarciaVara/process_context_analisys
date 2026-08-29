@@ -1,6 +1,6 @@
 from typing import Any
 
-from ...dto import integer, legacy_contract_id, normalize_tree_view
+from ...dto import contract_id as normalize_contract_id, integer, normalize_tree_view
 from ...ports.outbound import TreeQueryPort
 
 
@@ -21,5 +21,5 @@ class GetTree:
             normalize_tree_view(view),
             integer(selected_cause_id),
             float(zoom),
-            legacy_contract_id(contract_id),
+            normalize_contract_id(contract_id),
         )

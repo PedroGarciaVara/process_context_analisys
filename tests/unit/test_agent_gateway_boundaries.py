@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from uc_bib_solv.modules.platform.adapters.agent_tools.adapters.outbound.backend_gateway import ExistingBackendGateway
+from uc_bib_solv.modules.platform.adapters.agent_tools.adapters.outbound.backend_gateway import BackendToolsAdapter
 
 
 class AgentGatewayBoundaryTests(unittest.TestCase):
@@ -9,11 +9,10 @@ class AgentGatewayBoundaryTests(unittest.TestCase):
         operational = object()
         tree = object()
         process = object()
-        with patch("uc_bib_solv.modules.bpm.infrastructure.wiring.build_bpm_operational_service", return_value=operational), \
+        with patch("uc_bib_solv.modules.bpm.infrastructure.wiring.build_bpm_operational_application", return_value=operational), \
              patch("uc_bib_solv.modules.rca_tree.infrastructure.wiring.build_rca_tree_application", return_value=tree):
             with patch("uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring.create_process_modeling_handlers", return_value=process):
-                gateway = ExistingBackendGateway()
-        self.assertIs(operational, gateway._machines)
+                gateway = BackendToolsAdapter()
         self.assertIs(operational, gateway._operational)
         self.assertIs(tree, gateway._causas)
 

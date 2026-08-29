@@ -2,12 +2,10 @@
 
 from .exceptions import BpmDomainError
 from .rules import validate_name, validate_structured_field
-from .value_objects import OperationRef, ProcessRef, require_positive_int, require_text, require_uuid
+from .value_objects import require_positive_int, require_text, require_uuid
 
 __all__ = [
     "BpmDomainError",
-    "OperationRef",
-    "ProcessRef",
     "require_positive_int",
     "require_text",
     "require_uuid",

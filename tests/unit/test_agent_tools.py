@@ -21,12 +21,12 @@ class FakeGateway:
 def test_manifest_is_deterministic_and_complete():
     names = [item["name"] for item in build_default_registry(FakeGateway()).manifest()]
     assert names == sorted(names)
-    assert {"bpm.version", "causal.tree", "machine.context", "context.get"} <= set(names)
+    assert {"bpm.process", "causal.tree", "machine.context", "context.get"} <= set(names)
 
 
 def test_invocation_adds_trace_without_changing_domain_payload():
-    result = build_default_registry(FakeGateway()).invoke("bpm.version", ToolRequest({"version_id": "v1"}, actor="test"))
-    assert result.data["version_id"] == "v1"
+    result = build_default_registry(FakeGateway()).invoke("bpm.process", ToolRequest({"process_id": "p1"}, actor="test"))
+    assert result.data["process_id"] == "p1"
     assert result.context.tool_name == "bpm.version"
     assert result.context.actor == "test"
 

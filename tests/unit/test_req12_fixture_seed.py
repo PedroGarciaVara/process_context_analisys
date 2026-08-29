@@ -155,12 +155,10 @@ class Req12FixtureSeedContractTests(unittest.TestCase):
         self.assertIn("request.args.get(\"process_id\")", route)
         self.assertIn('"relations"', repo)
 
-    def test_machine_model_migration_reads_canonical_ids_and_keeps_contract_separate(self):
-        migration = (Path(__file__).parents[2] / "scripts" / "migrate_arc009_remove_process_versions.sql").read_text(encoding="utf-8")
-        self.assertIn("machine_operation_configuration", migration)
-        self.assertIn("process_id", migration)
-        self.assertIn("DROP TABLE pm_process_version", migration)
-        self.assertNotIn("process_version_id UUID", migration)
+    def test_final_schema_reads_canonical_ids_and_keeps_contract_separate(self):
+        final_schema = (Path(__file__).parents[2] / "db_management" / "schema.sql").read_text(encoding="utf-8")
+        self.assertIn("machine_operation_configuration", final_schema)
+        self.assertNotIn("CREATE TABLE pm_process_version", final_schema)
 
 
 if __name__ == "__main__":
