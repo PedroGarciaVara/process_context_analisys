@@ -7,19 +7,17 @@ from .update_bpm_process import UpdateProcess
 from .create_operational_process import CreateOperationalProcess
 from .list_operational_processes import ListOperationalProcesses
 from .update_operational_process import UpdateOperationalProcess
-from .create_version import CreateProcessVersion
 from .get_process import GetProcess
-from .list_versions import ListProcessVersions
+from .validate_process import ValidateProcess
 
 __all__ = [
     "CreateProcess",
     "CreateOperationalProcess",
-    "CreateProcessVersion",
     "DeleteOperationalProcess",
     "GetProcess",
-    "ListProcessVersions",
     "ListProcesses",
     "UpdateProcess",
     "ListOperationalProcesses",
     "UpdateOperationalProcess",
+    "ValidateProcess",
 ]

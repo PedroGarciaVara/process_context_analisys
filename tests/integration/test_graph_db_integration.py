@@ -23,18 +23,25 @@ from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import (
 )
 from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
 from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import causas_repository as java_causas_repository
+from uc_bib_solv.modules.platform.infrastructure.app_factory import create_app
 
 
 class GraphDbIntegrationTests(TestCase):
     def setUp(self):
         self.stamp = int(time.time() * 1000)
+        self.client = create_app().test_client()
         self.created_process_ids: list[int] = []
+        self.created_bpm_process_ids: list[str] = []
         self.created_contract_ids: list[int] = []
         self.created_causa_ids: list[int] = []
         self.created_hypothesis_ids: list[int] = []
         self.created_analysis_ids: list[int] = []
 
-        self.process = proceso_repo.create(f"IT GRAPH PROC {self.stamp}")
+        response = self.client.post("/api/bpm/processes", json={"process_code": f"IT_GRAPH_PROC_{self.stamp}", "name": f"IT GRAPH PROC {self.stamp}"})
+        self.assertEqual(response.status_code, 201, response.get_json())
+        bpm_process = response.get_json()["data"]
+        self.process = next(item for item in proceso_repo.get_all() if item["bpm_process_id"] == bpm_process["process_id"])
+        self.created_bpm_process_id = bpm_process["process_id"]
         self.created_process_ids.append(int(self.process["id"]))
 
         self.contract = contrato_repo.create(
@@ -74,7 +81,11 @@ class GraphDbIntegrationTests(TestCase):
         self.created_hypothesis_ids.append(int(self.hypothesis["id"]))
 
     def _create_process_and_contract(self, label: str) -> tuple[dict, dict]:
-        process = proceso_repo.create(f"{label} PROC {self.stamp}")
+        response = self.client.post("/api/bpm/processes", json={"process_code": f"{label}_PROC_{self.stamp}", "name": f"{label} PROC {self.stamp}"})
+        self.assertEqual(response.status_code, 201, response.get_json())
+        bpm_process = response.get_json()["data"]
+        self.created_bpm_process_ids.append(bpm_process["process_id"])
+        process = next(item for item in proceso_repo.get_all() if item["bpm_process_id"] == bpm_process["process_id"])
         self.created_process_ids.append(int(process["id"]))
         contract = contrato_repo.create(
             int(process["id"]),
@@ -172,7 +183,7 @@ class GraphDbIntegrationTests(TestCase):
                 cur.execute("DELETE FROM contrato_maquina WHERE contrato_id = ANY(%s)", (self.created_contract_ids,))
                 cur.execute("DELETE FROM contrato WHERE id = ANY(%s)", (self.created_contract_ids,))
             if self.created_process_ids:
-                cur.execute("DELETE FROM proceso WHERE id = ANY(%s)", (self.created_process_ids,))
+                cur.execute("DELETE FROM bpm_process WHERE process_id = ANY(%s::uuid[])", (self.created_bpm_process_ids,))
 
             node_ids: list[int] = []
             if self.created_process_ids:

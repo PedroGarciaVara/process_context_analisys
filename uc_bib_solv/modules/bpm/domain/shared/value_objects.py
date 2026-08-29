@@ -38,8 +38,8 @@ class ProcessRef:
 @dataclass(frozen=True)
 class OperationRef:
     node_id: str
-    version_id: str
+    process_id: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "node_id", require_uuid(self.node_id, "node_id"))
-        object.__setattr__(self, "version_id", require_uuid(self.version_id, "version_id"))
+        object.__setattr__(self, "process_id", require_uuid(self.process_id, "process_id"))

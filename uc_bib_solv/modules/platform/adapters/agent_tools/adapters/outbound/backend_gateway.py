@@ -24,11 +24,8 @@ class ExistingBackendGateway:
     def process(self, process_id):
         return self._process_modeling.get_process(process_id)
 
-    def version(self, version_id, expand_node_id=None):
-        return self._process_modeling.get_version(version_id, expand_node_id)
-
-    def context(self, version_id, node_id=None, family=None, record_type=None):
-        return self._process_modeling.get_context(version_id, node_id, family, record_type)
+    def context(self, process_id, node_id=None, family=None, record_type=None):
+        return self._process_modeling.get_context(process_id, node_id, family, record_type)
 
     def tree(self, view, contract_id=None):
         return self._causas.get_tree_payload(view=view, contract_id=contract_id)

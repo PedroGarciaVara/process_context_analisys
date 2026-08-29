@@ -1,35 +1,31 @@
 """Application composition for BPM process-modeling use cases."""
 
 from .use_cases.context.context_records import CalculateContextKpi, CreateContextRecord, GetContext
-from .use_cases.nodes import CreateProcessNode, DeleteProcessNode, GetNodeMetadata, UpdateNodeMetadata, UpdateProcessNode
+from .use_cases.nodes import CreateProcessNode, CreateProcessNodeWithTransition, DeleteProcessNode, GetNodeMetadata, UpdateNodeMetadata, UpdateProcessNode
 from .use_cases.operations import CreateProcessOperation, DeleteProcessOperation, GetProcessOperation, UpdateProcessOperationStages
 from .use_cases.process_modeling_dependencies import ProcessModelingDependencies
 from .use_cases.processes import (
     CreateProcess,
-    CreateProcessVersion,
     GetProcess,
     ListProcesses,
-    ListProcessVersions,
     UpdateProcess,
+    ValidateProcess,
 )
 from .use_cases.transitions.transitions import CreateTransition, DeleteTransition
-from .use_cases.versions.versions import GetVersion, UpdateVersion, ValidateVersion
 
 
 class ProcessModelingApplication:
     """Explicit application facade composed from individual use cases."""
 
-    def __init__(self, persistence):
-        dependencies = ProcessModelingDependencies(persistence)
+    def __init__(self, processes, nodes, transitions):
+        dependencies = ProcessModelingDependencies(processes, nodes, transitions)
         self._list_processes = ListProcesses(dependencies)
         self._get_process = GetProcess(dependencies)
         self._create_process = CreateProcess(dependencies)
         self._update_process = UpdateProcess(dependencies)
-        self._list_versions = ListProcessVersions(dependencies)
-        self._create_version = CreateProcessVersion(dependencies)
-        self._get_version = GetVersion(dependencies)
-        self._update_version = UpdateVersion(dependencies)
+        self._validate_process = ValidateProcess(dependencies)
         self._create_node = CreateProcessNode(dependencies)
+        self._create_node_with_transition = CreateProcessNodeWithTransition(dependencies)
         self._update_node = UpdateProcessNode(dependencies)
         self._delete_node = DeleteProcessNode(dependencies)
         self._get_node_metadata = GetNodeMetadata(dependencies)
@@ -43,31 +39,27 @@ class ProcessModelingApplication:
         self._calculate_context_kpi = CalculateContextKpi()
         self._create_transition = CreateTransition(dependencies)
         self._delete_transition = DeleteTransition(dependencies)
-        self._validate_version = ValidateVersion(dependencies)
 
     def list_processes(self): return self._list_processes.execute()
     def create_process(self, data): return self._create_process.execute(data)
-    def get_process(self, process_id): return self._get_process.execute(process_id)
+    def get_process(self, process_id, expand_node_id=None): return self._get_process.execute(process_id, expand_node_id)
     def update_process(self, process_id, data): return self._update_process.execute(process_id, data)
-    def list_versions(self, process_id): return self._list_versions.execute(process_id)
-    def create_version(self, process_id, data): return self._create_version.execute(process_id, data)
-    def get_version(self, version_id, expand_node_id=None): return self._get_version.execute(version_id, expand_node_id)
-    def update_version(self, version_id, data): return self._update_version.execute(version_id, data)
-    def create_node(self, version_id, data): return self._create_node.execute(version_id, data)
+    def validate_process(self, process_id): return self._validate_process.execute(process_id)
+    def create_node(self, process_id, data): return self._create_node.execute(process_id, data)
+    def create_node_with_transition(self, process_id, data): return self._create_node_with_transition.execute(process_id, data)
     def update_node(self, node_id, data): return self._update_node.execute(node_id, data)
     def delete_node(self, node_id): return self._delete_node.execute(node_id)
     def get_node_metadata(self, node_id): return self._get_node_metadata.execute(node_id)
     def update_node_metadata(self, node_id, data): return self._update_node_metadata.execute(node_id, data)
     def get_operation(self, operation_id): return self._get_operation.execute(operation_id)
-    def create_operation(self, version_id, data): return self._create_operation.execute(version_id, data)
+    def create_operation(self, process_id, data): return self._create_operation.execute(process_id, data)
     def delete_operation(self, operation_id): return self._delete_operation.execute(operation_id)
     def update_operation_stages(self, operation_id, data): return self._update_operation_stages.execute(operation_id, data)
-    def get_context(self, version_id, node_id=None, family=None, record_type=None): return self._get_context.execute(version_id, node_id, family, record_type)
+    def get_context(self, process_id, node_id=None, family=None, record_type=None): return self._get_context.execute(process_id, node_id, family, record_type)
     def create_context_record(self, node_id, data): return self._create_context_record.execute(node_id, data)
     def calculate_context_kpi(self, data): return self._calculate_context_kpi.execute(data)
-    def create_transition(self, version_id, data): return self._create_transition.execute(version_id, data)
+    def create_transition(self, process_id, data): return self._create_transition.execute(process_id, data)
     def delete_transition(self, transition_id): return self._delete_transition.execute(transition_id)
-    def validate_version(self, version_id): return self._validate_version.execute(version_id)
 
 
 __all__ = ["ProcessModelingApplication"]

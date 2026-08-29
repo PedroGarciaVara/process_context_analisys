@@ -13,18 +13,17 @@ from uc_bib_solv.modules.bpm.adapters.outbound.postgres import operational_repos
 class Req12MachineProjectionTests(unittest.TestCase):
     def test_operation_configuration_is_selected_by_canonical_pair(self):
         rows = [
-            {"operation_id": "op-a", "process_version_id": "version-a", "contract_id": 11},
-            {"operation_id": "op-b", "process_version_id": "version-b", "contract_id": 12},
+            {"operation_id": "op-a", "process_id": "process-a", "contract_id": 11},
+            {"operation_id": "op-b", "process_id": "process-b", "contract_id": 12},
         ]
-        selected = _operation_configuration(rows, "op-b", "version-b")
+        selected = _operation_configuration(rows, "op-b", "process-b")
         self.assertEqual(selected["contract_id"], 12)
-        self.assertIsNone(_operation_configuration(rows, "op-b", "version-a"))
+        self.assertIsNone(_operation_configuration(rows, "op-b", "process-a"))
 
     def test_machine_projection_keeps_bpm_contract_separate_from_first_legacy_link(self):
         machine = {"id": 7, "nombre": "BA01", "maquinas_tipo_id": 3}
         operations = [{
             "operation_id": "op-b",
-            "process_version_id": "version-b",
             "process_id": "bpm-process",
             "contract_id": 12,
             "legacy_process_id": 8,
@@ -42,7 +41,7 @@ class Req12MachineProjectionTests(unittest.TestCase):
              patch.object(operational_repository, "_links_by_machine", return_value={7: [11, 12]}), \
              patch.object(operational_repository, "_operations_by_machine", return_value={7: operations}):
             projected = operational_repository._decorate_machine(
-                machine, operation_id="op-b", process_version_id="version-b"
+                machine, operation_id="op-b", process_id_bpm="bpm-process"
             )
 
         self.assertEqual(projected["id"], 7)

@@ -1,9 +1,9 @@
-"""Process aggregate: processes, versions, graph nodes and rules."""
+"""Canonical BPM process aggregate."""
 
 from .context import ContextDetail, ContextRecord, calculate_kpi
-from .entities import Process, ProcessNode, ProcessTransition, ProcessVersion
+from .entities import Process, ProcessNode, ProcessTransition
 from .exceptions import NotDraftError, NotFoundError, ProcessModelingError
-from .rules import validate_graph, validate_hierarchy
+from .rules import diagram_transitions, validate_graph, validate_hierarchy
 
 __all__ = [
     "ContextDetail",
@@ -14,8 +14,8 @@ __all__ = [
     "ProcessModelingError",
     "ProcessNode",
     "ProcessTransition",
-    "ProcessVersion",
     "calculate_kpi",
+    "diagram_transitions",
     "validate_graph",
     "validate_hierarchy",
 ]

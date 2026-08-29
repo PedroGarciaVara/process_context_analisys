@@ -7,13 +7,11 @@ class BpmPersistencePortTests(unittest.TestCase):
     def test_adapter_keeps_injected_repository_ports(self):
         adapter = BpmPostgresPersistenceAdapter(
             processes="processes",
-            versions="versions",
             nodes="nodes",
             transitions="transitions",
             connection_factory="factory",
         )
         self.assertEqual("processes", adapter.processes)
-        self.assertEqual("versions", adapter.versions)
         self.assertEqual("nodes", adapter.nodes)
         self.assertEqual("transitions", adapter.transitions)
         self.assertEqual("factory", adapter.connection_factory)

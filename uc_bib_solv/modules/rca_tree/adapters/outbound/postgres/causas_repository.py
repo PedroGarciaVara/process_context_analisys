@@ -28,12 +28,26 @@ def _flatten(nodes: list[dict]) -> list[dict]:
     return flat
 
 
-def _default_contract(contract_id: int | None = None) -> dict | None:
+def _get_contract(contract_id: int, contract_context=None) -> dict | None:
+    return contract_context.get_contract(int(contract_id)) if contract_context else get_contract(int(contract_id))
+
+
+def _list_contracts(contract_context=None) -> list[dict]:
+    return contract_context.list_contracts() if contract_context else list_contracts()
+
+
+def _create_contract(process_id, name, metric=None, objective=None, bpm_process_id=None, bpm_node_id=None, contract_context=None):
+    if contract_context:
+        return contract_context.create_contract(process_id, name, metric, objective, bpm_process_id, bpm_node_id)
+    return create_contract(process_id, name, metric, objective, bpm_process_id, bpm_node_id)
+
+
+def _default_contract(contract_id: int | None = None, contract_context=None) -> dict | None:
     if contract_id:
-        contract = get_contract(int(contract_id))
+        contract = _get_contract(int(contract_id), contract_context)
         if contract:
             return contract
-    contracts = list_contracts()
+    contracts = _list_contracts(contract_context)
     return contracts[0] if contracts else None
 
 
@@ -47,8 +61,8 @@ def _default_selected_cause(causas: list[dict], selected_cause_id: int | None = 
     return causas[0] if causas else None
 
 
-def _ensure_contract_node(contract_id: int) -> dict:
-    contract = get_contract(int(contract_id))
+def _ensure_contract_node(contract_id: int, contract_context=None) -> dict:
+    contract = _get_contract(int(contract_id), contract_context)
     if not contract:
         raise ValueError("El contrato indicado no existe.")
     return node_repo.get_by_legacy_ref("contrato", int(contract_id)) or graph_sync.sync_contract_graph(int(contract_id))
@@ -66,6 +80,7 @@ def _resolve_parent_context(
     contract_id: int | None = None,
     parent_id: int | None = None,
     child_node_type: str = "CAUSE",
+    contract_context=None,
 ) -> tuple[dict, str, int | None, int | None]:
     if parent_id is not None:
         parent_node = _ensure_cause_node(int(parent_id))
@@ -73,7 +88,7 @@ def _resolve_parent_context(
         relationship_type = "DEPENDS_ON" if str(child_node_type).upper() == "CONTRACT" else "CAUSES"
         return parent_node, relationship_type, parent_record.get("contrato_id") if parent_record else None, int(parent_id)
     if contract_id is not None:
-        parent_node = _ensure_contract_node(int(contract_id))
+        parent_node = _ensure_contract_node(int(contract_id), contract_context)
         return parent_node, "DEPENDS_ON", int(contract_id), None
     raise ValueError("Se requiere un contrato o una causa padre para crear el vínculo.")
 
@@ -127,8 +142,10 @@ def get_tree_payload(
     selected_cause_id: int | None = None,
     zoom: float = 1.0,
     contract_id: int | None = None,
+    *,
+    contract_context=None,
 ) -> dict:
-    contract = _default_contract(contract_id)
+    contract = _default_contract(contract_id, contract_context)
     causas = causa_repo.get_by_contrato(int(contract["id"])) if contract else []
     tree = causa_repo.build_tree(causas)
     flat = _flatten(tree)
@@ -207,11 +224,13 @@ def search_reusable_nodes(
     contract_id: int | None = None,
     parent_id: int | None = None,
     limit: int = 25,
+    contract_context=None,
 ) -> list[dict]:
     parent_node, relationship_type, active_contract_id, active_parent_id = _resolve_parent_context(
         contract_id=contract_id,
         parent_id=parent_id,
         child_node_type=node_type,
+        contract_context=contract_context,
     )
     rows = graph_query_repo.search_reusable_nodes(node_type, text=text, limit=limit)
     existing_child_ids = _resolve_existing_child_ids(int(parent_node["id"]), relationship_type)
@@ -232,6 +251,7 @@ def link_reusable_node(
     child_node_id: int,
     contract_id: int | None = None,
     parent_id: int | None = None,
+    contract_context=None,
 ) -> dict:
     child_node = node_repo.get_by_id(int(child_node_id))
     if not child_node:
@@ -240,6 +260,7 @@ def link_reusable_node(
         contract_id=contract_id,
         parent_id=parent_id,
         child_node_type=child_node.get("node_type") or "CAUSE",
+        contract_context=contract_context,
     )
 
     validate_relationship_signature(
@@ -285,22 +306,24 @@ def create_contract_child(
     *,
     objetivo: str | None = None,
     metrica: str | None = None,
+    contract_context=None,
 ) -> dict:
-    parent_contract = get_contract(int(parent_contract_id))
+    parent_contract = _get_contract(int(parent_contract_id), contract_context)
     if not parent_contract:
         raise ValueError("El contrato base no existe.")
 
-    created_contract = create_contract(
+    created_contract = _create_contract(
         int(parent_contract["proceso_id"]),
         nombre,
         metrica,
         objetivo,
         parent_contract.get("bpm_process_id"),
         parent_contract.get("bpm_node_id"),
+        contract_context,
     )
     graph_sync.sync_contract_graph(int(created_contract["id"]))
-    parent_node = _ensure_contract_node(int(parent_contract_id))
-    child_node = _ensure_contract_node(int(created_contract["id"]))
+    parent_node = _ensure_contract_node(int(parent_contract_id), contract_context)
+    child_node = _ensure_contract_node(int(created_contract["id"]), contract_context)
 
     validate_relationship_signature(
         parent_node.get("node_type"),

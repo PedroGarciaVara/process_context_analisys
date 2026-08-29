@@ -21,22 +21,31 @@ class MachineModelingDomainTests(unittest.TestCase):
 
     def test_configuration_requires_bpm_operation_identity_and_validity(self):
         with self.assertRaises(MachineModelError):
-            MachineOperationConfiguration(machine_id=1, operation_id="not-uuid", process_version_id=str(uuid4()), process_id=str(uuid4()))
+            MachineOperationConfiguration(machine_id=1, operation_id="not-uuid", process_id=str(uuid4()))
         with self.assertRaises(MachineModelError):
-            MachineOperationConfiguration(machine_id=1, operation_id=str(uuid4()), process_version_id=str(uuid4()), process_id=str(uuid4()), valid_from="2026-01-02T00:00:00", valid_to="2026-01-01T00:00:00")
+            MachineOperationConfiguration(machine_id=1, operation_id=str(uuid4()), process_id=str(uuid4()), valid_from="2026-01-02T00:00:00", valid_to="2026-01-01T00:00:00")
 
-    def test_operation_identity_is_node_id_and_version_scoped(self):
+    def test_operation_identity_is_node_id_and_process_scoped(self):
         node_id = str(uuid4())
-        version_id = str(uuid4())
+        process_id = str(uuid4())
         self.assertEqual(
             validate_operation_identity(
                 node_id=node_id,
                 node_type="operation",
-                node_version_id=version_id,
-                process_version_id=version_id,
+                node_process_id=process_id,
+                process_id=process_id,
             ),
             node_id,
         )
+
+    def test_machine_owns_name_and_contract_assignment(self):
+        machine = Machine(name="P-01", machine_type_id=1)
+        machine.rename("P-02")
+        machine.assign_contract(7)
+        self.assertEqual(machine.name, "P-02")
+        self.assertEqual(machine.contract_id, 7)
+        machine.assign_contract(None)
+        self.assertIsNone(machine.contract_id)
 
 
 if __name__ == "__main__":

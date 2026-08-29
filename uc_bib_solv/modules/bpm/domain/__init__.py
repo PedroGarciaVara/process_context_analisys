@@ -3,9 +3,9 @@
 from .associations.entities import MachineContractAssociation
 from .configurations.entities import MachineOperationConfiguration
 from .contracts.entities import Contract
-from .machines.operational_entities import Machine
+from .machines.entities import Machine
 from .operations.entities import Operation, Stage
-from .processes.entities import Process, ProcessNode, ProcessTransition, ProcessVersion
+from .processes.entities import Process, ProcessNode, ProcessTransition
 from .shared.exceptions import BpmDomainError
 
 __all__ = [
@@ -18,6 +18,5 @@ __all__ = [
     "Process",
     "ProcessNode",
     "ProcessTransition",
-    "ProcessVersion",
     "Stage",
 ]

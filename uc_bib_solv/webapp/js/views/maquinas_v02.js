@@ -461,9 +461,9 @@ export function renderMaquinasV02(state, bus) {
         const configurations = context?.machine_operation_configurations || [];
         const configuration = AppState.currentOperation
           ? configurations.find((item) => {
-            const [operationId, processVersionId] = String(AppState.currentOperation).split("|");
+            const [operationId, processId] = String(AppState.currentOperation).split("|");
             return String(item.operation_id) === operationId
-              && String(item.process_version_id) === processVersionId;
+              && String(item.process_id) === processId;
           })
           : configurations[0];
         contextBlocks.innerHTML = [
@@ -480,9 +480,9 @@ export function renderMaquinasV02(state, bus) {
         try {
           const contextParams = {};
           if (AppState.currentOperation) {
-            const [operationId, processVersionId] = String(AppState.currentOperation).split("|");
+            const [operationId, processId] = String(AppState.currentOperation).split("|");
             contextParams.operation_id = operationId;
-            contextParams.process_version_id = processVersionId;
+            contextParams.process_id = processId;
           }
           const response = await fetchMachineContext(machine.id, contextParams);
           renderContext(response?.data);
@@ -643,7 +643,7 @@ export function renderMaquinasV02(state, bus) {
         if (machine) {
           const selectedOperation = selectedOperationForMachine(machine);
           const params = selectedOperation
-            ? { operation_id: selectedOperation.operation_id, process_version_id: selectedOperation.process_version_id }
+            ? { operation_id: selectedOperation.operation_id, process_id: selectedOperation.process_id }
             : {};
           fetchMachineContext(machine.id, params).then((response) => populateManagementModal(response?.data)).catch(() => {});
         }
@@ -716,7 +716,7 @@ export function renderMaquinasV02(state, bus) {
             differences_from_machine_type: parseModalJson("machine-v02-specific-differences", "Diferencias frente al tipo"),
             ...(selectedOperation ? {
               operation_id: selectedOperation.operation_id,
-              process_version_id: selectedOperation.process_version_id,
+              process_id: selectedOperation.process_id,
               etapas: stageDraft.map((stage, index) => ({ ...stage, orden: index + 1, subetapas: stage.subetapas.map((child, childIndex) => ({ ...child, orden: childIndex + 1, subetapas: [] })) })),
             } : {}),
           };

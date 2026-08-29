@@ -1,8 +1,8 @@
 """Load the ML manufacturing fixture into the existing generic BPM model.
 
 The loader is deliberately fixture-scoped and idempotent.  It creates or
-reuses only the exact generic process definition, its deterministic test
-version, canonical operation contracts/resources, and rows marked with the
+reuses only the exact generic process, canonical operation contracts/resources,
+and rows marked with the
 seed provenance.  It does not create ML-specific tables or pretend to ingest
 PLC/MES/PI-AVEVA telemetry.
 """
@@ -28,7 +28,6 @@ PROCESS_NAME = "PROCESO_ML_FABRICACION"
 FIXTURE_PATH = "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
 NAMESPACE = UUID("f4ccf53d-29e5-4fb2-a34b-120260801001")
 PROCESS_ID = str(uuid5(NAMESPACE, f"{SEED}:process:{PROCESS_CODE}"))
-VERSION_ID = str(uuid5(NAMESPACE, f"{SEED}:version:1"))
 
 NODE_SPECS = [
     ("INPUT_ML", "input", "Demanda de Receta ML", "§8.1", "normal"),
@@ -120,10 +119,10 @@ def contract_snapshot() -> dict:
     """
     return {
         "process_code": PROCESS_CODE,
-        "version_id": VERSION_ID,
+        "process_id": PROCESS_ID,
         "seed": SEED,
         "generic_tables": [
-            "bpm_process", "pm_process_version", "pm_process_node",
+            "bpm_process", "pm_process_node",
             "pm_process_transition", "pm_process_node_metadata",
             "pm_context_record", "proceso", "maquina", "contrato",
             "contrato_maquina", "machine_operation_configuration",
@@ -136,7 +135,7 @@ def contract_snapshot() -> dict:
             "gaps": len(GAPS),
         },
         "persisted_as_metadata_or_projection": [
-            "process/version identity and BPM graph",
+            "process identity and BPM graph",
             "node detail envelope family/schema_version/data/source/provenance",
             "generic resource and canonical machine references",
             "operation-to-machine configuration projection",
@@ -157,8 +156,7 @@ def _target(cur, create: bool = True) -> dict:
     process = cur.fetchone()
     if process is None:
         if not create:
-            return {"process": {"process_id": PROCESS_ID, "process_code": PROCESS_CODE, "name": PROCESS_NAME, "status": "draft", "prospective": True},
-                    "version": {"version_id": VERSION_ID, "process_id": PROCESS_ID, "version_number": 1, "status": "draft", "prospective": True}}
+            return {"process": {"process_id": PROCESS_ID, "process_code": PROCESS_CODE, "name": PROCESS_NAME, "status": "draft", "prospective": True}}
         cur.execute("""INSERT INTO bpm_process (process_id, process_code, name, description, status)
                        VALUES (%s, %s, %s, %s, 'draft') RETURNING *""", (PROCESS_ID, PROCESS_CODE, PROCESS_NAME, PROCESS_DESCRIPTION))
         process = cur.fetchone()
@@ -169,27 +167,17 @@ def _target(cur, create: bool = True) -> dict:
     if create:
         cur.execute("""UPDATE bpm_process SET description = %s, updated_at = NOW()
                        WHERE process_id = %s""", (PROCESS_DESCRIPTION, PROCESS_ID))
-    cur.execute("SELECT * FROM pm_process_version WHERE version_id = %s FOR UPDATE", (VERSION_ID,))
-    version = cur.fetchone()
-    if version is None and create:
-        cur.execute("""INSERT INTO pm_process_version (version_id, process_id, version_number, change_description, status)
-                       VALUES (%s, %s, 1, %s, 'draft') RETURNING *""", (VERSION_ID, PROCESS_ID, "Fixture test ML §§8.1-8.2"))
-        version = cur.fetchone()
-    elif version is None:
-        return {"process": dict(process), "version": {"version_id": VERSION_ID, "process_id": PROCESS_ID, "version_number": 1, "status": "draft", "prospective": True}}
-    if str(version["process_id"]) != PROCESS_ID or int(version["version_number"]) != 1 or version["status"] != "draft":
-        raise RuntimeError("La versión de test ML no pertenece al proceso o no está editable")
-    return {"process": dict(process), "version": dict(version)}
+    return {"process": dict(process)}
 
 
 PROCESS_DESCRIPTION = "Proceso generalista de fabricación de mezclas de caucho para neumáticos, estructurado desde las secciones §1-§14 del fixture ML."
 
 
 def _canonical(cur) -> dict:
-    cur.execute("SELECT id, nombre FROM proceso WHERE nombre = %s FOR UPDATE", (PROCESS_NAME,))
+    cur.execute("SELECT id, nombre, bpm_process_id FROM proceso WHERE bpm_process_id = %s FOR UPDATE", (PROCESS_ID,))
     row = cur.fetchone()
     if row is None:
-        cur.execute("INSERT INTO proceso(nombre) VALUES (%s) RETURNING id, nombre", (PROCESS_NAME,))
+        cur.execute("INSERT INTO proceso(nombre, bpm_process_id) VALUES (%s, %s) RETURNING id, nombre, bpm_process_id", (PROCESS_NAME, PROCESS_ID))
         row = cur.fetchone()
     process_id = int(row["id"])
     machines = {}
@@ -212,7 +200,7 @@ def _canonical(cur) -> dict:
         if rows:
             contract = rows[0]
         else:
-            cur.execute("INSERT INTO contrato(proceso_id, nombre, objetivo) VALUES (%s, %s, %s) RETURNING id, proceso_id, nombre", (process_id, name, DETAILS.get(code, {}).get("objective")))
+            cur.execute("INSERT INTO contrato(proceso_id, bpm_process_id, nombre, objetivo) VALUES (%s, %s, %s, %s) RETURNING id, proceso_id, bpm_process_id, nombre", (process_id, PROCESS_ID, name, DETAILS.get(code, {}).get("objective")))
             contract = cur.fetchone()
         contracts[code] = dict(contract)
         expected = MACHINE_ASSIGNMENTS.get(code, [])
@@ -224,13 +212,13 @@ def _canonical(cur) -> dict:
 
 def _cleanup(cur) -> dict:
     before = _counts(cur)
-    cur.execute("DELETE FROM pm_process_transition WHERE version_id = %s AND properties->>'seed' = %s", (VERSION_ID, SEED))
+    cur.execute("DELETE FROM pm_process_transition WHERE process_id = %s AND properties->>'seed' = %s", (PROCESS_ID, SEED))
     transitions = cur.rowcount
-    cur.execute("DELETE FROM pm_context_record WHERE version_id = %s AND provenance->>'seed' = %s", (VERSION_ID, SEED))
+    cur.execute("DELETE FROM pm_context_record WHERE process_id = %s AND provenance->>'seed' = %s", (PROCESS_ID, SEED))
     context = cur.rowcount
-    cur.execute("DELETE FROM machine_operation_configuration WHERE process_version_id = %s AND specific_description LIKE %s", (VERSION_ID, f"%{SEED}%"))
+    cur.execute("DELETE FROM machine_operation_configuration WHERE process_id = %s AND specific_description LIKE %s", (PROCESS_ID, f"%{SEED}%"))
     configurations = cur.rowcount
-    cur.execute("DELETE FROM pm_process_node WHERE version_id = %s AND properties->>'seed' = %s", (VERSION_ID, SEED))
+    cur.execute("DELETE FROM pm_process_node WHERE process_id = %s AND properties->>'seed' = %s", (PROCESS_ID, SEED))
     nodes = cur.rowcount
     return {"before": before, "deleted": {"nodes": nodes, "transitions": transitions, "context_records": context, "machine_operation_configurations": configurations}}
 
@@ -238,11 +226,11 @@ def _cleanup(cur) -> dict:
 def _counts(cur) -> dict:
     result = {}
     for key, table, where, params in [
-        ("nodes", "pm_process_node", "version_id = %s AND properties->>'seed' = %s", (VERSION_ID, SEED)),
-        ("transitions", "pm_process_transition", "version_id = %s AND properties->>'seed' = %s", (VERSION_ID, SEED)),
+        ("nodes", "pm_process_node", "process_id = %s AND properties->>'seed' = %s", (PROCESS_ID, SEED)),
+        ("transitions", "pm_process_transition", "process_id = %s AND properties->>'seed' = %s", (PROCESS_ID, SEED)),
         ("metadata", "pm_process_node_metadata", "metadata->'provenance'->>'seed' = %s", (SEED,)),
-        ("context_records", "pm_context_record", "version_id = %s AND provenance->>'seed' = %s", (VERSION_ID, SEED)),
-        ("machine_operation_configurations", "machine_operation_configuration", "process_version_id = %s AND specific_description LIKE %s", (VERSION_ID, f"%{SEED}%")),
+        ("context_records", "pm_context_record", "process_id = %s AND provenance->>'seed' = %s", (PROCESS_ID, SEED)),
+        ("machine_operation_configurations", "machine_operation_configuration", "process_id = %s AND specific_description LIKE %s", (PROCESS_ID, f"%{SEED}%")),
     ]:
         cur.execute(f"SELECT COUNT(*) AS count FROM {table} WHERE {where}", params)
         result[key] = int(cur.fetchone()["count"])
@@ -256,15 +244,15 @@ def _insert_node(cur, code: str, node_type: str, name: str, section: str, canoni
     stock = node_type == "stock"
     output_role = "waste" if code == "DESECHO_MATERIAL" else "normal" if node_type == "output" else None
     cur.execute("""INSERT INTO pm_process_node
-        (node_id, version_id, node_code, node_type, name, description, output_role, stock_capacity, stock_initial_quantity, stock_unit, properties)
+        (node_id, process_id, node_code, node_type, name, description, output_role, stock_capacity, stock_initial_quantity, stock_unit, properties)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)
-        ON CONFLICT (version_id,node_code) DO UPDATE SET node_type=EXCLUDED.node_type,name=EXCLUDED.name,description=EXCLUDED.description,output_role=EXCLUDED.output_role,stock_capacity=EXCLUDED.stock_capacity,stock_initial_quantity=EXCLUDED.stock_initial_quantity,stock_unit=EXCLUDED.stock_unit,properties=EXCLUDED.properties,updated_at=NOW()
+        ON CONFLICT (process_id,node_code) DO UPDATE SET node_type=EXCLUDED.node_type,name=EXCLUDED.name,description=EXCLUDED.description,output_role=EXCLUDED.output_role,stock_capacity=EXCLUDED.stock_capacity,stock_initial_quantity=EXCLUDED.stock_initial_quantity,stock_unit=EXCLUDED.stock_unit,properties=EXCLUDED.properties,updated_at=NOW()
         WHERE pm_process_node.properties->>'seed' = EXCLUDED.properties->>'seed' RETURNING node_id""",
-        (node_id, VERSION_ID, code, node_type, name, detail.get("description", name), output_role, 20 if stock else None, 0 if stock else None, "cmin" if stock else None, json.dumps(props)))
+        (node_id, PROCESS_ID, code, node_type, name, detail.get("description", name), output_role, 20 if stock else None, 0 if stock else None, "cmin" if stock else None, json.dumps(props)))
     row = cur.fetchone()
     if row is None:
         raise RuntimeError(
-            f"El nodo {code} ya existe en la versión ML y no pertenece al seed {SEED}"
+            f"El nodo {code} ya existe en el proceso ML y no pertenece al seed {SEED}"
         )
     actual = str(row["node_id"])
     metadata = envelope("node", actual, "industrial_process_fixture", {"name": name, "fixture_key": code, "description": detail.get("description", name), "objective": detail.get("objective"), "inputs": detail.get("inputs", []), "outputs": detail.get("outputs", []), "parameters": detail.get("parameters", []), "quality_controls": detail.get("controls", []), "equipment": MACHINE_ASSIGNMENTS.get(code, []), "open_questions": [g["id"] for g in GAPS if g["id"].startswith("ML-")], "canonical_ids": canonical}, section)
@@ -276,21 +264,22 @@ def _insert_node(cur, code: str, node_type: str, name: str, section: str, canoni
 
 def _insert_transition(cur, key: str, source: str, target: str, transition_type: str, label: str, nodes: dict) -> None:
     props = {"seed": SEED, "external_key": f"{SEED}:transition:{key}", "source": {"reference": FIXTURE_PATH, "section": "§8.2"}}
-    cur.execute("""INSERT INTO pm_process_transition(transition_id,version_id,source_node_id,target_node_id,transition_type,label,condition,properties)
+    cur.execute("""INSERT INTO pm_process_transition(transition_id,process_id,source_node_id,target_node_id,transition_type,label,condition,properties)
                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb)
-                   ON CONFLICT(version_id,source_node_id,target_node_id,transition_type) DO UPDATE SET label=EXCLUDED.label,condition=EXCLUDED.condition,properties=EXCLUDED.properties,updated_at=NOW()
+                   ON CONFLICT(process_id,source_node_id,target_node_id,transition_type) DO UPDATE SET label=EXCLUDED.label,condition=EXCLUDED.condition,properties=EXCLUDED.properties,updated_at=NOW()
                    WHERE pm_process_transition.properties->>'seed' = EXCLUDED.properties->>'seed'
-                   RETURNING transition_id""", (sid("transition", key), VERSION_ID, nodes[source], nodes[target], transition_type, label, label if transition_type == "branch" else None, json.dumps(props)))
+                   RETURNING transition_id""", (sid("transition", key), PROCESS_ID, nodes[source], nodes[target], transition_type, label, label if transition_type == "branch" else None, json.dumps(props)))
     if cur.fetchone() is None:
         raise RuntimeError(
-            f"La transición {key} ya existe en la versión ML y no pertenece al seed {SEED}"
+            f"La transición {key} ya existe en el proceso ML y no pertenece al seed {SEED}"
         )
 
 
 def _context(cur, record_type: str, owner_type: str, owner_id: str, family: str, data: dict, section: str, node_id: str | None = None, key: str | None = None) -> None:
     payload = envelope(owner_type, owner_id, family, data, section)
-    cur.execute("""INSERT INTO pm_context_record(record_id,version_id,node_id,record_type,payload,source,provenance,execution_id)
-                   VALUES (%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s)""", (sid("record", key or f"{family}:{owner_id}"), VERSION_ID, node_id, record_type, json.dumps(payload), json.dumps(payload["source"]), json.dumps(payload["provenance"]), f"{SEED}:execution:1" if record_type == "fact" else None))
+    cur.execute("""INSERT INTO pm_context_record(record_id,process_id,node_id,record_type,payload,source,provenance,execution_id)
+                   VALUES (%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s)
+                   ON CONFLICT(record_id) DO UPDATE SET process_id=EXCLUDED.process_id,node_id=EXCLUDED.node_id,record_type=EXCLUDED.record_type,payload=EXCLUDED.payload,source=EXCLUDED.source,provenance=EXCLUDED.provenance,execution_id=EXCLUDED.execution_id,updated_at=NOW()""", (sid("record", key or f"{family}:{owner_id}"), PROCESS_ID, node_id, record_type, json.dumps(payload), json.dumps(payload["source"]), json.dumps(payload["provenance"]), f"{SEED}:execution:1" if record_type == "fact" else None))
 
 
 def load(cur, target: dict | None = None) -> dict:
@@ -306,10 +295,10 @@ def load(cur, target: dict | None = None) -> dict:
     for transition in TRANSITIONS:
         _insert_transition(cur, *transition, nodes)
         _context(cur, "declaration", "process", PROCESS_ID, "bpm_process", {"process_code": PROCESS_CODE, "name": PROCESS_NAME, "description": PROCESS_DESCRIPTION, "fixture_version": "test"}, "§0-§1", key="bpm-process")
-    _context(cur, "declaration", "version", VERSION_ID, "methodology", {"fixture_scope": "coverage_and_gap_discovery", "levels": ["PLC/Autómata", "MES/SCADA", "PI-AVEVA"], "causal_chain": "contract -> analysis -> methodology -> cause -> hypothesis -> evidence -> conclusion"}, "§9-§10", key="methodology")
-    _context(cur, "declaration", "version", VERSION_ID, "fixture_gaps", {"gaps": GAPS}, "§11-§13", key="gaps")
-    _context(cur, "fact", "version", VERSION_ID, "execution", {"event": "fixture_loaded", "telemetry_ingested": False, "node_count": len(NODE_SPECS)}, "§9", key="execution")
-    _context(cur, "evidence", "version", VERSION_ID, "fixture_report", {"path": FIXTURE_PATH, "sections": ["§8.1", "§8.2"], "gap_ids": [g["id"] for g in GAPS]}, "§13", key="fixture-report")
+    _context(cur, "declaration", "process", PROCESS_ID, "methodology", {"fixture_scope": "coverage_and_gap_discovery", "levels": ["PLC/Autómata", "MES/SCADA", "PI-AVEVA"], "causal_chain": "contract -> analysis -> methodology -> cause -> hypothesis -> evidence -> conclusion"}, "§9-§10", key="methodology")
+    _context(cur, "declaration", "process", PROCESS_ID, "fixture_gaps", {"gaps": GAPS}, "§11-§13", key="gaps")
+    _context(cur, "fact", "process", PROCESS_ID, "execution", {"event": "fixture_loaded", "telemetry_ingested": False, "node_count": len(NODE_SPECS)}, "§9", key="execution")
+    _context(cur, "evidence", "process", PROCESS_ID, "fixture_report", {"path": FIXTURE_PATH, "sections": ["§8.1", "§8.2"], "gap_ids": [g["id"] for g in GAPS]}, "§13", key="fixture-report")
     for code in RESOURCE_CODES:
         _context(cur, "declaration", "resource", sid("resource", code), "resource", {"external_key": code, "role": "equipment_or_machine", "description": f"Recurso declarado por el fixture ML ({code}).", "canonical_machine_id": canonical["machines"][code]["id"], "placeholder": True}, "§2-§7", key=f"resource:{code}")
     for code, node_type, name, section, _role in NODE_SPECS:
@@ -320,20 +309,20 @@ def load(cur, target: dict | None = None) -> dict:
         for machine_code in MACHINE_ASSIGNMENTS.get(code, []):
             machine_id = canonical["machines"][machine_code]["id"]
             config = {"additional_inputs": detail.get("inputs", []), "specific_controls": detail.get("controls", []), "available_measurements": ["peso", "temperatura", "energía"], "specific_safety_rules": [], "specific_description": f"{SEED}: {detail.get('description', name)}"}
-            cur.execute("""INSERT INTO machine_operation_configuration(machine_id,operation_id,process_version_id,process_id,contract_id,specific_description,additional_inputs,specific_controls,available_measurements,specific_safety_rules,validation_status)
-                           VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s::jsonb,'draft')
-                           ON CONFLICT(machine_id,process_version_id,operation_id) DO UPDATE SET contract_id=EXCLUDED.contract_id,specific_description=EXCLUDED.specific_description,additional_inputs=EXCLUDED.additional_inputs,specific_controls=EXCLUDED.specific_controls,available_measurements=EXCLUDED.available_measurements,updated_at=NOW()""", (machine_id, nodes[code], VERSION_ID, PROCESS_ID, contract_id, config["specific_description"], json.dumps(config["additional_inputs"]), json.dumps(config["specific_controls"]), json.dumps(config["available_measurements"]), json.dumps(config["specific_safety_rules"])))
-    cur.execute("""SELECT COUNT(*) AS total, COUNT(*) FILTER(WHERE NULLIF(BTRIM(description),'') IS NULL) AS empty FROM pm_process_node WHERE version_id=%s AND properties->>'seed'=%s AND node_type='operation'""", (VERSION_ID, SEED))
+            cur.execute("""INSERT INTO machine_operation_configuration(machine_id,operation_id,process_id,contract_id,specific_description,additional_inputs,specific_controls,available_measurements,specific_safety_rules,validation_status)
+                           VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s::jsonb,'draft')
+                           ON CONFLICT(machine_id,process_id,operation_id) DO UPDATE SET contract_id=EXCLUDED.contract_id,specific_description=EXCLUDED.specific_description,additional_inputs=EXCLUDED.additional_inputs,specific_controls=EXCLUDED.specific_controls,available_measurements=EXCLUDED.available_measurements,updated_at=NOW()""", (machine_id, nodes[code], PROCESS_ID, contract_id, config["specific_description"], json.dumps(config["additional_inputs"]), json.dumps(config["specific_controls"]), json.dumps(config["available_measurements"]), json.dumps(config["specific_safety_rules"])))
+    cur.execute("""SELECT COUNT(*) AS total, COUNT(*) FILTER(WHERE NULLIF(BTRIM(description),'') IS NULL) AS empty FROM pm_process_node WHERE process_id=%s AND properties->>'seed'=%s AND node_type='operation'""", (PROCESS_ID, SEED))
     descriptions = dict(cur.fetchone())
     if descriptions["empty"]:
         raise RuntimeError("Hay operaciones ML sin descripción persistida")
     after = _counts(cur)
-    return {"process_code": PROCESS_CODE, "process_id": PROCESS_ID, "version_id": VERSION_ID, "canonical": canonical, "cleanup": cleanup, "loaded": {"nodes": len(NODE_SPECS), "transitions": len(TRANSITIONS), "resources": len(RESOURCE_CODES), "operations": len([n for n in NODE_SPECS if n[1] == "operation"]), "gaps": len(GAPS)}, "description_evidence": {"operations": descriptions["total"], "operations_with_description": descriptions["total"] - descriptions["empty"]}, "after": after, "target": target}
+    return {"process_code": PROCESS_CODE, "process_id": PROCESS_ID, "canonical": canonical, "cleanup": cleanup, "loaded": {"nodes": len(NODE_SPECS), "transitions": len(TRANSITIONS), "resources": len(RESOURCE_CODES), "operations": len([n for n in NODE_SPECS if n[1] == "operation"]), "gaps": len(GAPS)}, "description_evidence": {"operations": descriptions["total"], "operations_with_description": descriptions["total"] - descriptions["empty"]}, "after": after, "target": target}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dry-run", action="store_true", help="validar la definición/version y mostrar conteos sin modificar la BD")
+    parser.add_argument("--dry-run", action="store_true", help="validar el proceso y mostrar conteos sin modificar la BD")
     parser.add_argument("--contract", action="store_true", help="emitir el contrato ML offline sin conectar a PostgreSQL")
     parser.add_argument("--json", action="store_true", help="emitir evidencia JSON")
     args = parser.parse_args()

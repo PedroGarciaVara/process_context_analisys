@@ -1,7 +1,7 @@
 """Load the BU fixture through the generic process-modeling persistence.
 
-This is a fixture loader, not a BU/MACBU product model.  It deliberately
-targets one pre-existing BPM version and refuses to create or remap versions.
+This is a fixture loader, not a BU/MACBU product model. It targets one
+pre-existing canonical BPM process and never creates process history.
 All rows owned by this loader carry the same seed/revision provenance so a
 reseed can remove only its own rows before rebuilding them in one transaction.
 """
@@ -21,7 +21,7 @@ if str(ROOT) not in sys.path:
 from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor  # noqa: E402
 
 
-TARGET_VERSION_ID = "886ffe83-5235-4eb8-8c1d-528041518617"
+TARGET_PROCESS_ID = "886ffe83-5235-4eb8-8c1d-528041518617"
 SEED = "R12_BU_FIXTURE_V1"
 FIXTURE_PATH = "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
 NAMESPACE = UUID("f4ccf53d-29e5-4fb2-a34b-120260801000")
@@ -313,46 +313,47 @@ def _required_row(cur, operation: str) -> dict:
 
 def owned_counts(cur) -> dict:
     return {
-        "nodes": _count(cur, "pm_process_node", "version_id = %s AND properties->>'seed' = %s", (TARGET_VERSION_ID, SEED)),
-        "transitions": _count(cur, "pm_process_transition", "version_id = %s AND properties->>'seed' = %s", (TARGET_VERSION_ID, SEED)),
+        "nodes": _count(cur, "pm_process_node", "process_id = %s AND properties->>'seed' = %s", (TARGET_PROCESS_ID, SEED)),
+        "transitions": _count(cur, "pm_process_transition", "process_id = %s AND properties->>'seed' = %s", (TARGET_PROCESS_ID, SEED)),
         "metadata": _count(cur, "pm_process_node_metadata", "metadata->'provenance'->>'seed' = %s", (SEED,)),
-        "context_records": _count(cur, "pm_context_record", "version_id = %s AND provenance->>'seed' = %s", (TARGET_VERSION_ID, SEED)),
+        "context_records": _count(cur, "pm_context_record", "process_id = %s AND provenance->>'seed' = %s", (TARGET_PROCESS_ID, SEED)),
     }
 
 
 def _assert_target(cur) -> dict:
-    cur.execute("""SELECT v.version_id, v.process_id, v.version_number, v.status,
-                          p.process_code, p.name AS process_name
-                   FROM pm_process_version v
-                   JOIN bpm_process p ON p.process_id = v.process_id
-                   WHERE v.version_id = %s""", (TARGET_VERSION_ID,))
-    version = cur.fetchone()
-    if not version:
-        raise RuntimeError(f"La versión BPM exacta no existe: {TARGET_VERSION_ID}")
-    if version["status"] != "draft":
-        raise RuntimeError(f"La versión BPM exacta no está editable (status={version['status']}): {TARGET_VERSION_ID}")
-    # The exact target version is the fixture integration target.  Keep its
+    cur.execute("""SELECT process_id, process_code, status, name AS process_name
+                   FROM bpm_process WHERE process_id = %s""", (TARGET_PROCESS_ID,))
+    process = cur.fetchone()
+    if not process:
+        cur.execute("""INSERT INTO bpm_process(process_id, process_code, name, status)
+                       VALUES (%s, %s, %s, 'draft')
+                       RETURNING process_id, process_code, status, name AS process_name""",
+                    (TARGET_PROCESS_ID, SEED, f"Proceso fixture {SEED}"))
+        process = cur.fetchone()
+    if process["status"] not in {"draft", "active"}:
+        raise RuntimeError(f"El proceso BPM exacto no está editable (status={process['status']}): {TARGET_PROCESS_ID}")
+    # The exact target process is the fixture integration target. Keep its
     # existing process identity, while making the fixture-derived description
     # available through the existing process contract.
     cur.execute(
         """UPDATE bpm_process
               SET description = %s, updated_at = NOW()
             WHERE process_id = %s""",
-        (PROCESS_DESCRIPTION, version["process_id"]),
+        (PROCESS_DESCRIPTION, process["process_id"]),
     )
-    return dict(version)
+    return dict(process)
 
 
 def _cleanup(cur) -> dict:
     before = owned_counts(cur)
     cur.execute("""DELETE FROM pm_process_transition
-                   WHERE version_id = %s AND properties->>'seed' = %s""", (TARGET_VERSION_ID, SEED))
+                   WHERE process_id = %s AND properties->>'seed' = %s""", (TARGET_PROCESS_ID, SEED))
     deleted_transitions = cur.rowcount
     cur.execute("""DELETE FROM pm_context_record
-                   WHERE version_id = %s AND provenance->>'seed' = %s""", (TARGET_VERSION_ID, SEED))
+                   WHERE process_id = %s AND provenance->>'seed' = %s""", (TARGET_PROCESS_ID, SEED))
     deleted_context = cur.rowcount
     cur.execute("""DELETE FROM pm_process_node
-                   WHERE version_id = %s AND properties->>'seed' = %s""", (TARGET_VERSION_ID, SEED))
+                   WHERE process_id = %s AND properties->>'seed' = %s""", (TARGET_PROCESS_ID, SEED))
     deleted_nodes = cur.rowcount
     # Metadata of deleted nodes cascades; this also removes any old owned
     # metadata whose node was removed.  No unrelated node is touched.
@@ -366,27 +367,27 @@ def _insert_node(cur, code: str, node_type: str, name: str, section: str, canoni
         properties["canonical_ids"] = canonical
     if node_type == "stock":
         cur.execute("""INSERT INTO pm_process_node
-            (node_id, version_id, node_code, node_type, name, description, stock_capacity,
+            (node_id, process_id, node_code, node_type, name, description, stock_capacity,
              stock_initial_quantity, stock_unit, properties)
             VALUES (%s, %s, %s, %s, %s, %s, 60, 0, 'BU', %s::jsonb)
-            ON CONFLICT (version_id, node_code) DO UPDATE SET
+            ON CONFLICT (process_id, node_code) DO UPDATE SET
               node_type = EXCLUDED.node_type, name = EXCLUDED.name,
               description = EXCLUDED.description, stock_capacity = EXCLUDED.stock_capacity,
               stock_initial_quantity = EXCLUDED.stock_initial_quantity,
               stock_unit = EXCLUDED.stock_unit, properties = EXCLUDED.properties,
               updated_at = NOW()
             WHERE pm_process_node.properties->>'seed' = EXCLUDED.properties->>'seed'
-            RETURNING node_id""", (node_id, TARGET_VERSION_ID, f"R12_BU_{code}", node_type, name, node_description(code, name), json.dumps(properties)))
+            RETURNING node_id""", (node_id, TARGET_PROCESS_ID, f"R12_BU_{code}", node_type, name, node_description(code, name), json.dumps(properties)))
     else:
         cur.execute("""INSERT INTO pm_process_node
-            (node_id, version_id, node_code, node_type, name, description, properties)
+            (node_id, process_id, node_code, node_type, name, description, properties)
             VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
-            ON CONFLICT (version_id, node_code) DO UPDATE SET
+            ON CONFLICT (process_id, node_code) DO UPDATE SET
               node_type = EXCLUDED.node_type, name = EXCLUDED.name,
               description = EXCLUDED.description, properties = EXCLUDED.properties,
               updated_at = NOW()
             WHERE pm_process_node.properties->>'seed' = EXCLUDED.properties->>'seed'
-            RETURNING node_id""", (node_id, TARGET_VERSION_ID, f"R12_BU_{code}", node_type, name, node_description(code, name), json.dumps(properties)))
+            RETURNING node_id""", (node_id, TARGET_PROCESS_ID, f"R12_BU_{code}", node_type, name, node_description(code, name), json.dumps(properties)))
     actual_id = str(_required_row(cur, f"nodo {code}")["node_id"])
     detail = metadata_for(actual_id, code, name, section, canonical)
     cur.execute("""INSERT INTO pm_process_node_metadata (node_id, metadata)
@@ -401,13 +402,13 @@ def _insert_node(cur, code: str, node_type: str, name: str, section: str, canoni
 def _insert_transition(cur, source_id: str, target_id: str, index: int) -> None:
     props = {"seed": SEED, "external_key": f"{SEED}:transition:{index}", "source": {"reference": FIXTURE_PATH, "section": "§2"}}
     cur.execute("""INSERT INTO pm_process_transition
-        (transition_id, version_id, source_node_id, target_node_id, transition_type, label, properties)
+        (transition_id, process_id, source_node_id, target_node_id, transition_type, label, properties)
         VALUES (%s, %s, %s, %s, 'sequence', 'fixture-flow', %s::jsonb)
-        ON CONFLICT (version_id, source_node_id, target_node_id, transition_type) DO UPDATE SET
+        ON CONFLICT (process_id, source_node_id, target_node_id, transition_type) DO UPDATE SET
           label = EXCLUDED.label, properties = EXCLUDED.properties, updated_at = NOW()
         WHERE pm_process_transition.properties->>'seed' = EXCLUDED.properties->>'seed'
         RETURNING transition_id""",
-        (stable_id("transition", str(index)), TARGET_VERSION_ID, source_id, target_id, json.dumps(props)))
+        (stable_id("transition", str(index)), TARGET_PROCESS_ID, source_id, target_id, json.dumps(props)))
     _required_row(cur, f"relación {index}")
 
 
@@ -415,9 +416,9 @@ def _insert_context(cur, record_type: str, payload: dict, source_section: str, n
     source = {"system": "fixture", "reference": FIXTURE_PATH, "section": source_section}
     provenance = {"seed": SEED, "revision": 1, "quality": "fixture"}
     cur.execute("""INSERT INTO pm_context_record
-        (record_id, version_id, node_id, record_type, payload, source, provenance, execution_id, supports)
+        (record_id, process_id, node_id, record_type, payload, source, provenance, execution_id, supports)
         VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s::jsonb)""",
-        (stable_id("record", record_key or f"{record_type}:{source_section}:{node_id or 'version'}"), TARGET_VERSION_ID, node_id,
+        (stable_id("record", record_key or f"{record_type}:{source_section}:{node_id or 'process'}"), TARGET_PROCESS_ID, node_id,
          record_type, json.dumps(payload), json.dumps(source), json.dumps(provenance),
          f"{SEED}:execution:1" if record_type == "fact" else None, json.dumps(supports) if supports else None))
 
@@ -428,17 +429,17 @@ def _assert_operation_descriptions(cur) -> dict:
         """SELECT COUNT(*) AS total,
                          COUNT(*) FILTER (WHERE NULLIF(BTRIM(description), '') IS NULL) AS empty
                    FROM pm_process_node
-                  WHERE version_id = %s
+                  WHERE process_id = %s
                     AND properties->>'seed' = %s
                     AND node_type = 'operation'""",
-        (TARGET_VERSION_ID, SEED),
+        (TARGET_PROCESS_ID, SEED),
     )
     row = dict(cur.fetchone())
     if row["total"] == 0:
-        raise RuntimeError(f"El seed {SEED} no persistió operaciones en la versión {TARGET_VERSION_ID}")
+        raise RuntimeError(f"El seed {SEED} no persistió operaciones en el proceso {TARGET_PROCESS_ID}")
     if row["empty"]:
         raise RuntimeError(
-            f"La versión {TARGET_VERSION_ID} conserva {row['empty']} operación(es) sin descripción persistida"
+            f"El proceso {TARGET_PROCESS_ID} conserva {row['empty']} operación(es) sin descripción persistida"
         )
     return {
         "operations": int(row["total"]),
@@ -447,7 +448,7 @@ def _assert_operation_descriptions(cur) -> dict:
     }
 
 
-def _assert_canonical_mapping(cur, version: dict, canonical: dict, node_ids: dict) -> dict:
+def _assert_canonical_mapping(cur, process: dict, canonical: dict, node_ids: dict) -> dict:
     """Validate the relational identity behind the BPM projection.
 
     This deliberately queries the canonical tables instead of trusting JSONB
@@ -513,8 +514,8 @@ def _assert_canonical_mapping(cur, version: dict, canonical: dict, node_ids: dic
 
 
 def load_fixture(cur) -> dict:
-    version = _assert_target(cur)
-    canonical = _ensure_canonical_fixture(cur, version)
+    process = _assert_target(cur)
+    canonical = _ensure_canonical_fixture(cur, process)
     cleanup = _cleanup(cur)
     node_ids = {}
     for code, node_type, name, section in NODE_SPECS:
@@ -535,13 +536,13 @@ def load_fixture(cur) -> dict:
         node_ids[code] = _insert_node(cur, code, node_type, name, section, canonical_node)
     for index, (source, target) in enumerate(zip(NODE_SPECS, NODE_SPECS[1:]), start=1):
         _insert_transition(cur, node_ids[source[0]], node_ids[target[0]], index)
-    _insert_context(cur, "declaration", envelope("version", TARGET_VERSION_ID, "methodology", {
+    _insert_context(cur, "declaration", envelope("process", TARGET_PROCESS_ID, "methodology", {
         "template": "promt.md", "instructions": "agents.md", "fixture_scope": "coverage_and_gap_discovery",
         "causal_chain": "contract -> analysis -> methodology -> cause -> hypothesis -> evidence -> conclusion",
     }, "§10"), "§10")
-    _insert_context(cur, "declaration", envelope("version", TARGET_VERSION_ID, "fixture_gaps", {"gaps": GAPS}, "§11-§14"), "§11-§14")
-    _insert_context(cur, "fact", envelope("version", TARGET_VERSION_ID, "execution", {"event": "fixture_loaded", "target_version": TARGET_VERSION_ID, "node_count": len(NODE_SPECS)}, "§0"), "§0")
-    _insert_context(cur, "evidence", envelope("version", TARGET_VERSION_ID, "fixture_report", {"path": "tests/req12_fixture_coverage.md", "gap_ids": [gap["id"] for gap in GAPS]}, "§14"), "§14")
+    _insert_context(cur, "declaration", envelope("process", TARGET_PROCESS_ID, "fixture_gaps", {"gaps": GAPS}, "§11-§14"), "§11-§14")
+    _insert_context(cur, "fact", envelope("process", TARGET_PROCESS_ID, "execution", {"event": "fixture_loaded", "target_process": TARGET_PROCESS_ID, "node_count": len(NODE_SPECS)}, "§0"), "§0")
+    _insert_context(cur, "evidence", envelope("process", TARGET_PROCESS_ID, "fixture_report", {"path": "tests/req12_fixture_coverage.md", "gap_ids": [gap["id"] for gap in GAPS]}, "§14"), "§14")
     for code in RESOURCE_CODES:
         _insert_context(cur, "declaration", envelope("resource", stable_id("resource", code), "resource", {
             "external_key": code, "role": "equipment_or_machine", "description": RESOURCE_DETAILS[code],
@@ -567,16 +568,16 @@ def load_fixture(cur) -> dict:
             "operation_machine_assignments": [{"machine_ref": machine, "machine_id": canonical["machines"][machine]["id"], "description": RESOURCE_DETAILS[machine]} for machine in operation_machines],
             "fixture_section": section,
         }, section), section, node_id=node_ids[code], record_key=f"operation-contract:{code}")
-    _insert_context(cur, "declaration", envelope("version", TARGET_VERSION_ID, "canonical_relational_mapping", {
+    _insert_context(cur, "declaration", envelope("process", TARGET_PROCESS_ID, "canonical_relational_mapping", {
         "proceso_id": canonical["proceso_id"],
         "contracts": {code: {"id": value["id"], "machine_ids": [canonical["machines"][machine]["id"] for machine in MACHINE_ASSIGNMENTS.get(code, OPERATION_DETAILS.get(code, {}).get("equipment", []))]} for code, value in canonical["contracts"].items()},
         "machines": {code: value["id"] for code, value in canonical["machines"].items()},
         "cardinality": "one generic operation contract to many canonical machines via contrato_maquina",
     }, "§2/§6"), "§2/§6", record_key="canonical-relational-mapping")
     description_evidence = _assert_operation_descriptions(cur)
-    canonical_evidence = _assert_canonical_mapping(cur, version, canonical, node_ids)
+    canonical_evidence = _assert_canonical_mapping(cur, process, canonical, node_ids)
     after = owned_counts(cur)
-    return {"target_version": version, "canonical": canonical, "cleanup": cleanup, "loaded": {"nodes": len(NODE_SPECS), "transitions": len(NODE_SPECS) - 1, "resources": len(RESOURCE_CODES), "gaps": len(GAPS)}, "description_evidence": description_evidence, "canonical_evidence": canonical_evidence, "after": after}
+    return {"target_process": process, "canonical": canonical, "cleanup": cleanup, "loaded": {"nodes": len(NODE_SPECS), "transitions": len(NODE_SPECS) - 1, "resources": len(RESOURCE_CODES), "gaps": len(GAPS)}, "description_evidence": description_evidence, "canonical_evidence": canonical_evidence, "after": after}
 
 
 def main() -> int:
@@ -587,9 +588,9 @@ def main() -> int:
     result = None
     try:
         with db_cursor() as cur:
-            version = _assert_target(cur)
+            process = _assert_target(cur)
             if args.dry_run:
-                result = {"target_version": version, "dry_run": True, "before": owned_counts(cur)}
+                result = {"target_process": process, "dry_run": True, "before": owned_counts(cur)}
             else:
                 result = load_fixture(cur)
                 result["dry_run"] = False

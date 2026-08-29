@@ -87,25 +87,23 @@ def _operations_by_machine() -> dict[int, list[dict]]:
     with db_cursor() as cur:
         cur.execute(
             """
-            SELECT moc.machine_id, moc.operation_id, moc.process_version_id,
+            SELECT moc.machine_id, moc.operation_id,
                    moc.process_id, moc.contract_id, c.proceso_id AS legacy_process_id,
                    n.node_code, n.name, n.description,
                    n.properties->'etapas' AS stage_payload,
-                   v.version_number, p.name AS process_name
+                   p.name AS process_name
               FROM machine_operation_configuration moc
               LEFT JOIN contrato c ON c.id = moc.contract_id
               JOIN pm_process_node n ON n.node_id = moc.operation_id
-              JOIN pm_process_version v ON v.version_id = moc.process_version_id
               JOIN bpm_process p ON p.process_id = moc.process_id
              WHERE n.node_type = 'operation'
-             ORDER BY moc.machine_id, p.name, v.version_number, n.node_code, moc.operation_id
+             ORDER BY moc.machine_id, p.name, n.node_code, moc.operation_id
             """
         )
         grouped: dict[int, list[dict]] = {}
         for row in cur.fetchall():
             item = dict(row)
             item["operation_id"] = str(item["operation_id"])
-            item["process_version_id"] = str(item["process_version_id"])
             item["process_id"] = str(item["process_id"])
             item["contract_id"] = int(item["contract_id"]) if item["contract_id"] is not None else None
             item["legacy_process_id"] = int(item["legacy_process_id"]) if item["legacy_process_id"] is not None else None
@@ -169,11 +167,10 @@ def _contract_scope_options() -> dict:
         ]
         cur.execute(
             """
-            SELECT n.node_id, n.name, n.version_id, p.process_id AS bpm_process_id,
+            SELECT n.node_id, n.name, p.process_id AS bpm_process_id,
                    p.name AS process_name, lp.id AS process_id
               FROM pm_process_node n
-              JOIN pm_process_version v ON v.version_id = n.version_id
-              JOIN bpm_process p ON p.process_id = v.process_id
+              JOIN bpm_process p ON p.process_id = n.process_id
               JOIN proceso lp ON lp.bpm_process_id = p.process_id
              WHERE n.node_type = 'operation'
              ORDER BY p.name, n.name, n.node_id
@@ -183,7 +180,6 @@ def _contract_scope_options() -> dict:
             {
                 "id": str(row["node_id"]),
                 "name": row["name"],
-                "versionId": str(row["version_id"]),
                 "bpmProcessId": str(row["bpm_process_id"]),
                 "processName": row["process_name"],
                 "processId": int(row["process_id"]),
@@ -214,8 +210,7 @@ def _resolve_contract_scope(payload: dict) -> tuple[int, str]:
                 """
                 SELECT lp.id, n.name
                   FROM pm_process_node n
-                  JOIN pm_process_version v ON v.version_id=n.version_id
-                  JOIN bpm_process p ON p.process_id=v.process_id
+                  JOIN bpm_process p ON p.process_id=n.process_id
                   JOIN proceso lp ON lp.bpm_process_id=p.process_id
                  WHERE n.node_id=%s AND n.node_type='operation'
                 """,
@@ -262,7 +257,7 @@ def _decorate_machine(
     machine: dict,
     preferred_contract_id: int | None = None,
     operation_id: str | None = None,
-    process_version_id: str | None = None,
+    process_id_bpm: str | None = None,
 ) -> dict:
     processes_by_id = {int(item["id"]): item for item in _process_records()}
     contracts_by_id = {int(item["id"]): item for item in _contract_records()}
@@ -280,7 +275,7 @@ def _decorate_machine(
         (
             item for item in operations
             if (not operation_id or item["operation_id"] == str(operation_id))
-            and (not process_version_id or item["process_version_id"] == str(process_version_id))
+            and (not process_id_bpm or item["process_id"] == str(process_id_bpm))
         ),
         None,
     )
@@ -304,15 +299,14 @@ def _decorate_machine(
         "contractIds": links,
         "operations": operations,
         "operationIds": [item["operation_id"] for item in operations],
-        "processVersionIds": [item["process_version_id"] for item in operations],
+        "processIds": [item["process_id"] for item in operations],
         "selectedOperationId": scoped_operation["operation_id"] if scoped_operation else None,
-        "selectedProcessVersionId": scoped_operation["process_version_id"] if scoped_operation else None,
         "selectedBpmProcessId": scoped_operation["process_id"] if scoped_operation else None,
         "selectedOperationContractId": scoped_operation["contract_id"] if scoped_operation else None,
         "operationRelations": [
             {
                 "operation_id": item["operation_id"],
-                "process_version_id": item["process_version_id"],
+                "process_id": item["process_id"],
                 "process_id": item["process_id"],
                 "contract_id": item["contract_id"],
                 "legacy_process_id": item["legacy_process_id"],
@@ -333,21 +327,21 @@ def _save_operation_stages(payload: dict) -> None:
     if "etapas" not in payload:
         return
     operation_id = payload.get("operation_id") or payload.get("operationId")
-    version_id = payload.get("process_version_id") or payload.get("processVersionId")
-    if not operation_id or not version_id:
-        raise ValueError("operation_id y process_version_id son obligatorios para guardar etapas.")
+    process_id = payload.get("process_id") or payload.get("processId")
+    if not operation_id or not process_id:
+        raise ValueError("operation_id y process_id son obligatorios para guardar etapas.")
     stages = validate_stages(payload.get("etapas"))
     with db_cursor() as cur:
         cur.execute(
             """UPDATE pm_process_node
                   SET properties = jsonb_set(COALESCE(properties, '{}'::jsonb), '{etapas}', %s::jsonb, true),
                       updated_at = NOW()
-                WHERE node_id=%s AND version_id=%s AND node_type='operation'
+                WHERE node_id=%s AND process_id=%s AND node_type='operation'
                 RETURNING node_id""",
-            (Json(canonical_stages(stages, envelope=True)), str(operation_id), str(version_id)),
+            (Json(canonical_stages(stages, envelope=True)), str(operation_id), str(process_id)),
         )
         if not cur.fetchone():
-            raise ValueError("La operación BPM no existe o no pertenece a la versión indicada.")
+            raise ValueError("La operación BPM no existe o no pertenece al proceso indicado.")
 
 
 def _filter_contracts(process_id: int | None = None, status: str | None = None) -> list[dict]:
@@ -363,7 +357,7 @@ def _filter_machines(
     process_id: int | None = None,
     contract_id: int | None = None,
     operation_id: str | None = None,
-    process_version_id: str | None = None,
+    process_id_bpm: str | None = None,
     bpm_process_id: str | None = None,
 ) -> list[dict]:
     operation_scope = None
@@ -375,10 +369,10 @@ def _filter_machines(
                   FROM machine_operation_configuration moc
                   LEFT JOIN contrato c ON c.id = moc.contract_id
                  WHERE moc.operation_id = %s
-                   AND (%s IS NULL OR moc.process_version_id = %s)
+                   AND (%s IS NULL OR moc.process_id = %s)
                  LIMIT 1
                 """,
-                (operation_id, process_version_id, process_version_id),
+                (operation_id, process_id_bpm, process_id_bpm),
             )
             operation_scope = cur.fetchone()
         if not operation_scope:
@@ -393,7 +387,7 @@ def _filter_machines(
             machine,
             preferred_contract_id=int(contract_id) if contract_id else None,
             operation_id=operation_id,
-            process_version_id=process_version_id,
+            process_id_bpm=process_id_bpm,
         )
         for machine in machines
     ]
@@ -406,7 +400,7 @@ def _filter_machines(
             item for item in records
             if any(
                 operation["operation_id"] == str(operation_id)
-                and (not process_version_id or operation["process_version_id"] == str(process_version_id))
+                and (not process_id_bpm or operation["process_id"] == str(process_id_bpm))
                 for operation in item["operations"]
             )
         ]
@@ -460,7 +454,7 @@ def _decorate_page_payload(page: str, payload: dict, params: dict[str, str] | No
     )
     contract_id = params.get("contract_id") or params.get("contractId") or None
     operation_id = params.get("operation_id") or params.get("operationId") or None
-    process_version_id = params.get("process_version_id") or params.get("processVersionId") or None
+    process_id_bpm = params.get("bpm_process_id") or None
     machine_id = params.get("machine_id") or params.get("machineId") or None
     status = params.get("status") or params.get("filter") or "all"
     process_id_int = _coerce_optional_int(process_id)
@@ -512,11 +506,11 @@ def _decorate_page_payload(page: str, payload: dict, params: dict[str, str] | No
 
     if page == "maquinas":
         result["data"] = {
-            "rows": _filter_machines(process_id_int, contract_id_int, operation_id, process_version_id, bpm_process_id),
+            "rows": _filter_machines(process_id_int, contract_id_int, operation_id, process_id_bpm, bpm_process_id),
             "selected_process_id": process_id_int,
             "selected_contract_id": contract_id_int,
             "selected_operation_id": operation_id,
-            "selected_process_version_id": process_version_id,
+            "selected_bpm_process_id": process_id_bpm,
             "selected_machine_id": machine_id_int,
         }
         return result
@@ -537,19 +531,19 @@ def list_machines(
     process_id: str | None = None,
     contract_id: str | None = None,
     operation_id: str | None = None,
-    process_version_id: str | None = None,
+    process_id_bpm: str | None = None,
     bpm_process_id: str | None = None,
 ) -> list[dict]:
     process_id_int = _coerce_optional_int(process_id)
     contract_id_int = _coerce_optional_int(contract_id)
-    return _filter_machines(process_id_int, contract_id_int, operation_id, process_version_id, bpm_process_id)
+    return _filter_machines(process_id_int, contract_id_int, operation_id, process_id_bpm, bpm_process_id)
 
 
-def get_machine_context(machine_id: int, operation_id: str | None = None, process_version_id: str | None = None) -> dict | None:
+def get_machine_context(machine_id: int, operation_id: str | None = None, process_id: str | None = None) -> dict | None:
     """Expose the canonical machine context through the operational adapter."""
     from uc_bib_solv.modules.bpm.adapters.outbound.postgres.machine_model_repo import get_machine_context as load_machine_context
 
-    return load_machine_context(int(machine_id), operation_id, process_version_id)
+    return load_machine_context(int(machine_id), operation_id, process_id)
 
 
 def create_process(payload: dict) -> dict:
@@ -797,32 +791,29 @@ def delete_machine(machine_id: str) -> dict:
     }
 
 
-def _bpm_identity(version_id: str | None) -> dict | None:
-    """Return the generic BPM-to-operational identity for an exact version."""
-    if not version_id:
+def _bpm_identity(process_id: str | None) -> dict | None:
+    """Return the generic BPM-to-operational identity for a process."""
+    if not process_id:
         return None
     try:
-        version_uuid = str(UUID(str(version_id)))
+        process_uuid = str(UUID(str(process_id)))
     except (TypeError, ValueError):
-        raise ValueError("version_id must be a valid UUID")
+        raise ValueError("process_id must be a valid UUID")
     with db_cursor() as cur:
         cur.execute(
-            """SELECT v.version_id, v.process_id AS bpm_process_id,
-                      v.version_number, p.process_code, p.name, p.description
-                 FROM pm_process_version v
-                 JOIN bpm_process p ON p.process_id = v.process_id
-                WHERE v.version_id = %s""",
-            (version_uuid,),
+            """SELECT p.process_id AS bpm_process_id, p.process_code, p.name, p.description
+                 FROM bpm_process p WHERE p.process_id = %s""",
+            (process_uuid,),
         )
         version = cur.fetchone()
         if not version:
-            raise ValueError("BPM version not found")
+            raise ValueError("BPM process not found")
         cur.execute(
             """SELECT node_id, node_code, node_type, properties
                  FROM pm_process_node
-                WHERE version_id = %s AND node_type = 'operation'
+                WHERE process_id = %s AND node_type = 'operation'
                 ORDER BY node_code, node_id""",
-            (version_uuid,),
+            (process_uuid,),
         )
         relations = []
         for row in cur.fetchall():
@@ -846,13 +837,13 @@ def _bpm_identity(version_id: str | None) -> dict | None:
                 "contract_id": ids.get("contrato_id"),
                 "machine_ids": list((canonical or {}).get("machine_ids") or []),
             })
-    return {"version": dict(version), "relations": relations}
+    return {"process": dict(version), "relations": relations}
 
 
-def get_operational_catalog(version_id: str | None = None) -> dict:
+def get_operational_catalog(process_id: str | None = None) -> dict:
     payload = _build_catalog()
-    if version_id:
-        payload["bpm"] = _bpm_identity(version_id)
+    if process_id:
+        payload["bpm"] = _bpm_identity(process_id)
     return payload
 
 

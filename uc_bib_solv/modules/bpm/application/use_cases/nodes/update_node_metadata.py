@@ -11,7 +11,6 @@ class UpdateNodeMetadata:
         node = self.dependencies.nodes.get(node_id)
         if not node:
             raise NotFoundError("Nodo no encontrado")
-        self.dependencies.draft(node["version_id"])
         metadata = data.get("metadata", data)
         if not isinstance(metadata, dict):
             raise ProcessModelingError("Los metadatos deben ser un objeto JSON", "metadata_object_required")

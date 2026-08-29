@@ -44,10 +44,14 @@ class T9BoundaryTests(unittest.TestCase):
         schema = ROOT / "db_management" / "schema.sql"
         self.assertEqual(
             hashlib.sha256(schema.read_bytes()).hexdigest(),
-            # Baseline of the local db_management schema.  The schema itself
-            # is intentionally not changed by the architecture migration.
-            "9c7674169b5a010fd9cd8dcdeb117c96ac3165b8f41440e8fd57b6196e9f7073",
+            # Baseline of the current intentional db_management schema.
+            "d1369faf65176a6078260a88e6b210e1442b53b709baaec0adc24c82560b3a59",
         )
+
+    def test_http_alias_registry_has_been_removed(self):
+        from uc_bib_solv.architecture_validators import allowlist
+
+        self.assertFalse(hasattr(allowlist, "HTTP_ROUTE_ALIASES"))
 
 
 if __name__ == "__main__":

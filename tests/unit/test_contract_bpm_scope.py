@@ -2,6 +2,8 @@ import unittest
 
 from uc_bib_solv.modules.bpm.domain.shared.exceptions import BpmDomainError
 from uc_bib_solv.modules.bpm.domain.contracts.rules import validate_contract_payload
+from uc_bib_solv.modules.bpm.domain.contracts.entities import Contract
+from uuid import uuid4
 
 
 class ContractBpmScopeTests(unittest.TestCase):
@@ -22,6 +24,15 @@ class ContractBpmScopeTests(unittest.TestCase):
         ):
             with self.assertRaises(BpmDomainError):
                 validate_contract_payload(payload)
+
+    def test_contract_owns_name_and_scope_mutations(self):
+        contract = Contract(contract_id=None, name="Inicial", bpm_process_id=str(uuid4()))
+        contract.rename("Actualizado")
+        node_id = str(uuid4())
+        contract.change_scope(bpm_node_id=node_id)
+        self.assertEqual(contract.name, "Actualizado")
+        self.assertEqual(contract.bpm_node_id, node_id)
+        self.assertIsNone(contract.bpm_process_id)
 
 
 if __name__ == "__main__":

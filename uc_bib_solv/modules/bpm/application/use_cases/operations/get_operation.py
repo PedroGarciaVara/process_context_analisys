@@ -5,7 +5,7 @@ from uc_bib_solv.modules.bpm.domain.processes.exceptions import NotFoundError, P
 
 
 class GetProcessOperation:
-    """Read and validate an operation node from its BPM version."""
+    """Read and validate an operation node from its BPM process."""
 
     def __init__(self, dependencies: ProcessModelingDependencies):
         self.dependencies = dependencies
@@ -18,7 +18,7 @@ class GetProcessOperation:
             raise ProcessModelingError("El nodo no es una operación BPM", "invalid_operation_type")
         return jsonable({
             "operation_id": str(node["node_id"]),
-            "process_version_id": str(node["version_id"]),
+            "process_id": str(node["process_id"]),
             "etapas": canonical_stages((node.get("properties") or {}).get("etapas"), envelope=False),
             "schema_version": 1,
             "name": node.get("name"),

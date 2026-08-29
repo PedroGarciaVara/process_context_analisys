@@ -101,15 +101,15 @@ def get_bootstrap_manifest() -> dict:
             "cards": "fixed_width_industrial",
             "detail_panel": "fixed_right_sidebar",
         },
-        "operational_catalog": "/api/operational/catalog",
+        "operational_catalog": "/api/bpm/operational/catalog",
         "operational_pages": {
-            "inicio": "/api/operational/page/inicio",
-            "procesos": "/api/operational/page/procesos",
-            "contratos": "/api/operational/page/contratos",
-            "maquinas": "/api/operational/page/maquinas",
+            "inicio": "/api/bpm/operational/page/inicio",
+            "procesos": "/api/bpm/operational/page/procesos",
+            "contratos": "/api/bpm/operational/page/contratos",
+            "maquinas": "/api/bpm/operational/page/maquinas",
         },
         "tree_views": {
-            "arbol": "/api/causas?view=arbol",
-            "analisis_causas_v2": "/api/causas?view=analisis_causas_v2",
+            "arbol": "/api/rca-tree/nodes?view=arbol",
+            "analisis_causas_v2": "/api/rca-tree/nodes?view=analisis_causas_v2",
         },
     }

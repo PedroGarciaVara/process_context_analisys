@@ -18,5 +18,8 @@ class LinkReusableNode:
             contract_id=payload.get("contract_id"),
             parent_id=payload.get("parent_id"),
         )
-        result["message"] = "Nodo existente vinculado."
+        result["message"] = {
+            "CONTRACT": "Contrato existente vinculado.",
+            "CAUSE": "Causa existente vinculada.",
+        }.get(result["child"]["node_type"], "Nodo existente vinculado.")
         return result

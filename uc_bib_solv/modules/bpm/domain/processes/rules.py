@@ -6,7 +6,17 @@ from collections.abc import Iterable
 
 from .entities import ProcessNode, ProcessTransition
 from .exceptions import ProcessModelingError
-from .value_objects import NODE_TYPES, validate_stock_properties
+from .value_objects import NODE_TYPES, TRANSITION_TYPES, validate_stock_properties
+
+
+def next_node_code(nodes, node_type):
+    """Generate the next process-scoped code for a node type."""
+    prefix = {"subprocess": "PROC", "operation": "OP", "stock": "STOCK", "decision": "DECISION"}.get(node_type, str(node_type or "NODE").upper())
+    used = {str(_value(node, "node_code") or "").upper() for node in nodes}
+    number = 1
+    while f"{prefix}-{number:03d}" in used:
+        number += 1
+    return f"{prefix}-{number:03d}"
 
 
 def _value(item, field):
@@ -48,6 +58,7 @@ def validate_transitions(transitions: Iterable[dict | ProcessTransition], node_i
     transitions = list(transitions)
     errors = []
     adjacency = {node_id: set() for node_id in node_ids}
+    signatures = set()
     for transition in transitions:
         source = _value(transition, "source_node_id")
         target = _value(transition, "target_node_id")
@@ -55,6 +66,13 @@ def validate_transitions(transitions: Iterable[dict | ProcessTransition], node_i
             errors.append({"code": "node_reference_missing", "field": "transition", "message": "La transición referencia nodos inexistentes"})
         if source == target:
             errors.append({"code": "self_transition", "field": "transition", "message": "Una transición no puede apuntar a sí misma"})
+        transition_type = _value(transition, "transition_type") or "sequence"
+        signature = (source, target, transition_type)
+        if transition_type not in TRANSITION_TYPES:
+            errors.append({"code": "invalid_transition_type", "field": "transition_type", "message": f"Tipo de transición no permitido: {transition_type}"})
+        if signature in signatures:
+            errors.append({"code": "duplicate_transition", "field": "transition", "message": "La transición ya existe"})
+        signatures.add(signature)
         if source in adjacency and target in adjacency:
             adjacency[source].add(target)
     visiting, visited = set(), set()
@@ -76,7 +94,7 @@ def validate_transitions(transitions: Iterable[dict | ProcessTransition], node_i
     return errors
 
 
-def validate_decision_branches(nodes, transitions) -> list[dict[str, str]]:
+def validate_decision_branches(nodes, transitions, require_complete=False) -> list[dict[str, str]]:
     node_map = {str(_value(node, "node_id")): node for node in nodes}
     errors = []
     for node_id, node in node_map.items():
@@ -86,7 +104,7 @@ def validate_decision_branches(nodes, transitions) -> list[dict[str, str]]:
         labels = [str(_value(item, "label") or "").strip() for item in outgoing]
         if len(labels) != len(set(labels)) or any(not label for label in labels):
             errors.append({"code": "decision_branch_labels_unique", "field": "transition.label", "message": "Las ramas de una decisión requieren etiquetas únicas"})
-        if outgoing and set(labels) != {"Sí", "No"}:
+        if require_complete and outgoing and set(labels) != {"Sí", "No"}:
             errors.append({"code": "decision_branches_required", "field": "transition.label", "message": "Una decisión requiere ramas Sí y No"})
         for item, label in zip(outgoing, labels):
             target = node_map.get(str(_value(item, "target_node_id")))
@@ -96,6 +114,57 @@ def validate_decision_branches(nodes, transitions) -> list[dict[str, str]]:
             if _value(target, "node_type") != "output" or (label == "Sí" and target_role not in {None, "normal"}) or (label == "No" and target_role != "waste"):
                 errors.append({"code": "decision_output_role_mismatch", "field": "transition.target_node_id", "message": f"La rama {label or 'sin etiqueta'} no alcanza la salida esperada"})
     return errors
+
+
+def diagram_transitions(nodes, transitions):
+    """Project persisted transitions into the process diagram edge collection.
+
+    This is a read projection only.  It deliberately leaves the persisted
+    transition collection untouched so validation can still inspect every
+    relation, including redundant legacy branch continuations.
+    """
+    nodes = list(nodes)
+    transitions = list(transitions)
+    decision_ids = {
+        str(_value(node, "node_id"))
+        for node in nodes
+        if _value(node, "node_type") == "decision"
+    }
+    branch_pairs = {
+        (str(_value(edge, "source_node_id")), str(_value(edge, "target_node_id")))
+        for edge in transitions
+        if _value(edge, "transition_type") == "branch"
+    }
+    branch_targets_by_source = {}
+    for edge in transitions:
+        if _value(edge, "transition_type") != "branch":
+            continue
+        source_id = str(_value(edge, "source_node_id"))
+        branch_targets_by_source.setdefault(source_id, set()).add(str(_value(edge, "target_node_id")))
+
+    result = []
+    for edge in transitions:
+        source_id = str(_value(edge, "source_node_id"))
+        target_id = str(_value(edge, "target_node_id"))
+        transition_type = _value(edge, "transition_type") or "sequence"
+        if (
+            transition_type == "sequence"
+            and source_id in decision_ids
+            and (source_id, target_id) in branch_pairs
+        ):
+            continue
+        if (
+            transition_type == "sequence"
+            and any(
+                source_id in targets and target_id in targets
+                for targets in branch_targets_by_source.values()
+            )
+        ):
+            continue
+        if source_id in decision_ids and source_id in branch_targets_by_source and transition_type != "branch":
+            continue
+        result.append(edge)
+    return [dict(edge) if isinstance(edge, dict) else edge for edge in result]
 
 
 def validate_hierarchy(process_id: str, parent_by_process: dict[str, str | None]) -> list[dict[str, str]]:
@@ -112,13 +181,13 @@ def validate_hierarchy(process_id: str, parent_by_process: dict[str, str | None]
     return errors
 
 
-def validate_graph(nodes, transitions, parent_by_process=None) -> dict:
+def validate_graph(nodes, transitions, parent_by_process=None, require_complete_decisions=False) -> dict:
     nodes = list(nodes)
     transitions = list(transitions)
     errors = validate_nodes(nodes)
     node_ids = {_value(node, "node_id") for node in nodes}
     errors.extend(validate_transitions(transitions, node_ids))
-    errors.extend(validate_decision_branches(nodes, transitions))
+    errors.extend(validate_decision_branches(nodes, transitions, require_complete=require_complete_decisions))
     if parent_by_process is not None:
         errors.extend(validate_hierarchy("", parent_by_process))
     return {"valid": not errors, "errors": errors}

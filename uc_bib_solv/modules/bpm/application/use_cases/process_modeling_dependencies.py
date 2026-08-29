@@ -8,25 +8,18 @@ from uc_bib_solv.modules.bpm.domain.processes.exceptions import NotDraftError, N
 class ProcessModelingDependencies:
     """Application-facing repository dependencies for BPM modeling."""
 
-    def __init__(self, persistence):
-        self.processes = persistence.processes
-        self.versions = persistence.versions
-        self.nodes = persistence.nodes
-        self.transitions = persistence.transitions
+    def __init__(self, processes, nodes, transitions):
+        self.processes = processes
+        self.nodes = nodes
+        self.transitions = transitions
 
-    def version(self, version_id):
+    def process(self, process_id):
         try:
-            value = self.versions.get(version_id)
+            value = self.processes.get(process_id)
         except (ValueError, TypeError):
-            raise ProcessModelingError("version_id debe ser un UUID válido", "invalid_uuid")
+            raise ProcessModelingError("process_id debe ser un UUID válido", "invalid_uuid")
         if not value:
-            raise NotFoundError("Versión no encontrada")
-        return value
-
-    def draft(self, version_id):
-        value = self.version(version_id)
-        if value["status"] != "draft":
-            raise NotDraftError()
+            raise NotFoundError("Proceso no encontrado")
         return value
 
     def hierarchy_contains(self, start_process_id, target_process_id):

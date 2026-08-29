@@ -286,20 +286,9 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 ALTER TABLE proceso ALTER COLUMN bpm_process_id SET NOT NULL;
 
-CREATE TABLE IF NOT EXISTS pm_process_version (
-    version_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    process_id UUID NOT NULL REFERENCES bpm_process(process_id) ON DELETE CASCADE,
-    version_number INTEGER NOT NULL CHECK (version_number > 0),
-    change_description TEXT,
-    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'review', 'approved', 'published', 'obsolete')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (process_id, version_number)
-);
-
 CREATE TABLE IF NOT EXISTS pm_process_node (
     node_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    version_id UUID NOT NULL REFERENCES pm_process_version(version_id) ON DELETE CASCADE,
+    process_id UUID NOT NULL REFERENCES bpm_process(process_id) ON DELETE CASCADE,
     node_code TEXT NOT NULL,
     node_type TEXT NOT NULL CHECK (node_type IN ('input', 'output', 'operation', 'subprocess', 'decision', 'stock')),
     name TEXT NOT NULL,
@@ -312,7 +301,7 @@ CREATE TABLE IF NOT EXISTS pm_process_node (
     properties JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (version_id, node_code),
+    UNIQUE (process_id, node_code),
     CONSTRAINT pm_subprocess_child_chk CHECK (
         (node_type = 'subprocess' AND child_process_id IS NOT NULL) OR
         (node_type <> 'subprocess' AND child_process_id IS NULL)
@@ -340,7 +329,6 @@ CREATE TABLE IF NOT EXISTS machine_operation_configuration (
     id BIGSERIAL PRIMARY KEY,
     machine_id INT NOT NULL REFERENCES maquina(id) ON DELETE CASCADE,
     operation_id UUID NOT NULL REFERENCES pm_process_node(node_id) ON DELETE RESTRICT,
-    process_version_id UUID NOT NULL REFERENCES pm_process_version(version_id) ON DELETE RESTRICT,
     process_id UUID NOT NULL REFERENCES bpm_process(process_id) ON DELETE RESTRICT,
     contract_id INT REFERENCES contrato(id) ON DELETE SET NULL,
     specific_description TEXT,
@@ -353,7 +341,7 @@ CREATE TABLE IF NOT EXISTS machine_operation_configuration (
     valid_to TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT machine_operation_configuration_unq UNIQUE (machine_id, process_version_id, operation_id),
+    CONSTRAINT machine_operation_configuration_unq UNIQUE (machine_id, process_id, operation_id),
     CONSTRAINT machine_operation_configuration_status_chk CHECK (validation_status IN ('draft', 'validated', 'rejected')),
     CONSTRAINT machine_operation_configuration_validity_chk CHECK (valid_to IS NULL OR valid_from IS NULL OR valid_to >= valid_from),
     CONSTRAINT machine_operation_configuration_json_chk CHECK (
@@ -369,23 +357,21 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    node_version UUID;
     node_type TEXT;
-    version_process UUID;
+    node_process UUID;
 BEGIN
-    SELECT n.version_id, n.node_type, v.process_id
-      INTO node_version, node_type, version_process
+    SELECT n.node_type, n.process_id
+      INTO node_type, node_process
       FROM pm_process_node n
-      JOIN pm_process_version v ON v.version_id = n.version_id
      WHERE n.node_id = NEW.operation_id;
-    IF node_version IS NULL THEN
+    IF node_process IS NULL THEN
         RAISE EXCEPTION 'operation_id no existe en pm_process_node';
     END IF;
     IF node_type <> 'operation' THEN
         RAISE EXCEPTION 'operation_id debe referenciar un nodo BPM operation';
     END IF;
-    IF node_version <> NEW.process_version_id OR version_process <> NEW.process_id THEN
-        RAISE EXCEPTION 'operation_id no pertenece a process_version_id/process_id';
+    IF node_process <> NEW.process_id THEN
+        RAISE EXCEPTION 'operation_id no pertenece a process_id';
     END IF;
     NEW.updated_at = NOW();
     RETURN NEW;
@@ -398,7 +384,7 @@ CREATE TRIGGER machine_operation_configuration_identity_trg
     FOR EACH ROW EXECUTE FUNCTION validate_machine_operation_configuration_identity();
 
 CREATE INDEX IF NOT EXISTS idx_machine_operation_configuration_machine ON machine_operation_configuration(machine_id);
-CREATE INDEX IF NOT EXISTS idx_machine_operation_configuration_operation ON machine_operation_configuration(operation_id, process_version_id);
+CREATE INDEX IF NOT EXISTS idx_machine_operation_configuration_operation ON machine_operation_configuration(operation_id, process_id);
 CREATE INDEX IF NOT EXISTS idx_machine_operation_configuration_contract ON machine_operation_configuration(contract_id);
 
 ALTER TABLE pm_process_node ADD COLUMN IF NOT EXISTS output_role TEXT;
@@ -414,7 +400,7 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS pm_process_transition (
     transition_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    version_id UUID NOT NULL REFERENCES pm_process_version(version_id) ON DELETE CASCADE,
+    process_id UUID NOT NULL REFERENCES bpm_process(process_id) ON DELETE CASCADE,
     source_node_id UUID NOT NULL REFERENCES pm_process_node(node_id) ON DELETE CASCADE,
     target_node_id UUID NOT NULL REFERENCES pm_process_node(node_id) ON DELETE CASCADE,
     transition_type TEXT NOT NULL CHECK (transition_type IN ('sequence', 'branch')),
@@ -423,12 +409,12 @@ CREATE TABLE IF NOT EXISTS pm_process_transition (
     properties JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (version_id, source_node_id, target_node_id, transition_type),
+    UNIQUE (process_id, source_node_id, target_node_id, transition_type),
     CONSTRAINT pm_transition_self_chk CHECK (source_node_id <> target_node_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_pm_process_parent ON bpm_process(parent_process_id);
-CREATE INDEX IF NOT EXISTS idx_pm_version_process ON pm_process_version(process_id);
+CREATE INDEX IF NOT EXISTS idx_pm_process_node_process ON pm_process_node(process_id);
 CREATE INDEX IF NOT EXISTS idx_pm_node_code ON pm_process_node(node_code);
 CREATE INDEX IF NOT EXISTS idx_pm_node_child_process ON pm_process_node(child_process_id);
 CREATE INDEX IF NOT EXISTS idx_pm_transition_source ON pm_process_transition(source_node_id);
@@ -478,10 +464,9 @@ BEGIN
     END IF;
 
     IF NEW.bpm_node_id IS NOT NULL THEN
-        SELECT v.process_id
+          SELECT n.process_id
           INTO node_process
           FROM pm_process_node n
-          JOIN pm_process_version v ON v.version_id = n.version_id
          WHERE n.node_id = NEW.bpm_node_id
            AND n.node_type = 'operation';
         IF node_process IS NULL THEN
@@ -521,7 +506,7 @@ CREATE INDEX IF NOT EXISTS idx_pm_node_metadata_node ON pm_process_node_metadata
 -- Deployment is performed by the data-model deployment phase.
 CREATE TABLE IF NOT EXISTS pm_context_record (
     record_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    version_id UUID REFERENCES pm_process_version(version_id) ON DELETE CASCADE,
+    process_id UUID REFERENCES bpm_process(process_id) ON DELETE CASCADE,
     node_id UUID REFERENCES pm_process_node(node_id) ON DELETE CASCADE,
     record_type TEXT NOT NULL CHECK (record_type IN ('declaration', 'fact', 'evidence')),
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -535,9 +520,9 @@ CREATE TABLE IF NOT EXISTS pm_context_record (
     CONSTRAINT pm_context_record_source_chk CHECK (jsonb_typeof(source) = 'object'),
     CONSTRAINT pm_context_record_provenance_chk CHECK (jsonb_typeof(provenance) = 'object'),
     CONSTRAINT pm_context_record_supports_chk CHECK (supports IS NULL OR jsonb_typeof(supports) = 'object'),
-    CONSTRAINT pm_context_record_owner_chk CHECK (version_id IS NOT NULL OR node_id IS NOT NULL)
+    CONSTRAINT pm_context_record_owner_chk CHECK (process_id IS NOT NULL OR node_id IS NOT NULL)
 );
 
-CREATE INDEX IF NOT EXISTS idx_pm_context_record_version ON pm_context_record(version_id);
+CREATE INDEX IF NOT EXISTS idx_pm_context_record_process ON pm_context_record(process_id);
 CREATE INDEX IF NOT EXISTS idx_pm_context_record_node ON pm_context_record(node_id);
 CREATE INDEX IF NOT EXISTS idx_pm_context_record_type ON pm_context_record(record_type);

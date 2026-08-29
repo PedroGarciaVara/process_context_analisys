@@ -10,7 +10,6 @@ class DeleteProcessNode:
         node = self.dependencies.nodes.get(node_id)
         if not node:
             raise NotFoundError("Nodo no encontrado")
-        self.dependencies.draft(node["version_id"])
         if not self.dependencies.nodes.delete(node_id):
             raise ProcessModelingError("No se pudo eliminar el nodo", "node_delete_failed")
         return {"deleted": True, "node_id": str(node_id)}

@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from .exceptions import CausalTreeError
+from .exceptions import CausalTreeError, InvalidRelationshipError
+from .causal_graph.rules import normalize_node_type as normalize_graph_node_type
+from .causal_graph.rules import normalize_relationship_type as normalize_graph_relationship_type
 
 
 class NodeType(StrEnum):
@@ -45,14 +47,17 @@ class CauseTag:
 
 def normalize_node_type(value: str | NodeType) -> NodeType:
     try:
-        return NodeType(str(value).strip().upper())
+        return NodeType(normalize_graph_node_type(value))
+    except InvalidRelationshipError:
+        raise
     except ValueError as exc:
         raise CausalTreeError(f"Tipo de nodo inválido: {value!r}") from exc
 
 
 def normalize_relationship_type(value: str | RelationshipType) -> RelationshipType:
     try:
-        return RelationshipType(str(value).strip().upper())
+        return RelationshipType(normalize_graph_relationship_type(value))
+    except InvalidRelationshipError:
+        raise
     except ValueError as exc:
         raise CausalTreeError(f"Tipo de relación inválido: {value!r}") from exc
-

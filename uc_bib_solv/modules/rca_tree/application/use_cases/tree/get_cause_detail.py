@@ -4,6 +4,32 @@ from ...dto import integer, legacy_contract_id
 from ...ports.outbound import CauseRepositoryPort, HypothesisRepositoryPort
 
 
+def _context_items(contract_id, cause_id, parent_id, hypothesis_id, mode, cause, hypothesis):
+    items = []
+    if contract_id:
+        items.append({"label": "Contrato", "value": f"#{contract_id}"})
+    if cause_id and cause:
+        items.append({"label": "Causa", "value": f"#{cause['id']} {cause['nombre']}"})
+    elif parent_id:
+        items.append({"label": "Parent", "value": f"#{parent_id}"})
+    if hypothesis_id and hypothesis:
+        items.append({"label": "Hipotesis", "value": f"#{hypothesis['id']} {hypothesis['descripcion']}"})
+    items.append({"label": "Mode", "value": mode})
+    return items
+
+
+def _cause_form_values(cause, mode):
+    if not cause or mode in {"new_root", "new_child"}:
+        return {"nombre": "", "tipo": "causa", "categoria": "", "descripcion": ""}
+    return {"nombre": cause.get("nombre") or "", "tipo": cause.get("tipo") or "causa", "categoria": cause.get("categoria") or "", "descripcion": cause.get("descripcion") or ""}
+
+
+def _hypothesis_form_values(hypothesis, mode):
+    if not hypothesis or mode == "new_hipotesis":
+        return {"descripcion": "", "tipo": "aceptacion", "criterio_validacion": "", "estado": "pendiente"}
+    return {"descripcion": hypothesis.get("descripcion") or "", "tipo": hypothesis.get("tipo") or "aceptacion", "criterio_validacion": hypothesis.get("criterio_validacion") or "", "estado": hypothesis.get("estado") or "pendiente"}
+
+
 class GetCauseDetail:
     """Resolve the cause/hypothesis editing context used by the UI."""
 
@@ -46,4 +72,12 @@ class GetCauseDetail:
             "cause": cause,
             "hipotesis": hypothesis,
             "hypotheses": hypotheses,
+            "context_items": _context_items(contract_id, cause_id, parent_id, hypothesis_id, mode, cause, hypothesis),
+            "context_message": "Selecciona un contrato para continuar." if not contract_id else "Detalle listo para edicion.",
+            "cause_form": _cause_form_values(cause, mode),
+            "hypothesis_form": _hypothesis_form_values(hypothesis, mode),
+            "labels": {
+                "cause_save": "Actualizar causa" if cause_id else "Crear causa hija" if mode == "new_child" and parent_id else "Guardar causa",
+                "hypothesis_save": "Actualizar hipotesis" if hypothesis_id and mode == "edit_hipotesis" else "Guardar hipotesis",
+            },
         }

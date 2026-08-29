@@ -1,5 +1,9 @@
 # Informe de gates arquitectónicos
 
+Las secciones anteriores a ARC-008 conservan resultados históricos de fases
+anteriores. No describen disponibilidad actual de aliases HTTP ni de módulos de
+compatibilidad retirados; el estado vigente está en la sección ARC-008.
+
 ## Gates 7–10
 
 Validados mediante tests focalizados, compilación, validadores estructural/naming/dependencies y auditoría runtime.
@@ -21,13 +25,17 @@ La suite histórica `tests/unit` se ejecuta como caracterización y presenta inc
 - tests causales legacy que dependen de IDs/fixtures de PostgreSQL no presentes;
 - una prueba HTTP causal que asume un mock no conectado al adaptador canónico actual.
 
-Estas incidencias no se han resuelto modificando datos, esquema ni restaurando módulos legacy eliminados. Se mantienen como compatibilidad pendiente y no se consideran regresiones de los cambios BPM/TREE validados.
+Estas incidencias se registran como caracterización histórica; no implican que
+los módulos o aliases retirados sigan disponibles y no se consideran regresiones
+de los cambios BPM/TREE validados.
 
 ## Gate 12
 
 Se retiró únicamente `uc_bib_solv/modules/process_modeling/application/ports/persistence.py`, un duplicado sin consumidores estáticos ni dinámicos conocidos. Los ports activos están en `persistence_ports.py` y en `modules/bpm/application/ports`.
 
-No se eliminan otras rutas, servicios o repositorios legacy en esta iteración. El inventario detecta candidatos sin consumidor estático, pero la allowlist exige validación dinámica y consumidores externos antes de borrar. Las fachadas se conservan y quedan documentadas con criterio de retirada.
+En aquella iteración no se eliminaron otras rutas, servicios o repositorios
+legacy. Ese resultado es histórico y queda supersedido por las retiradas
+documentadas en ARC-008.
 
 ## Estabilización posterior — ejecución actual
 
@@ -61,13 +69,16 @@ Verificación adicional:
 - Tests de estructura, aislamiento de dominios y composición HTTP: correctos.
 - `Flask.test_client()` confirma respuestas en procesos BPM, catálogo operacional, operaciones, nodos RCA_TREE y análisis RCA_TREE.
 
-Limitación conocida: las fachadas HTTP y persistencias legacy siguen registradas como compatibilidad transitoria. No se han eliminado porque el inventario aún contiene consumidores históricos y la validación E2E completa requiere `pytest`, que no está instalado en este entorno.
+Limitación histórica: en esa ejecución las fachadas HTTP y persistencias legacy
+seguían registradas como compatibilidad transitoria. ARC-008 actualiza ese estado
+para las fachadas HTTP; las persistencias no forman parte de ese alcance.
 
 ## Separación de persistencia de análisis RCA_TREE
 
 El análisis causal canónico utiliza `RcaTreeAnalysisPostgresAdapter`, que contiene el SQL y el mapeo propios del dominio y no depende de `causal_analysis`. Los puertos de participantes y resultados se componen explícitamente en `analysis_wiring.py`; los tests con dobles en memoria cubren creación, actualización y guardado de resultados.
 
-La ruta legacy `/api/analyses` mantiene su fachada compatible, mientras `/api/rca-tree/analyses` utiliza la implementación canónica.
+En esa fase la ruta legacy `/api/analyses` mantenía una fachada compatible;
+ARC-008 la retiró y dejó `/api/rca-tree/analyses` como ruta canónica.
 
 Verificación de esta fase:
 
@@ -77,7 +88,8 @@ Verificación de esta fase:
 - Rutas canónicas de análisis comprobadas con `Flask.test_client()`: 200.
 - `compileall`: correcto.
 
-Queda pendiente la extracción futura del seam `db_cursor` y la retirada de fachadas legacy, condicionada a validación dinámica de consumidores externos.
+Quedaba pendiente la extracción futura del seam `db_cursor`; la retirada de
+fachadas HTTP quedó resuelta por ARC-008.
 
 ## Port transaccional RCA_TREE
 
@@ -85,15 +97,22 @@ La persistencia de análisis RCA_TREE recibe ahora un `TransactionPort`. `Postgr
 
 La fase queda validada con 13 tests focalizados, 11 tests de la suite `unittest`, validadores arquitectónicos, auditoría runtime, comprobación de las rutas canónicas y legacy con `Flask.test_client()`, y `compileall`.
 
-No se modificaron esquema, datos, SQL ni contratos HTTP. Las fachadas legacy permanecen en la allowlist hasta disponer de evidencia dinámica suficiente para retirarlas.
+No se modificaron esquema, datos, SQL ni contratos HTTP. La allowlist descrita
+en esta fase era histórica; ARC-008 retiró las fachadas HTTP incluidas en su
+alcance.
 
 ## Fachada legacy de análisis sobre RCA_TREE
 
-`routes.analysis` conserva las rutas públicas `/api/analyses` y delega su composición en `RcaTreeAnalysisService`. Se mantuvieron las funciones de fachada para preservar consumidores y pruebas existentes. La implementación inbound de `modules/causal_analysis` no se registra en runtime.
+En esa fase `routes.analysis` conservaba las rutas públicas `/api/analyses` y
+delegaba en `RcaTreeAnalysisService`. ARC-008 retiró esa fachada HTTP; la
+implementación inbound de `modules/causal_analysis` tampoco se registra en
+runtime.
 
 Validación: 13 tests focalizados, 11 tests `unittest`, rutas legacy y canónicas con HTTP 200, auditoría runtime, validadores arquitectónicos, compilación y `git diff --check` correctos.
 
-La retirada física del paquete legacy queda pendiente hasta migrar sus tests históricos y validar consumidores externos dinámicos.
+La retirada física del paquete legacy quedó resuelta para los módulos incluidos
+en ARC-008; los tests históricos que mencionan literales legacy solo sirven como
+caracterización de ausencia.
 
 ## Consumidores históricos migrados
 
@@ -109,7 +128,9 @@ Las pruebas históricas de causas y detalle causal fueron normalizadas para usar
 
 Validación: 15/15 tests causales, 14/14 tests focalizados RCA_TREE/compatibilidad, suite `unittest discover` 11/11, auditoría, validadores y compilación correctos.
 
-Los aliases restantes se conservan como compatibilidad y requieren una fase independiente antes de su retirada.
+Los aliases HTTP mencionados en esa caracterización fueron retirados por
+ARC-008; cualquier literal legacy restante debe interpretarse como prueba de
+ausencia, no como superficie disponible.
 
 ## Pruebas del entrypoint histórico migradas
 
@@ -117,11 +138,12 @@ Las pruebas de Process Modeling y causas dejaron de cargar el entrypoint inexist
 
 Validación: 12/12 tests de esas suites, 40/40 tests combinados de rutas/causalidad/RCA_TREE, suite `unittest discover` 11/11, auditoría, validadores y compilación correctos.
 
-Los aliases top-level restantes quedan clasificados como compatibilidad histórica pendiente.
+Los aliases top-level descritos aquí son un registro histórico; ARC-008 no los
+ofrece como superficie HTTP actual.
 
 ## Inventario de aliases top-level
 
-La comprobación arquitectónica confirma que el código productivo no importa los namespaces top-level `app`, `modules`, `repositories`, `routes` o `services` como dependencias internas. Las referencias restantes están confinadas a pruebas del entrypoint histórico y a fachadas de compatibilidad cualificadas.
+La comprobación arquitectónica confirma que el código productivo no importa los namespaces top-level `app`, `modules`, `repositories`, `routes` o `services` como dependencias internas. Las referencias restantes están confinadas a pruebas históricas y no representan fachadas HTTP registradas.
 
 Se corrigió además la expectativa obsoleta que marcaba `causal_tree` como inbound no registrado. El único adaptador inbound no observado es el legacy de `causal_analysis`.
 
@@ -151,3 +173,10 @@ Verificación ejecutada:
 No se modificaron PostgreSQL, `db_management/schema.sql`, migraciones, datos ni contratos HTTP.
 
 Comprobación adicional: RCA_TREE no importa repositorios BPM directamente; la resolución de referencias de contrato se compone mediante `platform.adapters.bpm_contract_context`.
+
+## ARC-008 — retirada de aliases HTTP
+
+ARC-008 removes the legacy HTTP aliases, inbound compatibility blueprints, and
+legacy-only outbound facades. The runtime registers canonical `/api/bpm/...`
+and `/api/rca-tree/...` routes only; legacy paths are not registered. No
+database schema, data, SQL, or migration artifact was changed.

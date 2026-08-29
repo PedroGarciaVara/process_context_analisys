@@ -3,12 +3,12 @@ export function readHashParams(hash = window.location.hash) {
   return new URLSearchParams(queryIndex >= 0 ? hash.slice(queryIndex + 1) : "");
 }
 
-export function normalizeVersionPayload(response, fallbackVersionId = "") {
+export function normalizeProcessPayload(response, fallbackProcessId = "") {
   const data = response?.data || response || {};
   const version = {
     ...(data.version || {}),
     ...data,
-    version_id: data.version?.version_id || data.version_id || fallbackVersionId,
+    process_id: data.process_id || fallbackProcessId,
   };
   return { data, version };
 }

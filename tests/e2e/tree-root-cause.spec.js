@@ -20,7 +20,7 @@ test("permite seleccionar un contrato y crear la primera causa raiz", async ({ p
   const causeName = `Causa raíz E2E ${Date.now()}`;
   await page.locator("#cd-cause-name").fill(causeName);
   const createResponsePromise = page.waitForResponse(
-    (response) => response.url().endsWith("/api/causas") && response.request().method() === "POST",
+    (response) => response.url().endsWith("/api/rca-tree/causes") && response.request().method() === "POST",
   );
   await page.locator("#cd-cause-save").click();
   const createResponse = await createResponsePromise;
@@ -31,7 +31,7 @@ test("permite seleccionar un contrato y crear la primera causa raiz", async ({ p
   expect(createdCause?.nombre).toBe(causeName);
   await expect(page.locator("#cd-cause-name")).toHaveValue(causeName);
   await expect(page).toHaveURL(/#\/causa_detalle_v02\?contrato_id=\d+&causa_id=\d+/);
-  await page.request.delete(`/api/causas/${createdCause.id}`);
+  await page.request.delete(`/api/rca-tree/causes/${createdCause.id}`);
   await page.locator("#cd-cause-exit").click();
   await expect(page).toHaveURL(/#\/arboles_v02/);
 });
@@ -53,7 +53,7 @@ test("al cambiar de proceso actualiza los objetivos del contrato relacionado", a
 });
 
 test("precarga los datos al editar una causa existente", async ({ page }) => {
-  const detailResponse = await page.request.get("/api/causas/detail?contrato_id=2&causa_id=45");
+  const detailResponse = await page.request.get("/api/rca-tree/causes/detail?contrato_id=2&causa_id=45");
   expect(detailResponse.ok()).toBeTruthy();
   const detail = await detailResponse.json();
   const cause = detail.cause || detail.data?.cause;
@@ -75,7 +75,7 @@ test("permite crear una hipotesis para la causa activa", async ({ page }) => {
   await page.locator("#cd-hypothesis-description").fill(hypothesisDescription);
   await page.locator("#cd-hypothesis-criterion").fill("Criterio E2E");
   const createResponsePromise = page.waitForResponse(
-    (response) => response.url().endsWith("/api/causas/45/hipotesis") && response.request().method() === "POST",
+    (response) => response.url().endsWith("/api/rca-tree/causes/45/hypotheses") && response.request().method() === "POST",
   );
   await page.locator("#cd-hypothesis-save").click();
   const createResponse = await createResponsePromise;
@@ -84,5 +84,5 @@ test("permite crear una hipotesis para la causa activa", async ({ page }) => {
   const createdHypothesis = responseBody.hypothesis || responseBody.data?.hypothesis;
   expect(Number(createdHypothesis?.causa_id)).toBe(45);
   expect(createdHypothesis?.descripcion).toBe(hypothesisDescription);
-  await page.request.delete(`/api/hipotesis/${createdHypothesis.id}`);
+  await page.request.delete(`/api/rca-tree/hypotheses/${createdHypothesis.id}`);
 });

@@ -45,3 +45,10 @@ Un archivo, ruta, export o endpoint solo podrá eliminarse cuando la auditoría 
 ## Siguiente fase
 
 Refactorizar incrementalmente el dominio de procesos/operaciones BPM, empezando por contratos compartidos de navegación, carga y errores. Después continuar con máquinas, contratos, árboles/análisis y modelado BPM.
+# ARC-008 — estado vigente de rutas (2026-08-29)
+
+ARC-008 supersedes the historical compatibility findings below: runtime HTTP
+registration now uses only `/api/bpm/...` and `/api/rca-tree/...` (plus root,
+health, bootstrap and unrelated canonical routes). Legacy HTTP aliases and
+compatibility blueprints are removed. Historical entries are retained as audit
+history, not as current architecture requirements.

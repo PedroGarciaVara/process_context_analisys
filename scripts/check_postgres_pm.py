@@ -14,7 +14,6 @@ from uc_bib_solv.modules.platform.infrastructure.postgres import get_connection 
 
 EXPECTED_TABLES = {
     "bpm_process",
-    "pm_process_version",
     "pm_process_node",
     "pm_process_transition",
 }
@@ -35,7 +34,7 @@ def main() -> int:
         with conn.cursor() as cursor:
             cursor.execute("SELECT current_database(), current_user")
             database, user = cursor.fetchone()
-            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name LIKE 'pm_%'")
+            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND (table_name = 'bpm_process' OR table_name LIKE 'pm_%')")
             tables = {row[0] for row in cursor.fetchall()}
         missing = EXPECTED_TABLES - tables
         print(f"postgresql: connected database={database} user={user}")

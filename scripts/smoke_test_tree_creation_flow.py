@@ -28,12 +28,12 @@ def call(method: str, path: str, payload: dict | None = None) -> dict:
 
 def main() -> int:
     suffix = str(int(time.time() * 1000))
-    process = call("POST", "/api/operational/processes", {"name": f"SMOKE RCA PROCESS {suffix}"})
+    process = call("POST", "/api/bpm/operational/processes", {"name": f"SMOKE RCA PROCESS {suffix}"})
     process_id = process["data"]["id"]
 
     contract = call(
         "POST",
-        "/api/operational/contracts",
+        "/api/bpm/contracts",
         {
             "processId": process_id,
             "name": f"SMOKE RCA CONTRACT {suffix}",
@@ -45,7 +45,7 @@ def main() -> int:
 
     machine = call(
         "POST",
-        "/api/operational/machines",
+        "/api/bpm/machines",
         {
             "name": f"SMOKE RCA MACHINE {suffix}",
             "processId": process_id,
@@ -56,7 +56,7 @@ def main() -> int:
 
     root_cause = call(
         "POST",
-        "/api/causas",
+        "/api/rca-tree/causes",
         {
             "contract_id": contract_id,
             "nombre": f"SMOKE ROOT CAUSE {suffix}",
@@ -69,7 +69,7 @@ def main() -> int:
 
     child_cause = call(
         "POST",
-        "/api/causas",
+        "/api/rca-tree/causes",
         {
             "contract_id": contract_id,
             "parent_id": root_cause_id,
@@ -83,7 +83,7 @@ def main() -> int:
 
     hypothesis = call(
         "POST",
-        f"/api/causas/{child_cause_id}/hipotesis",
+        f"/api/rca-tree/causes/{child_cause_id}/hypotheses",
         {
             "descripcion": f"SMOKE HYPOTHESIS {suffix}",
             "tipo": "aceptacion",
@@ -93,7 +93,7 @@ def main() -> int:
     )
     hypothesis_id = hypothesis["hypothesis"]["id"]
 
-    tree = call("GET", f"/api/causas?{parse.urlencode({'view': 'arbol', 'contract_id': contract_id})}")
+    tree = call("GET", f"/api/rca-tree/nodes?{parse.urlencode({'view': 'arbol', 'contract_id': contract_id})}")
 
     summary = {
         "base_url": BASE_URL,

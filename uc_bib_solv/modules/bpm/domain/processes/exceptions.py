@@ -12,5 +12,5 @@ class NotFoundError(ProcessModelingError):
 
 
 class NotDraftError(ProcessModelingError):
-    def __init__(self, message: str = "La versión no está en estado draft"):
-        super().__init__(message, "version_not_draft")
+    def __init__(self, message: str = "El proceso no está en estado draft"):
+        super().__init__(message, "process_not_editable")

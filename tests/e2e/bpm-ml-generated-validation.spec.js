@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 
 const TARGET_PROCESS = "PROCESO_ML_FABRICACION";
-const TARGET_VERSION = "0236289a-4371-55d0-a3b7-21e00def4993";
 const REQUIRED_CODES = [
   "INPUT_ML",
   "BU_APROV",
@@ -66,7 +65,7 @@ async function geometry(page) {
 }
 
 async function validateAtViewport(page, viewportName) {
-  const catalogResponse = page.waitForResponse((response) => response.url().endsWith("/api/process-modeling/processes") && response.request().method() === "GET");
+  const catalogResponse = page.waitForResponse((response) => response.url().endsWith("/api/bpm/processes") && response.request().method() === "GET");
   await page.goto("/index.html#/modelado-procesos");
   const catalogPayload = await (await catalogResponse).json();
   const process = (catalogPayload.data || []).find((item) => item.process_code === TARGET_PROCESS);
@@ -74,7 +73,7 @@ async function validateAtViewport(page, viewportName) {
   await page.locator("#pm-process-selector").selectOption(process.process_id);
   await expect(page.locator(".pm-bpm")).toBeVisible({ timeout: 20_000 });
   await expect(page.locator(".pm-editor-head")).toBeVisible().catch(() => {});
-  await expect.poll(() => page.url(), { timeout: 10_000 }).toContain(`version_id=${TARGET_VERSION}`);
+  await expect.poll(() => page.url(), { timeout: 10_000 }).toContain(`process_id=${process.process_id}`);
 
   const codes = await page.locator(".pm-bpm .pm-card-title").allTextContents();
   const edgeCount = await page.locator(".pm-bpm .pm-edge").count();
@@ -109,7 +108,7 @@ test.describe("BPM ML generado: catálogo y modelado", () => {
     page.on("requestfailed", (request) => requestFailures.push(`${request.method()} ${request.url()} :: ${request.failure()?.errorText || "unknown"}`));
   });
   test.afterAll(() => {
-    writeJson("summary.json", { status: results.length === 2 && results.every((item) => item.passed) ? "passed" : "failed", targetProcess: TARGET_PROCESS, targetVersion: TARGET_VERSION, results, requestFailures });
+    writeJson("summary.json", { status: results.length === 2 && results.every((item) => item.passed) ? "passed" : "failed", targetProcess: TARGET_PROCESS, results, requestFailures });
     writeText("console.log", consoleLines.join("\n") + "\n");
     writeText("request-failures.log", requestFailures.join("\n") + "\n");
   });

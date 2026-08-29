@@ -16,6 +16,8 @@ class TreeQueryPort(Protocol):
         self,
         node_type: str,
         text: str | None = None,
+        contract_id: int | None = None,
+        parent_id: int | None = None,
         limit: int = 25,
     ) -> list[dict[str, Any]]: ...
 

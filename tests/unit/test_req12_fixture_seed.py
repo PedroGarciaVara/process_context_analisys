@@ -42,7 +42,7 @@ class Req12FixtureSeedContractTests(unittest.TestCase):
         path = Path(__file__).parents[2] / "scripts" / "seed_process_modeling_hierarchical_test.py"
         source = path.read_text(encoding="utf-8")
         self.assertIn("def node_description(node_type: str, code: str, name: str)", source)
-        self.assertIn('return operation_description(code, name) if node_type == "operation" else None', source)
+        self.assertIn('return operation_description(code, name) if node_type in {"operation", "subprocess"} else None', source)
         self.assertNotIn('"description": None,', source)
 
     def test_node_projection_returns_persisted_description_to_api(self):
@@ -55,7 +55,7 @@ class Req12FixtureSeedContractTests(unittest.TestCase):
         })
         self.assertEqual(node["description"], "Descripción persistida")
 
-    def test_node_projection_compatibility_reads_legacy_metadata_description(self):
+    def test_node_projection_does_not_infer_description_from_legacy_metadata(self):
         node = _node_record({
             "node_id": "node-legacy",
             "node_type": "operation",
@@ -63,7 +63,7 @@ class Req12FixtureSeedContractTests(unittest.TestCase):
             "metadata": {"data": {"operation_description": "Descripción legacy"}},
             "properties": {},
         })
-        self.assertEqual(node["description"], "Descripción legacy")
+        self.assertIsNone(node["description"])
 
     def test_seed_asserts_non_empty_persisted_description_for_target_operations(self):
         self.assertIn("_assert_operation_descriptions", self.source)
@@ -119,9 +119,9 @@ class Req12FixtureSeedContractTests(unittest.TestCase):
         self.assertIn('if len(rows) > 1:', self.source)
         self.assertIn('raise RuntimeError(f"Contrato canónico duplicado para la operación {code}")', self.source)
 
-    def test_canonical_cleanup_is_scoped_without_historical_remapping(self):
+    def test_canonical_cleanup_is_scoped_without_version_history(self):
         self.assertIn('ON CONFLICT DO NOTHING', self.source)
-        self.assertIn('WHERE version_id = %s AND provenance->>\'seed\' = %s', self.source)
+        self.assertIn('WHERE process_id = %s AND provenance->>\'seed\' = %s', self.source)
         self.assertNotRegex(self.source, r"(?i)\bDELETE\s+FROM\s+contrato(?!\w)")
         self.assertNotRegex(self.source, r"(?i)\bDELETE\s+FROM\s+maquina(?!\w)")
 
@@ -147,23 +147,20 @@ class Req12FixtureSeedContractTests(unittest.TestCase):
         self.assertIn('"contract_id"', repo)
         self.assertIn('"machine_ids"', repo)
 
-    def test_operational_catalog_can_project_exact_bpm_version(self):
+    def test_operational_catalog_projects_canonical_bpm_process(self):
         repo = (Path(__file__).parents[2] / "uc_bib_solv" / "modules" / "bpm" / "adapters" / "outbound" / "postgres" / "operational_repository.py").read_text(encoding="utf-8")
-        route = (Path(__file__).parents[2] / "uc_bib_solv" / "modules" / "bpm" / "adapters" / "inbound" / "http" / "operational_compat.py").read_text(encoding="utf-8")
+        route = (Path(__file__).parents[2] / "uc_bib_solv" / "modules" / "bpm" / "adapters" / "inbound" / "http" / "process_modeling.py").read_text(encoding="utf-8")
         self.assertIn("def _bpm_identity", repo)
-        self.assertIn("pm_process_version", repo)
-        self.assertIn("request.args.get(\"version_id\")", route)
+        self.assertNotIn("pm_process_version", repo)
+        self.assertIn("request.args.get(\"process_id\")", route)
         self.assertIn('"relations"', repo)
 
     def test_machine_model_migration_reads_canonical_ids_and_keeps_contract_separate(self):
-        migration = (Path(__file__).parents[2] / "scripts" / "migrate_req12_machine_model.py").read_text(encoding="utf-8")
-        self.assertIn("properties.canonical_ids", migration)
-        self.assertIn("--from-bpm-version", migration)
+        migration = (Path(__file__).parents[2] / "scripts" / "migrate_arc009_remove_process_versions.sql").read_text(encoding="utf-8")
         self.assertIn("machine_operation_configuration", migration)
-        self.assertIn("operation_id", migration)
-        self.assertIn("process_version_id", migration)
-        self.assertIn("JOIN contrato_maquina", migration)
-        self.assertNotIn("operation_id = contract_id", migration)
+        self.assertIn("process_id", migration)
+        self.assertIn("DROP TABLE pm_process_version", migration)
+        self.assertNotIn("process_version_id UUID", migration)
 
 
 if __name__ == "__main__":

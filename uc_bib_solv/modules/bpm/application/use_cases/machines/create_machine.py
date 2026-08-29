@@ -1,19 +1,22 @@
-from uc_bib_solv.modules.bpm.domain.machines.operational_entities import Machine
+from uc_bib_solv.modules.bpm.domain.machines.entities import Machine
 from uc_bib_solv.modules.bpm.domain.machines.payload_rules import validate_machine_payload
+from uc_bib_solv.modules.bpm.application.dto.commands import MachineCommand
 
 
 class CreateMachine:
     """Create a machine after validating its BPM payload."""
 
-    def __init__(self, persistence):
-        self.persistence = persistence
+    def __init__(self, machine_port):
+        self.machine_port = machine_port
 
     def execute(self, payload):
         validated = validate_machine_payload(payload)
+        validated.setdefault("specific_description", validated.get("description"))
+        command = MachineCommand.from_payload(validated)
         Machine(
-            machine_id=None,
-            name=validated["name"],
-            machine_type_id=validated.get("machine_type_id"),
-            description=validated.get("description"),
+            id=None,
+            name=command.name,
+            machine_type_id=command.machine_type_id,
+            specific_description=command.specific_description,
         )
-        return self.persistence.create_machine(validated)
+        return self.machine_port.create_machine(validated)

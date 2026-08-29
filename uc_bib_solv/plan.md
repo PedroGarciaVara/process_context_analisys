@@ -1,5 +1,9 @@
 # Migración arquitectónica BPM/TREE — ejecución
 
+> Vigencia documental: las secciones anteriores a ARC-008 son registros históricos.
+> Cualquier alias HTTP o fachada pública descrita en ellas queda superseded por ARC-008;
+> las rutas vigentes son únicamente `/api/bpm/...` y `/api/rca-tree/...`.
+
 ## Análisis y plan de esta ejecución
 
 Se implementará la migración de forma incremental sobre la arquitectura híbrida existente. BPM será propietario de procesos, operaciones, etapas, máquinas, contratos, asociaciones máquina-contrato y configuraciones máquina-operación. TREE conservará exclusivamente el grafo causal, causas, hipótesis, evidencias y análisis causales. Las referencias entre dominios se mantendrán mediante identificadores, DTOs o ports.
@@ -31,9 +35,9 @@ Se implementará la migración de forma incremental sobre la arquitectura híbri
 
 - `OperationalPersistencePort` ahora expone capacidades BPM explícitas para procesos, operaciones, máquinas, contratos, asociaciones y configuraciones.
 - Los ports de Process Modeling incluyen operaciones de actualización, eliminación, metadatos, etapas y transiciones.
-- El runtime Flask usa los adaptadores canónicos de BPM operacional, TREE causal y análisis causal; las fachadas legacy siguen disponibles como aliases.
+- El runtime Flask usaba los adaptadores canónicos de BPM operacional, TREE causal y análisis causal; las fachadas HTTP legacy descritas en este registro histórico fueron retiradas por ARC-008.
 - El inventario registra ownership de dominio y verifica que contratos/máquinas pertenecen a BPM y nodos/análisis causales a TREE.
-- Las rutas de las fachadas legacy se comparan automáticamente con el mapa runtime canónico.
+- Las rutas históricas de las fachadas legacy se comparaban con el mapa runtime canónico; ARC-008 dejó como superficies vigentes `/api/bpm/...` y `/api/rca-tree/...`.
 - Fase validada: tests focalizados 16/16, auditoría runtime y validadores de estructura/nombres/dependencias correctos.
 - La suite completa mantiene fallos preexistentes relacionados con archivos legacy eliminados (`uc_bib_solv/app.py`, `db/schema.sql`, rutas antiguas) y con el hash histórico del esquema; no se han introducido cambios de PostgreSQL.
 
@@ -314,8 +318,9 @@ el nombre canónico `proceso`.
 5. Añadir pruebas unitarias y E2E de apertura, carga, edición y persistencia.
 
 Durante la validación se detectó que la ruta BPM solo exponía `GET`; se añadió
-el servicio y la ruta `PATCH /api/process-modeling/processes/{process_id}` para
-hacer efectiva la edición desde el modal.
+el servicio y, en el estado histórico previo a ARC-008, la ruta `PATCH
+/api/process-modeling/processes/{process_id}` para hacer efectiva la edición
+desde el modal. La ruta vigente pertenece al namespace `/api/bpm/...`.
 
 ### Autorización
 
@@ -376,7 +381,7 @@ Autorización recibida mediante `PLEASE IMPLEMENT THIS PLAN`.
 El código frontend ya contempla `AppState.catalog` y el catálogo de
 `pageData.contratos`. El backend actualizado también entrega `contractScopes`.
 Sin embargo, el proceso Flask activo en `127.0.0.1:8050` fue iniciado antes de
-esa implementación: su respuesta `/api/operational/page/contratos` no contiene
+esa implementación: su respuesta histórica `/api/operational/page/contratos` no contiene
 `contractScopes`, mientras que una instancia nueva sí lo entrega. Por eso el
 modal muestra `No hay alcances BPM disponibles`.
 
@@ -384,8 +389,9 @@ modal muestra `No hay alcances BPM disponibles`.
 
 1. Detener únicamente el proceso local Flask que escucha en el puerto `8050`.
 2. Iniciar de nuevo `uc_bib_solv/local_server.py` usando el código actualizado.
-3. Verificar que `/api/operational/catalog` y
-   `/api/operational/page/contratos` incluyan procesos y operaciones BPM.
+3. Verificar que las rutas canónicas `/api/bpm/catalog` y
+   `/api/bpm/page/contratos` incluyan procesos y operaciones BPM; las rutas
+   `/api/operational/...` citadas aquí son históricas y fueron retiradas por ARC-008.
 4. Recargar la página de contratos y comprobar que ambos selectores permiten
    seleccionar valores.
 5. Ejecutar la prueba frontend focalizada para confirmar el fallback y el
@@ -493,7 +499,7 @@ Autorización recibida mediante `PLEASE IMPLEMENT THIS PLAN`.
 - La creación y actualización del nombre del proceso canónico se realiza desde el repositorio BPM; la API operativa rechaza crear, actualizar o eliminar procesos directamente.
 - Conservado el BPM raíz y sus 6 descendientes: 7 definiciones y 7 versiones.
 - Sincronizados 7 procesos canónicos con los nombres visibles del BPM; no quedan procesos canónicos sin relación.
-- Ejecutada la depuración transaccional mediante `scripts/purge_outside_bpm_root.py`.
+- Ejecutada la depuración transaccional durante la migración del modelo BPM canónico.
 - PostgreSQL antes/después: BPM `16→7`, procesos `27→7`, contratos `33→6`, máquinas `41→13`, configuraciones `46→13`, nodos `150→23`, relaciones `98→22`, análisis `6→0`.
 - Validaciones PostgreSQL: 0 BPM externos, 0 procesos sin relación, 0 configuraciones fuera de alcance y 0 máquinas sin vínculo válido.
 - Tests Python focalizados: 15/15 OK.
@@ -565,7 +571,7 @@ No modificar código hasta recibir exactamente `inicia implementacion`.
 
 ### Análisis
 
-- `GET /api/process-modeling/versions/{id}` devuelve `data.version.version_id`.
+- Históricamente, `GET /api/process-modeling/versions/{id}` devolvía `data.version.version_id`; la ruta vigente equivalente es `/api/bpm/versions/{id}`.
 - `operaciones_v02` usa `versionData.version_id` al renderizar el botón `Detalle`.
 - Como `versionData.version_id` no existe en ese nivel, el enlace se genera como `version_id=undefined`.
 - El identificador correcto está disponible en `versionData.version.version_id` y, como respaldo, en el identificador usado para cargar la versión.
@@ -597,7 +603,7 @@ No modificar código hasta recibir exactamente `inicia implementacion`.
 ### Análisis
 
 - La auditoría no detecta rutas sin renderizador.
-- Las rutas legacy siguen renderizando vistas duplicadas y no están expresadas como aliases explícitos.
+- En ese momento, las rutas legacy seguían renderizando vistas duplicadas y no estaban expresadas como aliases explícitos; ARC-008 las retiró como superficies HTTP.
 - Los dominios de procesos y operaciones ya tienen páginas canónicas `v02`, páginas de detalle y APIs BPM separadas.
 - El siguiente riesgo principal es mantener dos implementaciones de una misma página, especialmente en procesos, causas y navegación operativa.
 
@@ -830,7 +836,7 @@ Actualización: el adaptador HTTP de análisis ya usa `rca_tree` en las rutas nu
 
 ### Objetivo
 
-Completar la siguiente fase de la arquitectura BPM + RCA_TREE sin eliminar todavía compatibilidad pública ni modificar PostgreSQL.
+Completar, en el estado histórico previo a ARC-008, la siguiente fase de la arquitectura BPM + RCA_TREE sin eliminar todavía compatibilidad pública ni modificar PostgreSQL. ARC-008 supersede las decisiones HTTP de este bloque.
 
 ### Trabajo previsto
 
@@ -846,7 +852,7 @@ Completar la siguiente fase de la arquitectura BPM + RCA_TREE sin eliminar todav
 
 - Los casos de uso `bpm` y `rca_tree` no importan servicios ni repositorios legacy.
 - El wiring de plataforma instancia exclusivamente adaptadores canónicos.
-- Las fachadas legacy permanecen funcionales mientras exista un consumidor.
+- En el estado documentado, las fachadas legacy permanecían funcionales mientras existiera un consumidor; ARC-008 retiró las fachadas HTTP alias.
 - Los endpoints canónicos conservan sus respuestas y códigos HTTP.
 - La suite disponible, compilación, validadores y auditoría runtime permanecen correctos.
 
@@ -858,7 +864,7 @@ Este plan queda preparado, pero no se modificarán archivos de código hasta rec
 
 - Se creó `modules/bpm/application/process_modeling.py` con `BpmProcessModelingPort` y `BpmProcessModelingApplication`.
 - El adaptador HTTP `/api/bpm` recibe ahora esa aplicación BPM, no el servicio legacy directamente.
-- La dependencia temporal con `services/process_modeling_service.py` queda confinada a `modules/bpm/infrastructure/wiring.py` y al blueprint legacy de compatibilidad.
+- La dependencia histórica con `services/process_modeling_service.py` quedaba confinada a `modules/bpm/infrastructure/wiring.py` y al blueprint legacy; ARC-008 retiró sus aliases HTTP.
 - No se modificaron PostgreSQL, datos ni respuestas HTTP.
 
 ### Verificación
@@ -1193,7 +1199,7 @@ Se completó la separación de la persistencia de análisis causales del módulo
 - El adaptador canónico no importa ni hereda de `causal_analysis`.
 - `analysis_wiring.py` compone explícitamente los puertos de participantes y resultados.
 - Se añadieron dobles en memoria para probar creación, actualización y resultados sin PostgreSQL.
-- La fachada legacy `/api/analyses` conserva su compatibilidad mediante `routes.analysis`; el contrato canónico `/api/rca-tree/analyses` utiliza el adaptador RCA_TREE propio.
+- Históricamente, la fachada `/api/analyses` conservaba compatibilidad mediante `routes.analysis`; ARC-008 retiró esa ruta y el contrato vigente es `/api/rca-tree/analyses`, servido por el adaptador RCA_TREE propio.
 
 ### Verificación
 
@@ -1221,7 +1227,7 @@ La persistencia de análisis RCA_TREE ya no depende de `causal_analysis`, pero e
 3. Inyectar ese port en `RcaTreeAnalysisPostgresAdapter`, preservando SQL, mapeos, transacciones y respuestas existentes.
 4. Mantener una composición por defecto en `analysis_wiring.py` para producción y dobles de memoria para tests.
 5. Verificar que `rca_tree.domain` y `rca_tree.application` no importen Flask, PostgreSQL, `app`, `routes`, `services` ni `repositories`.
-6. Mantener `/api/rca-tree/analyses` y `/api/analyses` sin cambios contractuales.
+6. Mantener `/api/rca-tree/analyses`; la referencia histórica a `/api/analyses` queda superseded por ARC-008.
 7. No retirar todavía fachadas legacy ni modificar esquema, datos o migraciones.
 
 ### Gates
@@ -1260,7 +1266,7 @@ Este plan se ejecutará únicamente después de recibir exactamente `inicia impl
 
 Los adaptadores PostgreSQL BPM ya concentran la composición de repositorios, pero algunas fachadas y servicios de aplicación todavía importan o reciben módulos concretos de persistencia. Esto dificulta sustituir infraestructura en tests y mantiene decisiones de infraestructura dentro de casos de uso.
 
-La siguiente fase debe localizar esas dependencias directas, convertirlas en ports de aplicación explícitos y hacer que el wiring inyecte los adaptadores ya creados. Las fachadas `routes/`, `services/` y `repositories/` seguirán disponibles como compatibilidad, pero no serán usadas como dependencias internas de los casos de uso canónicos.
+La siguiente fase debía localizar esas dependencias directas, convertirlas en ports de aplicación explícitos y hacer que el wiring inyectase los adaptadores ya creados. Las fachadas `routes/`, `services/` y `repositories/` se describen aquí como compatibilidad histórica interna, no como superficies HTTP vigentes tras ARC-008.
 
 ### Plan
 
@@ -1294,19 +1300,19 @@ La siguiente fase debe localizar esas dependencias directas, convertirlas en por
 - Tests focalizados RCA_TREE, compatibilidad HTTP y arquitectura: `13/13` correctos.
 - Suite completa `unittest`: `11/11` correcta.
 - Auditoría backend: correcta, sin errores de parseo ni módulos API sin consumidor estático.
-- Rutas `/api/rca-tree/analyses`, `/api/rca-tree/analyses/templates` y `/api/analyses`: `200` con `Flask.test_client()`.
+- Rutas canónicas `/api/rca-tree/analyses` y `/api/rca-tree/analyses/templates`: `200` con `Flask.test_client()`; `/api/analyses` era una ruta histórica retirada por ARC-008.
 - Validadores estructural, naming, dependencias y concrete implementations: correctos.
 - `compileall`: correcto.
 
 ### Pendiente explícito
 
-Se mantiene la fachada HTTP legacy y el adaptador inbound legacy no observado en runtime como compatibilidad pendiente. Su retirada requiere evidencia dinámica de consumidores externos y no forma parte de esta fase.
+La fachada HTTP legacy y el adaptador inbound legacy no observado en runtime se registran aquí como estado histórico; ARC-008 retiró sus aliases HTTP.
 
 ## Siguiente bloque planificado — fachada HTTP legacy de análisis sobre RCA_TREE
 
 ### Análisis
 
-La ruta pública legacy `/api/analyses` sigue siendo necesaria por consumidores E2E y compatibilidad, pero su fachada todavía compone `modules.causal_analysis.infrastructure.wiring`. La implementación canónica de análisis ya vive en `rca_tree`, por lo que la fachada debe delegar en ese servicio sin cambiar rutas, payloads, estados ni códigos HTTP.
+En el estado histórico, la ruta pública `/api/analyses` se consideraba necesaria por consumidores E2E y compatibilidad, pero ARC-008 la retiró. La implementación canónica de análisis vive en `rca_tree` y la ruta vigente es `/api/rca-tree/analyses`.
 
 El adaptador inbound de `causal_analysis` no está registrado en runtime, pero no se eliminará todavía: los tests y módulos históricos aún lo referencian. Primero se migrará la composición de la fachada y se actualizarán las pruebas de composición para distinguir ruta legacy de implementación canónica.
 
@@ -1314,14 +1320,14 @@ El adaptador inbound de `causal_analysis` no está registrado en runtime, pero n
 
 1. Cambiar `routes.analysis` para construir el servicio de análisis RCA_TREE canónico.
 2. Mantener las funciones públicas de la fachada (`list_recent`, `list_templates`, `create_analysis`, `get_analysis`, `update_analysis`, `save_result`) para no romper consumidores ni tests.
-3. Verificar que `/api/analyses`, `/api/analysis-templates` y sus operaciones de detalle siguen produciendo las respuestas actuales.
+3. Verificar las operaciones de detalle bajo `/api/rca-tree/analyses`; `/api/analyses` y `/api/analysis-templates` son referencias históricas superseded por ARC-008.
 4. Añadir una prueba de composición que confirme que la fachada legacy no instancia `causal_analysis`.
-5. Mantener `modules/causal_analysis` como alias temporal hasta migrar tests históricos y confirmar ausencia de imports dinámicos.
+5. Registrar `modules/causal_analysis` como dependencia histórica durante la migración; no tratarlo como alias HTTP vigente.
 6. Ejecutar validadores, auditoría runtime, tests unitarios, tests de contrato y compilación.
 
 ### Gates
 
-- `/api/analyses` continúa disponible con el mismo contrato HTTP.
+- `/api/rca-tree/analyses` queda como contrato HTTP vigente; `/api/analyses` fue retirado por ARC-008.
 - La fachada legacy delega únicamente al servicio RCA_TREE canónico.
 - El adaptador inbound legacy no se registra en runtime.
 - No se modifican PostgreSQL, esquema, datos ni contratos públicos.
@@ -1333,16 +1339,16 @@ La implementación comenzará únicamente al recibir exactamente `inicia impleme
 ## Fachada HTTP legacy de análisis migrada
 
 - `routes.analysis` compone ahora `build_rca_tree_analysis_service` mediante alias compatible.
-- Se conservaron sus funciones públicas y las rutas `/api/analyses`, `/api/analysis-templates`, detalle, actualización y resultados.
+- Se conservaron sus funciones históricas; las rutas `/api/analyses` y `/api/analysis-templates` fueron retiradas por ARC-008 y sus operaciones vigentes están bajo `/api/rca-tree/analyses`.
 - Se añadió una prueba de composición que impide volver a instanciar `modules.causal_analysis` desde la fachada.
-- El adaptador inbound de `causal_analysis` continúa sin registrarse en runtime y se conserva como alias temporal por sus consumidores históricos.
+- El adaptador inbound de `causal_analysis` no se registraba en runtime; su referencia queda únicamente como registro histórico y no como alias vigente.
 - No se modificaron PostgreSQL, esquema, datos ni contratos HTTP.
 
 ### Verificación
 
 - Tests focalizados: `13/13` correctos.
 - Suite completa `unittest`: `11/11` correcta.
-- `/api/analyses`, `/api/analysis-templates` y `/api/rca-tree/analyses`: `200` con `Flask.test_client()`.
+- `/api/rca-tree/analyses` y `/api/rca-tree/analyses/templates`: `200` con `Flask.test_client()`; las rutas `/api/analyses` y `/api/analysis-templates` fueron retiradas por ARC-008.
 - Auditoría runtime: la ruta legacy pertenece a `uc_bib_solv.routes.analysis`; el inbound legacy de `causal_analysis` no está registrado.
 - Validadores arquitectónicos, compilación y `git diff --check`: correctos.
 
@@ -1354,7 +1360,7 @@ La eliminación física de `modules/causal_analysis` y de otros aliases requiere
 
 ### Análisis
 
-La fachada HTTP legacy ya delega en RCA_TREE, pero todavía existen referencias directas a `modules.causal_analysis` en tests de dominio, persistencia y wiring. También hay repositorios legacy que construyen el servicio antiguo. No es seguro eliminar el paquete mientras esas referencias sigan activas, aunque el adaptador inbound antiguo no esté registrado en runtime.
+La antigua fachada HTTP ya delegaba en RCA_TREE, pero todavía existían referencias directas a `modules.causal_analysis` en tests de dominio, persistencia y wiring. Este bloque es histórico: ARC-008 retiró los aliases HTTP, aunque las referencias internas se conservan como trazabilidad.
 
 ### Plan
 
@@ -1369,7 +1375,7 @@ La fachada HTTP legacy ya delega en RCA_TREE, pero todavía existen referencias 
 
 - Ningún consumidor runtime usa directamente el wiring antiguo de `causal_analysis`.
 - Las pruebas canónicas cubren dominio, aplicación, persistencia y HTTP de RCA_TREE.
-- Las fachadas públicas legacy siguen funcionando.
+- Las fachadas públicas legacy funcionaban en el estado histórico; no representan disponibilidad HTTP vigente tras ARC-008.
 - No se modifican PostgreSQL, esquema, datos ni contratos HTTP.
 
 ### Restricción
@@ -1390,8 +1396,8 @@ La implementación comenzará únicamente al recibir exactamente `inicia impleme
 - Tests focalizados canónicos: `14/14` correctos.
 - Suite `unittest discover`: `11/11` correcta.
 - Auditoría backend, validadores arquitectónicos y compilación: correctos.
-- Rutas `/api/analyses`, `/api/analysis-templates` y `/api/rca-tree/analyses`: `200`.
-- El único inbound no observado continúa siendo `modules/causal_analysis/adapters/inbound/http/routes.py`, conservado como alias temporal.
+- Rutas canónicas `/api/rca-tree/analyses` y `/api/rca-tree/analyses/templates`: `200`; las rutas legacy fueron retiradas por ARC-008.
+- El inbound no observado `modules/causal_analysis/adapters/inbound/http/routes.py` queda mencionado únicamente como referencia histórica, no como alias temporal vigente.
 
 ### Pendiente explícito
 
@@ -1415,7 +1421,7 @@ La prueba histórica `tests.unit.test_causas_service` falla porque mezcla import
 ### Gates
 
 - `tests.unit.test_causas_service` pasa sin depender de namespaces duplicados.
-- Las pruebas canónicas de RCA_TREE y las fachadas legacy siguen pasando.
+- Las pruebas canónicas de RCA_TREE y las fachadas legacy pasaban en el estado histórico documentado; no implica disponibilidad HTTP tras ARC-008.
 - No se restauran módulos eliminados ni se cambian contratos HTTP.
 - No se modifican PostgreSQL, esquema ni datos.
 
@@ -1435,7 +1441,7 @@ Los aliases restantes quedan pendientes de una fase específica de retirada con 
 
 ### Análisis
 
-La búsqueda restante muestra referencias top-level concentradas en patches de pruebas (`routes.process_modeling`, `routes.causas`) y no en consumidores productivos internos. Estas rutas legacy pueden seguir siendo superficies públicas, por lo que no deben eliminarse automáticamente. Hay que distinguir aliases de compatibilidad HTTP de namespaces usados únicamente por tests históricos.
+La búsqueda restante mostraba referencias top-level concentradas en patches de pruebas (`routes.process_modeling`, `routes.causas`) y no en consumidores productivos internos. Este resultado es histórico: esas rutas legacy ya no son superficies públicas tras ARC-008; deben distinguirse de namespaces usados únicamente por tests históricos.
 
 ### Plan
 
@@ -1450,7 +1456,7 @@ La búsqueda restante muestra referencias top-level concentradas en patches de p
 
 - Cada alias conservado tiene consumidor o compatibilidad documentada.
 - Los tests canónicos no dependen de imports top-level duplicados.
-- Las rutas legacy públicas mantienen su contrato.
+- Las rutas legacy públicas mantenían su contrato en el momento documentado; ARC-008 retiró sus aliases HTTP.
 - No se eliminan archivos, rutas ni datos sin validación dinámica.
 
 ### Restricción
@@ -1927,7 +1933,7 @@ Cerrar la migración eliminando físicamente `uc_bib_solv/modules/bpm/process_mo
 - Buscar referencias a `uc_bib_solv.modules.bpm.process_modeling` en código, tests y scripts.
 - Verificar que el inventario runtime y `app_factory` usan únicamente los adapters y wiring canónicos de `bpm`.
 - Ejecutar compilación, tests unitarios, tests de arquitectura, validadores arquitectónicos y auditoría backend.
-- Confirmar que los endpoints `/api/bpm/*` y `/api/process-modeling/*` mantienen sus contratos.
+- Confirmar que los endpoints canónicos `/api/bpm/*` mantienen sus contratos; `/api/process-modeling/*` es una referencia histórica retirada por ARC-008.
 - Confirmar que PostgreSQL, esquema y datos no se modifican.
 
 ### Eliminación prevista
@@ -2221,13 +2227,15 @@ El nombre del archivo debe expresar una intención ejecutable (`create_process_n
   - `create_version.py`;
   - `list_versions.py`.
 - El wiring canónico está en `bpm/infrastructure/process_modeling_wiring.py`.
-- Los adapters HTTP están en `bpm/adapters/inbound/http/process_modeling.py` y `process_modeling_compat.py`.
+- El adapter HTTP activo está en `bpm/adapters/inbound/http/process_modeling.py`; el
+  antiguo `process_modeling_compat.py` fue retirado en ARC-008.
 - Se eliminó la duplicidad del adapter HTTP antiguo y se actualizó el inventario arquitectónico.
 
 ### Compatibilidad
 
-- Se mantienen los endpoints `/api/process-modeling/*` mediante `process_modeling_compat.py`.
-- Los endpoints `/api/bpm/*` se registran desde el adapter BPM canónico.
+- Los endpoints `/api/process-modeling/*` y su adapter de compatibilidad fueron
+  retirados en ARC-008; solo se registran los endpoints `/api/bpm/*` desde el
+  adapter BPM canónico.
 - La persistencia continúa usando los ports BPM existentes; no se modificaron tablas, SQL ni datos.
 - Se actualizaron gateway, wiring, tests y app factory para no importar `bpm.process_modeling`.
 
@@ -2390,9 +2398,9 @@ El directorio `modules/bpm/application/use_cases/operations/` solo contiene el l
 - `DeleteOperation` valida que el nodo sea una operación y reutiliza `DeleteNode` para las reglas de versión draft y persistencia.
 - `ProcessModelingApplication` expone `create_operation` y `delete_operation`.
 - Se añadieron endpoints explícitos:
-  - `POST /api/process-modeling/versions/{version_id}/operations`;
-  - `DELETE /api/process-modeling/operations/{operation_id}`;
-  - equivalentes bajo `/api/bpm`.
+  - históricamente: `POST /api/process-modeling/versions/{version_id}/operations`;
+  - históricamente: `DELETE /api/process-modeling/operations/{operation_id}`;
+  - rutas vigentes equivalentes bajo `/api/bpm`.
 - Se actualizaron los adaptadores HTTP, ports y tests.
 
 ### Gates
@@ -2441,3 +2449,12 @@ Este análisis no modifica `bpm_operational.py`. La extracción o renombrado com
 - No quedan referencias de código a `BpmOperationalUseCases`.
 - La composición operacional y los tests de arquitectura pasan.
 - No se modificaron PostgreSQL, esquema ni datos.
+
+## ARC-008 — canonización final de rutas HTTP (2026-08-29)
+
+ARC-008 is the current state for public HTTP boundaries. Legacy aliases under
+`/api/operational`, `/api/process-modeling`, `/api/causas`, `/api/hipotesis`,
+`/api/analyses`, and `/api/analysis-templates` are retired. Use only the
+canonical `/api/bpm/...` and `/api/rca-tree/...` namespaces. Older sections are
+historical records and are superseded by this entry. No PostgreSQL schema,
+data, SQL, or migration script was changed.

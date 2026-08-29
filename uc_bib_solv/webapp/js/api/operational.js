@@ -67,10 +67,10 @@ export function fetchMachineContext(machineId, params = {}) {
   return requestJson(`/api/bpm/machines/${machineId}/context${suffix}`);
 }
 
-export function updateOperationStages(operationId, processVersionId, etapas) {
+export function updateOperationStages(operationId, processId, etapas) {
   return requestJson(`/api/bpm/operations/${operationId}/stages`, jsonOptions("PATCH", {
     operation_id: operationId,
-    process_version_id: processVersionId,
+    process_id: processId,
     etapas,
   }));
 }

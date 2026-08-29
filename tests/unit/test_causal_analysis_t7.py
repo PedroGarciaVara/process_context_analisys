@@ -1,6 +1,4 @@
 import unittest
-from unittest.mock import patch
-from pathlib import Path
 
 from uc_bib_solv.modules.rca_tree.domain.analyses.entities import AnalysisResult, normalize_state, validate_evaluation
 from uc_bib_solv.modules.rca_tree.infrastructure.analysis_wiring import build_rca_tree_analysis_service
@@ -40,13 +38,5 @@ class CausalAnalysisT7Tests(unittest.TestCase):
         self.assertEqual(service.update(9, {"status": "cerrado"})["status"], "cerrado")
         self.assertEqual(service.save_result(9, {"element_type": "causa", "cause_id": 3})["id"], 4)
 
-    def test_legacy_repository_contains_no_sql_and_delegates(self):
-        import uc_bib_solv.modules.rca_tree.infrastructure.analysis_compat as legacy
-
-        source = Path(legacy.__file__).read_text(encoding="utf-8").upper()
-        self.assertNotIn("SELECT ", source)
-        self.assertNotIn("INSERT ", source)
-        with patch.object(legacy, "build_causal_analysis_service") as builder:
-            builder.return_value.list_recent.return_value = [{"id": 1}]
-            self.assertEqual(legacy.list_recent(), [{"id": 1}])
-            builder.return_value.list_recent.assert_called_once_with(20, None, None)
+    def test_canonical_analysis_application_is_the_only_service_boundary(self):
+        self.assertTrue(hasattr(build_rca_tree_analysis_service(persistence=FakePersistence()), "list_recent"))

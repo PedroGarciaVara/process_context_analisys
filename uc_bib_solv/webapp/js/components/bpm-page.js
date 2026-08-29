@@ -12,6 +12,6 @@ export function renderBpmProcessActions(processId) {
   return `<button type="button" class="px-md py-sm bg-primary text-on-primary text-label-md font-label-md rounded hover:opacity-90" data-action="process-contracts" data-process-id="${escapeHtml(processId)}">Contratos</button><button type="button" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container" data-action="process-operations" data-process-id="${escapeHtml(processId)}">Operaciones</button><button type="button" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container" data-action="process-detail" data-process-id="${escapeHtml(processId)}">Detalle</button>`;
 }
 
-export function renderBpmOperationDetailButton(nodeId, versionId) {
-  return `<button type="button" class="px-md py-sm bg-primary text-on-primary rounded text-label-md" data-action="operation-detail" data-node-id="${escapeHtml(nodeId)}" data-version-id="${escapeHtml(versionId)}">Detalle</button>`;
+export function renderBpmOperationDetailButton(nodeId, processId) {
+  return `<button type="button" class="px-md py-sm bg-primary text-on-primary rounded text-label-md" data-action="operation-detail" data-node-id="${escapeHtml(nodeId)}" data-process-id="${escapeHtml(processId)}">Detalle</button>`;
 }

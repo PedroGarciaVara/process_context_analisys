@@ -8,7 +8,7 @@ class CreateProcessOperation:
     def __init__(self, dependencies: ProcessModelingDependencies):
         self.create_node = CreateProcessNode(dependencies)
 
-    def execute(self, version_id, data):
+    def execute(self, process_id, data):
         payload = dict(data)
         payload["node_type"] = "operation"
-        return self.create_node.execute(version_id, payload)
+        return self.create_node.execute(process_id, payload)

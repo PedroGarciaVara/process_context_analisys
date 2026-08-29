@@ -13,16 +13,15 @@ from uc_bib_solv.modules.bpm.domain.shared.exceptions import BpmDomainError
 
 
 class BpmDomainTests(unittest.TestCase):
-    def test_bpm_owns_operational_entities(self):
+    def test_bpm_owns_machine_entity(self):
         process_id = str(uuid4())
-        version_id = str(uuid4())
         operation_id = str(uuid4())
 
         process = Process(process_id=process_id, process_code="PROC-01", name="Proceso")
-        operation = Operation(operation_id, version_id, "OP-01", "Operación")
+        operation = Operation(operation_id, process_id, "OP-01", "Operación")
         machine = Machine(1, "M-01", 2)
         contract = Contract(3, "Contrato", bpm_process_id=process_id)
-        association = MachineContractAssociation(contract.contract_id, machine.machine_id)
+        association = MachineContractAssociation(contract.contract_id, machine.id)
 
         self.assertEqual(process.process_id, process_id)
         self.assertEqual(operation.reference.node_id, operation_id)
@@ -42,7 +41,7 @@ class BpmDomainTests(unittest.TestCase):
             Stage("", "Etapa", 1)
 
     def test_machine_has_no_operational_status(self):
-        machine = Machine(1, "M-01")
+        machine = Machine(1, "M-01", 2)
         self.assertFalse(hasattr(machine, "operational_status"))
 
 

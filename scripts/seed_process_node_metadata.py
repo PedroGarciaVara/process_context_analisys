@@ -101,10 +101,9 @@ def metadata_for(code, name, process_code):
 def main():
     count = 0
     with db_cursor() as cursor:
-        cursor.execute("""SELECT n.node_id, n.node_code, n.name, v.process_id, p.process_code
+        cursor.execute("""SELECT n.node_id, n.node_code, n.name, n.process_id, p.process_code
                          FROM pm_process_node n
-                         JOIN pm_process_version v ON v.version_id = n.version_id
-                         JOIN bpm_process p ON p.process_id = v.process_id
+                         JOIN bpm_process p ON p.process_id = n.process_id
                          WHERE n.node_type = 'operation'
                          ORDER BY p.process_code, n.node_code""")
         operations = cursor.fetchall()

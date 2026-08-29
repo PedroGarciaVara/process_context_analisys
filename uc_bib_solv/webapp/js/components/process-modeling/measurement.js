@@ -92,9 +92,9 @@ function measureBaseNode(node) {
   return { width, height };
 }
 
-function estimateFlowBounds(version, dimensions) {
-  const nodes = version?.nodes || [];
-  const transitions = version?.transitions || [];
+function estimateFlowBounds(process, dimensions) {
+  const nodes = process?.nodes || [];
+  const transitions = process?.transitions || [];
   if (!nodes.length) return { width: DEFAULT_LAYOUT_METRICS.minCanvasWidth, height: DEFAULT_LAYOUT_METRICS.minCanvasHeight };
 
   const ids = nodes.map((node) => String(node.node_id));
@@ -142,9 +142,9 @@ function estimateFlowBounds(version, dimensions) {
   return { width, height };
 }
 
-function estimateTreeWidth(version, dimensions) {
-  const nodes = version?.nodes || [];
-  const transitions = version?.transitions || [];
+function estimateTreeWidth(process, dimensions) {
+  const nodes = process?.nodes || [];
+  const transitions = process?.transitions || [];
   if (!nodes.length) return DEFAULT_LAYOUT_METRICS.minCanvasWidth;
   const ids = nodes.map((node) => String(node.node_id));
   const incoming = Object.fromEntries(ids.map((id) => [id, []]));
@@ -175,8 +175,8 @@ function estimateTreeWidth(version, dimensions) {
   return total + DEFAULT_LAYOUT_METRICS.canvasPadding * 2;
 }
 
-export function measureDiagram(version, options = {}) {
-  const nodes = version?.nodes || [];
+export function measureDiagram(process, options = {}) {
+  const nodes = process?.nodes || [];
   const expansionStack = options.expansionStack || [];
   const depth = options.depth || 0;
   const currentExpansions = expansionStack.filter((item) => item.depth === depth);
@@ -191,7 +191,7 @@ export function measureDiagram(version, options = {}) {
       dimensions[nodeId] = base;
       return;
     }
-    const nested = measureDiagram(expansion.version, { ...options, depth: depth + 1, nested: true });
+    const nested = measureDiagram(expansion.process, { ...options, depth: depth + 1, nested: true });
     const width = Math.max(base.width, nested.width + DEFAULT_LAYOUT_METRICS.nestedInset * 2);
     // Include the inline child header, container padding, borders and the
     // card margins. Without this allowance the nested flow can extend below
@@ -201,11 +201,11 @@ export function measureDiagram(version, options = {}) {
     nestedLayouts[nodeId] = nested;
   });
 
-  const estimated = estimateFlowBounds(version, dimensions);
+  const estimated = estimateFlowBounds(process, dimensions);
   return {
     dimensions,
     nestedLayouts,
-    width: Math.max(estimated.width, estimateTreeWidth(version, dimensions), DEFAULT_LAYOUT_METRICS.minCanvasWidth, ...Object.values(dimensions).map((entry) => entry.width + DEFAULT_LAYOUT_METRICS.canvasPadding * 2)),
+    width: Math.max(estimated.width, estimateTreeWidth(process, dimensions), DEFAULT_LAYOUT_METRICS.minCanvasWidth, ...Object.values(dimensions).map((entry) => entry.width + DEFAULT_LAYOUT_METRICS.canvasPadding * 2)),
     height: Math.max(estimated.height, DEFAULT_LAYOUT_METRICS.minCanvasHeight, ...Object.values(dimensions).map((entry) => entry.height + DEFAULT_LAYOUT_METRICS.canvasPadding * 2)),
   };
 }

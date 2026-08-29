@@ -15,10 +15,10 @@ export function afterMountContexto(root) {
   const result = root.querySelector("#context-result");
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const versionId = root.querySelector("#context-version-id").value;
+    const processId = root.querySelector("#context-version-id").value;
     feedback.textContent = "Cargando contexto…";
     try {
-      const response = await getStructuredContext(String(versionId).trim());
+      const response = await getStructuredContext(String(processId).trim());
       const data = response.data || {};
       const text = JSON.stringify(data, null, 2);
       result.innerHTML = `<div class="context-result__toolbar"><strong>${esc(data.process?.name || "Proceso")}</strong><button type="button" class="pm-secondary" id="context-copy">Copiar JSON estructurado</button></div><pre class="context-result__json">${esc(text)}</pre>`;

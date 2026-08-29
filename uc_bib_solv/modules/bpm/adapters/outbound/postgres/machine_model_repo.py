@@ -27,7 +27,7 @@ def _json(value: Any) -> Json:
     return Json(value)
 
 
-def get_machine_context(machine_id: int, operation_id: str | None = None, process_version_id: str | None = None) -> dict | None:
+def get_machine_context(machine_id: int, operation_id: str | None = None, process_id: str | None = None) -> dict | None:
     """Return the canonical machine context without inferring relationships."""
     with db_cursor() as cur:
         cur.execute(
@@ -54,24 +54,23 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
         if operation_id:
             clauses.append("moc.operation_id = %s")
             values.append(operation_id)
-        if process_version_id:
-            clauses.append("moc.process_version_id = %s")
-            values.append(process_version_id)
+        if process_id:
+            clauses.append("moc.process_id = %s")
+            values.append(process_id)
         cur.execute(
             f"""
             SELECT moc.*, n.node_code, n.name AS operation_name,
                    n.description AS operation_description,
                    n.properties AS operation_properties,
-                   v.process_id, p.name AS process_name,
+                   n.process_id, p.name AS process_name,
                    c.nombre AS configuration_contract_name,
                    c.proceso_id AS configuration_legacy_process_id
               FROM machine_operation_configuration moc
               JOIN pm_process_node n ON n.node_id = moc.operation_id
-              JOIN pm_process_version v ON v.version_id = moc.process_version_id
-              JOIN bpm_process p ON p.process_id = v.process_id
+              JOIN bpm_process p ON p.process_id = n.process_id
               LEFT JOIN contrato c ON c.id = moc.contract_id
              WHERE {' AND '.join(clauses)}
-             ORDER BY moc.process_version_id, moc.operation_id, moc.id
+             ORDER BY moc.process_id, moc.operation_id, moc.id
             """,
             tuple(values),
         )
@@ -95,7 +94,7 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
         "common_limitations": row.pop("common_limitations", None),
         "general_technical_description": row.pop("general_technical_description", None),
     }
-    selected_configuration = _operation_configuration(configurations, operation_id, process_version_id)
+    selected_configuration = _operation_configuration(configurations, operation_id, process_id)
     direct_contract_id = row.pop("machine_contract_id", None)
     direct_contract_name = row.pop("machine_contract_name", None)
     effective_contract_id = direct_contract_id
@@ -109,12 +108,11 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
         "machine_type_id": canonical_machine_type_id,
         "contract_id": effective_contract_id,
         "process_id": selected_configuration.get("process_id") if selected_configuration else None,
-        "process_version_id": selected_configuration.get("process_version_id") if selected_configuration else None,
         "operation_id": selected_configuration.get("operation_id") if selected_configuration else None,
         "legacy_process_id": selected_configuration.get("configuration_legacy_process_id") if selected_configuration else None,
     }
     return {
-        "operation": _operation_block(configurations, operation_id, process_version_id),
+        "operation": _operation_block(configurations, operation_id, process_id),
         "machine_type": machine_type,
         "machine": row,
         "contract": contract if contract["id"] is not None else None,
@@ -127,7 +125,7 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
 def _operation_block(
     configurations: list[dict],
     operation_id: str | None = None,
-    process_version_id: str | None = None,
+    process_id: str | None = None,
 ) -> dict | None:
     if not configurations:
         return None
@@ -135,7 +133,7 @@ def _operation_block(
         (
             item for item in configurations
             if (not operation_id or str(item["operation_id"]) == str(operation_id))
-            and (not process_version_id or str(item["process_version_id"]) == str(process_version_id))
+            and (not process_id or str(item["process_id"]) == str(process_id))
         ),
         None,
     )
@@ -153,7 +151,6 @@ def _operation_block(
         schema_version = 1
     return {
         "operation_id": str(first["operation_id"]),
-        "process_version_id": str(first["process_version_id"]),
         "process_id": str(first["process_id"]),
         "name": first["operation_name"],
         "description": first["operation_description"],
@@ -167,15 +164,15 @@ def _operation_block(
 def _operation_configuration(
     configurations: list[dict],
     operation_id: str | None = None,
-    process_version_id: str | None = None,
+    process_id: str | None = None,
 ) -> dict | None:
     return next(
         (
             item for item in configurations
             if (not operation_id or str(item["operation_id"]) == str(operation_id))
-            and (not process_version_id or str(item["process_version_id"]) == str(process_version_id))
+            and (not process_id or str(item["process_id"]) == str(process_id))
         ),
-        configurations[0] if configurations and not operation_id and not process_version_id else None,
+        configurations[0] if configurations and not operation_id and not process_id else None,
     )
 
 
@@ -188,7 +185,7 @@ def list_configurations(machine_id: int) -> list[dict]:
 
 def create_configuration(payload: dict) -> dict:
     values = [
-        payload["machine_id"], payload["operation_id"], payload["process_version_id"], payload["process_id"],
+        payload["machine_id"], payload["operation_id"], payload["process_id"],
         payload.get("contract_id"), payload.get("specific_description"),
         *[_json(payload.get(field, [])) for field in CONFIG_FIELDS],
         payload.get("validation_status", "draft"), payload.get("valid_from"), payload.get("valid_to"),
@@ -197,11 +194,11 @@ def create_configuration(payload: dict) -> dict:
         cur.execute(
             """
             INSERT INTO machine_operation_configuration
-                (machine_id, operation_id, process_version_id, process_id,
+                (machine_id, operation_id, process_id,
                  contract_id, specific_description, additional_inputs,
                  specific_controls, available_measurements, specific_safety_rules,
                  validation_status, valid_from, valid_to)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING *
             """,
             tuple(values),

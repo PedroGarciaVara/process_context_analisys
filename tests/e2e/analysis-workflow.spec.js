@@ -9,8 +9,8 @@ test("flujo completo: abre analisis, importa plantilla, traza evaluaciones y cie
   await page.locator("#analysis-participant").fill("Analista E2E");
   await page.locator("#analysis-opening-indication").fill("Desviacion detectada durante la inspeccion E2E.");
 
-  const openResponse = page.waitForResponse((response) => response.url().endsWith("/api/analyses") && response.request().method() === "POST" && response.status() === 201);
-  const treeRequest = page.waitForRequest((request) => request.url().includes("/api/causas?") && request.url().includes("view=analisis_causas_v2"));
+  const openResponse = page.waitForResponse((response) => response.url().endsWith("/api/rca-tree/analyses") && response.request().method() === "POST" && response.status() === 201);
+  const treeRequest = page.waitForRequest((request) => request.url().includes("/api/rca-tree/nodes?") && request.url().includes("view=analisis_causas_v2"));
   await page.locator("#analysis-open-button").click();
   await openResponse;
   await expect(page).toHaveURL(/#\/analisis_causas_v02\?contract_id=1&analysis_id=\d+/);
@@ -39,11 +39,11 @@ test("flujo completo: abre analisis, importa plantilla, traza evaluaciones y cie
   await page.locator("[data-hypothesis-action='evaluate']").nth(1).click();
   await hypothesisResult;
   const analysisId = page.url().match(/analysis_id=(\d+)/)[1];
-  const analysisState = await page.request.get(`${process.env.UI_TEST_BASE_URL || "http://127.0.0.1:8050"}/api/analyses/${analysisId}`);
+  const analysisState = await page.request.get(`${process.env.UI_TEST_BASE_URL || "http://127.0.0.1:8050"}/api/rca-tree/analyses/${analysisId}`);
   expect(analysisState.ok()).toBeTruthy();
   expect((await analysisState.json()).data.results.filter((item) => item.tipo_elemento === "hipotesis")).toHaveLength(2);
   const baseUrl = process.env.UI_TEST_BASE_URL || "http://127.0.0.1:8050";
-  const masterTree = await page.request.get(`${baseUrl}/api/causas?view=arbol&contract_id=1`);
+  const masterTree = await page.request.get(`${baseUrl}/api/rca-tree/nodes?view=arbol&contract_id=1`);
   const masterPayload = await masterTree.json();
   const masterHypotheses = Object.values(masterPayload.hypotheses_by_cause || {}).flat();
   expect(masterHypotheses.every((item) => item.estado === "pendiente")).toBeTruthy();

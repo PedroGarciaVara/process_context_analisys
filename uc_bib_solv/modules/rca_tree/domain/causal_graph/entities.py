@@ -5,22 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..exceptions import InvalidRelationshipError
+from .rules import validate_relationship_signature
 from ..value_objects import NodeId, NodeType, RelationshipType, normalize_node_type, normalize_relationship_type
-
-
-ALLOWED_RELATIONSHIPS = {
-    (NodeType.CONTRACT, RelationshipType.DEPENDS_ON, NodeType.CONTRACT),
-    (NodeType.CONTRACT, RelationshipType.DEPENDS_ON, NodeType.CAUSE),
-    (NodeType.CAUSE, RelationshipType.CAUSES, NodeType.CAUSE),
-    (NodeType.CAUSE, RelationshipType.DEPENDS_ON, NodeType.CONTRACT),
-    (NodeType.CONTRACT, RelationshipType.VERIFIED_BY, NodeType.HYPOTHESIS),
-    (NodeType.CAUSE, RelationshipType.VERIFIED_BY, NodeType.HYPOTHESIS),
-    (NodeType.CONTRACT, RelationshipType.BELONGS_TO, NodeType.MACHINE),
-    (NodeType.CONTRACT, RelationshipType.BELONGS_TO, NodeType.PROCESS),
-    (NodeType.CAUSE, RelationshipType.BELONGS_TO, NodeType.MACHINE),
-    (NodeType.CAUSE, RelationshipType.BELONGS_TO, NodeType.PROCESS),
-}
 
 
 @dataclass
@@ -78,6 +64,4 @@ class Relationship:
 
     @classmethod
     def validate_signature(cls, parent: NodeType | str, relation: RelationshipType | str, child: NodeType | str) -> None:
-        signature = (normalize_node_type(parent), normalize_relationship_type(relation), normalize_node_type(child))
-        if signature not in ALLOWED_RELATIONSHIPS:
-            raise InvalidRelationshipError(f"Combinación de relación no permitida: {signature[0]} -[{signature[1]}]-> {signature[2]}")
+        validate_relationship_signature(parent, child, relation)

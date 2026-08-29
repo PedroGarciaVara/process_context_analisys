@@ -167,7 +167,7 @@ def validate_configuration_payload(payload: dict, *, partial: bool = False) -> d
     if not isinstance(payload, dict):
         raise MachineModelError("configuration debe ser un objeto", "invalid_payload")
     result = dict(payload)
-    for field in ("machine_id", "operation_id", "process_version_id", "process_id"):
+    for field in ("machine_id", "operation_id", "process_id"):
         if not partial or field in payload:
             if payload.get(field) is None:
                 raise MachineModelError(f"{field} es obligatorio", "required_identity")
@@ -197,7 +197,7 @@ def classify_field(*, common: bool = False, permanent: bool = False, contextual:
     return "machine_type" if common else "machine" if permanent else "machine_operation_configuration"
 
 
-def validate_operation_identity(*, node_id: Any, node_type: str, node_version_id: Any, process_version_id: Any) -> str:
+def validate_operation_identity(*, node_id: Any, node_type: str, node_process_id: Any, process_id: Any) -> str:
     """Validate the canonical BPM identity before persistence.
 
     The database trigger repeats this check; keeping the pure validation here
@@ -205,9 +205,9 @@ def validate_operation_identity(*, node_id: Any, node_type: str, node_version_id
     operation identity.
     """
     operation_id = _uuid(node_id, "operation_id")
-    version_id = _uuid(process_version_id, "process_version_id")
+    process_uuid = _uuid(process_id, "process_id")
     if node_type != "operation":
         raise MachineModelError("operation_id debe referenciar un nodo BPM operation", "invalid_operation_type")
-    if str(node_version_id) != version_id:
-        raise MachineModelError("operation_id no pertenece a process_version_id", "operation_version_mismatch")
+    if str(node_process_id) != process_uuid:
+        raise MachineModelError("operation_id no pertenece a process_id", "operation_process_mismatch")
     return operation_id

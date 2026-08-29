@@ -42,9 +42,22 @@ class Machine:
     differences_from_machine_type: Any = None
 
     def __post_init__(self):
-        validated = validate_machine_payload(self.__dict__)
+        # A machine can be constructed before its type is persisted (the
+        # create flow receives a nested machine_type payload).  The payload
+        # boundary enforces the required type; the entity validates its own
+        # fields without introducing a second operational Machine contract.
+        validated = validate_machine_payload(self.__dict__, partial=True)
         for key, value in validated.items():
             setattr(self, key, value)
+
+    def rename(self, name: str) -> None:
+        validated = validate_machine_payload({"name": name}, partial=True)
+        self.name = validated["name"]
+
+    def assign_contract(self, contract_id: int | None) -> None:
+        if contract_id is not None and (isinstance(contract_id, bool) or int(contract_id) <= 0):
+            raise ValueError("contract_id debe ser un entero positivo")
+        self.contract_id = int(contract_id) if contract_id is not None else None
 
 
 @dataclass
@@ -52,7 +65,6 @@ class MachineOperationConfiguration:
     id: int | None = None
     machine_id: int | None = None
     operation_id: str = ""
-    process_version_id: str = ""
     process_id: str = ""
     contract_id: int | None = None
     validation_status: str = "draft"

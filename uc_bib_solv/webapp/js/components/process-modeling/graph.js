@@ -23,31 +23,6 @@ function nodeSemanticText(node) {
   return node?.description || detail.description || detail.operation_description || detail.detailed_description || detail.summary || "Sin descripción";
 }
 
-function transitionsForDiagram(nodes, transitions) {
-  const decisionIds = new Set(nodes.filter((node) => node.node_type === "decision").map((node) => String(node.node_id)));
-  const branchSources = new Set(transitions.filter((edge) => edge.transition_type === "branch").map((edge) => String(edge.source_node_id)));
-  const branchTargets = new Set(transitions.filter((edge) => edge.transition_type === "branch").map((edge) => String(edge.target_node_id)));
-  const redundantPairs = new Set();
-  transitions
-    .filter((edge) => edge.transition_type === "branch")
-    .forEach((edge) => {
-      transitions
-        .filter((candidate) => String(candidate.source_node_id) === String(edge.source_node_id) && candidate.transition_type === "branch")
-        .forEach((candidate) => redundantPairs.add(`${candidate.source_node_id}->${candidate.target_node_id}`));
-    });
-  return transitions.filter((edge) => {
-    const sourceId = String(edge.source_node_id);
-    const targetId = String(edge.target_node_id);
-    const pairKey = `${edge.source_node_id}->${edge.target_node_id}`;
-    if (edge.transition_type === "sequence" && redundantPairs.has(pairKey) && decisionIds.has(sourceId)) return false;
-    // A legacy sequence between two alternatives of the same decision is a
-    // continuation artifact, not a second visible branch. Rendering it would
-    // make the No branch pass through the Sí output.
-    if (edge.transition_type === "sequence" && branchTargets.has(sourceId) && branchTargets.has(targetId)) return false;
-    return !decisionIds.has(sourceId) || !branchSources.has(sourceId) || edge.transition_type === "branch";
-  });
-}
-
 function renderNode(node, position, dimensions, expansionStack = [], depth = 0) {
   const shape = NODE_SHAPES[node.node_type] || "operation";
   const outputRole = node.output_role || node?.properties?.output_role;
@@ -57,7 +32,7 @@ function renderNode(node, position, dimensions, expansionStack = [], depth = 0) 
     ? `<button type="button" class="pm-card-action" data-pm-action="expand-subprocess" data-pm-expand-node="${esc(node.node_id)}" data-pm-node-id="${esc(node.node_id)}" data-testid="pm-expand-subprocess" aria-label="Expandir subflujo de ${esc(node.name)}">Expandir subflujo</button>`
     : "";
   const inlineChild = expansion
-    ? `<div class="pm-subprocess-container" data-pm-inline-child data-pm-expansion-depth="${depth}"><div class="pm-inline-child-header"><div><p class="pm-eyebrow">Subproceso expandido</p><h3>${esc(expansion.label || "Proceso hijo")}</h3></div><div class="pm-inline-child-actions"><button type="button" class="pm-secondary" data-pm-action="open-subprocess" data-pm-open-node="${esc(node.node_id)}" data-pm-open-depth="${depth}">Abrir subproceso</button><button type="button" class="pm-secondary" data-pm-action="collapse-subprocess" data-pm-collapse-node="${esc(node.node_id)}">Contraer</button></div></div>${renderGraph(expansion.version, { nested: true, expansionStack, depth: depth + 1 })}</div>`
+    ? `<div class="pm-subprocess-container" data-pm-inline-child data-pm-expansion-depth="${depth}"><div class="pm-inline-child-header"><div><p class="pm-eyebrow">Subproceso expandido</p><h3>${esc(expansion.label || "Proceso hijo")}</h3></div><div class="pm-inline-child-actions"><button type="button" class="pm-secondary" data-pm-action="open-subprocess" data-pm-open-node="${esc(node.node_id)}" data-pm-open-depth="${depth}">Abrir subproceso</button><button type="button" class="pm-secondary" data-pm-action="collapse-subprocess" data-pm-collapse-node="${esc(node.node_id)}">Contraer</button></div></div>${renderGraph(expansion.process, { nested: true, expansionStack, depth: depth + 1 })}</div>`
     : "";
   const warning = node.node_type === "operation" && !node.child_process_id ? '<span class="pm-card-warning" role="note">Sin subproceso asociado</span>' : "";
   const label = `${node.node_type}: ${node.name}${outputRole ? `, ${outputRole}` : ""}`;
@@ -68,7 +43,7 @@ function renderNode(node, position, dimensions, expansionStack = [], depth = 0) 
     ...measuredBox,
     width: position?.width || measuredBox.width,
   };
-  return `<article class="pm-node pm-bpm-card pm-bpm-card-${shape}${inlineChild ? " pm-bpm-card-expanded" : ""}" data-node-id="${esc(node.node_id)}" data-pm-node-type="${esc(node.node_type)}" data-pm-expansion-depth="${depth}" data-pm-parent-version-id="${esc(node.version_id || "")}" ${expandable ? `data-pm-action="expand-subprocess" data-pm-expand-node="${esc(node.node_id)}" role="button"` : ""} style="left:${position.x}px;top:${position.y}px;width:${nodeBox.width}px;height:${nodeBox.height}px" tabindex="0" aria-label="${esc(label)}"><div class="pm-card-kicker">${esc(node.node_type === "decision" ? "Decisión" : node.node_type === "stock" ? "Stock" : node.node_type)}</div><strong class="pm-card-title">${esc(node.node_code)}</strong><span class="pm-card-name">${esc(node.name)}</span><span class="pm-card-description">${esc(nodeSemanticText(node))}</span>${warning}${expand}${inlineChild}</article>`;
+  return `<article class="pm-node pm-bpm-card pm-bpm-card-${shape}${inlineChild ? " pm-bpm-card-expanded" : ""}" data-node-id="${esc(node.node_id)}" data-pm-node-type="${esc(node.node_type)}" data-pm-expansion-depth="${depth}" data-pm-parent-process-id="${esc(node.process_id || "")}" ${expandable ? `data-pm-action="expand-subprocess" data-pm-expand-node="${esc(node.node_id)}" role="button"` : ""} style="left:${position.x}px;top:${position.y}px;width:${nodeBox.width}px;height:${nodeBox.height}px" tabindex="0" aria-label="${esc(label)}"><div class="pm-card-kicker">${esc(node.node_type === "decision" ? "Decisión" : node.node_type === "stock" ? "Stock" : node.node_type)}</div><strong class="pm-card-title">${esc(node.node_code)}</strong><span class="pm-card-name">${esc(node.name)}</span><span class="pm-card-description">${esc(nodeSemanticText(node))}</span>${warning}${expand}${inlineChild}</article>`;
 }
 
 function renderLegend() {
@@ -83,14 +58,14 @@ function renderRoute(route) {
   return `<path class="pm-edge" data-pm-edge="${routeId}" d="${route.path}" />${label}`;
 }
 
-export function renderGraph(version, options = {}) {
-  const nodes = version?.nodes || [];
-  const transitions = transitionsForDiagram(nodes, version?.transitions || []);
-  if (!nodes.length) return '<p class="pm-empty">La versión no tiene nodos.</p>';
+export function renderGraph(process, options = {}) {
+  const nodes = process?.nodes || [];
+  const transitions = process?.diagram_transitions || [];
+  if (!nodes.length) return '<p class="pm-empty">El proceso no tiene nodos.</p>';
   const expansionStack = options.expansionStack || [];
   const depth = options.depth || 0;
-  const measurement = measureDiagram(version, { expansionStack, depth, nested: options.nested });
-  const layout = computeProcessLayout(version, measurement.dimensions, transitions);
+  const measurement = measureDiagram(process, { expansionStack, depth, nested: options.nested });
+  const layout = computeProcessLayout(process, measurement.dimensions, transitions);
   const cards = nodes.map((node) => renderNode(node, layout.positions[String(node.node_id)], measurement.dimensions, expansionStack, depth)).join("");
   const paths = layout.routes.map((route) => renderRoute(route)).join("");
   const zoom = options.nested ? 1 : Math.min(1, Math.max(0.35, Number(options.zoom) || 1));

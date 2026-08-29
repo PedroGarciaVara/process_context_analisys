@@ -1,4 +1,5 @@
 from uc_bib_solv.modules.bpm.application.dto.serialization import jsonable
+from uc_bib_solv.modules.bpm.application.dto.commands import ProcessCommand
 from uc_bib_solv.modules.bpm.application.use_cases.process_modeling_dependencies import ProcessModelingDependencies
 from uc_bib_solv.modules.bpm.domain.processes.entities import Process
 from uc_bib_solv.modules.bpm.domain.processes.exceptions import NotFoundError, ProcessModelingError
@@ -9,11 +10,7 @@ class CreateProcess:
         self.dependencies = dependencies
 
     def execute(self, data):
-        entity = Process(**{
-            key: value
-            for key, value in data.items()
-            if key in Process.__dataclass_fields__ and key != "process_id"
-        })
+        entity = Process(**ProcessCommand.from_payload(data).to_dict())
         if entity.parent_process_id:
             parent = self.dependencies.processes.get(entity.parent_process_id)
             if not parent:

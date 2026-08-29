@@ -6,6 +6,8 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import Any
 
+from ..exceptions import CycleDetectedError, InvalidRelationshipError, NodeDeletionError
+
 
 NODE_TYPES = {"CONTRACT", "CAUSE", "HYPOTHESIS", "MACHINE", "PROCESS"}
 RELATIONSHIP_TYPES = {"DEPENDS_ON", "CAUSES", "VERIFIED_BY", "BELONGS_TO"}
@@ -25,21 +27,17 @@ ALLOWED_RELATIONSHIPS = {
 }
 
 
-class GraphDomainError(ValueError):
-    """Error funcional del dominio del grafo."""
-
-
 def normalize_node_type(node_type: str | None) -> str:
     normalized = (node_type or "").strip().upper()
     if normalized not in NODE_TYPES:
-        raise GraphDomainError(f"Tipo de nodo inválido: {node_type!r}")
+        raise InvalidRelationshipError(f"Tipo de nodo inválido: {node_type!r}")
     return normalized
 
 
 def normalize_relationship_type(relationship_type: str | None) -> str:
     normalized = (relationship_type or "").strip().upper()
     if normalized not in RELATIONSHIP_TYPES:
-        raise GraphDomainError(f"Tipo de relación inválido: {relationship_type!r}")
+        raise InvalidRelationshipError(f"Tipo de relación inválido: {relationship_type!r}")
     return normalized
 
 
@@ -52,7 +50,7 @@ def validate_relationship_signature(
     child = normalize_node_type(child_node_type)
     relation = normalize_relationship_type(relationship_type)
     if (parent, relation, child) not in ALLOWED_RELATIONSHIPS:
-        raise GraphDomainError(
+        raise InvalidRelationshipError(
             "Combinación de relación no permitida: "
             f"{parent} -[{relation}]-> {child}"
         )
@@ -102,7 +100,7 @@ def validate_no_cycle(
     relationship_type: str | None = None,
 ) -> None:
     if would_create_cycle(edges, parent_node_id, child_node_id, relationship_type=relationship_type):
-        raise GraphDomainError("La relación introduciría un ciclo en el DAG causal.")
+        raise CycleDetectedError("La relación introduciría un ciclo en el DAG causal.")
 
 
 def validate_delete_allowed(
@@ -112,11 +110,11 @@ def validate_delete_allowed(
     analysis_references: int,
 ) -> None:
     if incoming_relationships > 1:
-        raise GraphDomainError("El nodo está reutilizado por múltiples padres y no puede eliminarse.")
+        raise NodeDeletionError("El nodo está reutilizado por múltiples padres y no puede eliminarse.")
     if outgoing_relationships > 0:
-        raise GraphDomainError("El nodo tiene descendencia o hipótesis vinculadas y no puede eliminarse.")
+        raise NodeDeletionError("El nodo tiene descendencia o hipótesis vinculadas y no puede eliminarse.")
     if analysis_references > 0:
-        raise GraphDomainError("El nodo tiene trazabilidad de análisis asociada y no puede eliminarse.")
+        raise NodeDeletionError("El nodo tiene trazabilidad de análisis asociada y no puede eliminarse.")
 
 
 def project_graph_as_tree(

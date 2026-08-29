@@ -281,8 +281,8 @@ function buildCanvas(positions, routes) {
   };
 }
 
-export function computeProcessLayout(version, dimensions, transitions) {
-  const nodes = version?.nodes || [];
+export function computeProcessLayout(process, dimensions, transitions) {
+  const nodes = process?.nodes || [];
   if (!nodes.length) {
     return { positions: {}, routes: [], width: DEFAULT_LAYOUT_METRICS.minCanvasWidth, height: DEFAULT_LAYOUT_METRICS.minCanvasHeight };
   }

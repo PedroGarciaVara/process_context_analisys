@@ -62,12 +62,12 @@ export function getOperations(state) {
   const byKey = new Map();
   getMachines(state).forEach((machine) => {
     (machine.operations || []).forEach((operation) => {
-      const key = `${operation.operation_id}|${operation.process_version_id}`;
+      const key = `${operation.operation_id}|${operation.process_id}`;
       if (!byKey.has(key)) {
         byKey.set(key, {
           id: key,
           operationId: operation.operation_id,
-          processVersionId: operation.process_version_id,
+          processId: operation.process_id,
           // The machine page selects the legacy numeric process. Keep the BPM
           // UUID separately so it can be sent as the canonical operation scope.
           processId: operation.legacy_process_id ?? operation.processId ?? null,
@@ -140,10 +140,10 @@ export function filterMachines(state, processId = null, operationKey = null) {
   return getMachines(state).filter((item) => {
     if (processId && String(item.processId) !== String(processId)) return false;
     if (operationKey) {
-      const [operationId, processVersionId] = String(operationKey).split("|");
+      const [operationId, processId] = String(operationKey).split("|");
       if (!(item.operations || []).some((operation) => (
         String(operation.operation_id) === operationId
-        && String(operation.process_version_id) === processVersionId
+        && String(operation.process_id) === processId
       ))) return false;
     }
     return true;
@@ -237,9 +237,9 @@ export function buildOperationalPageParams(state, route) {
   if (route === "maquinas") {
     if (state.currentProcess) params.processId = state.currentProcess;
     if (state.currentOperation) {
-      const [operationId, processVersionId] = String(state.currentOperation).split("|");
+      const [operationId, processId] = String(state.currentOperation).split("|");
       params.operation_id = operationId;
-      params.process_version_id = processVersionId;
+      params.process_id = processId;
       const operation = getOperations(state).find((item) => item.id === state.currentOperation);
       if (operation?.bpmProcessId) params.process_id = operation.bpmProcessId;
     }

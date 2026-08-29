@@ -83,3 +83,8 @@ python3 -m uc_bib_solv.architecture_validators --check-structure
 python3 -m uc_bib_solv.architecture_validators --check-naming
 python3 -m uc_bib_solv.architecture_validators --check-dependencies
 ```
+## ARC-008 — estado vigente (2026-08-29)
+
+The legacy HTTP aliases and compatibility inbound adapters described in older
+sections are retired. Current runtime consumers use the canonical BPM and
+RCA_TREE namespaces; no compatibility route registry remains.

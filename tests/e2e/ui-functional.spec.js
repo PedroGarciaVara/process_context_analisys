@@ -125,7 +125,7 @@ test.describe.serial("webapp-java UI", () => {
     await createModal.locator("#contract-create-v02-name").fill(name);
     await createModal.locator("#contract-create-v02-metrica").fill("Metrica UI");
     await createModal.locator("#contract-create-v02-objetivo").fill("Objetivo UI");
-    const contractCreateResponse = page.waitForResponse((response) => response.url().endsWith("/api/operational/contracts") && response.request().method() === "POST" && response.status() === 201);
+    const contractCreateResponse = page.waitForResponse((response) => response.url().endsWith("/api/bpm/operational/contracts") && response.request().method() === "POST" && response.status() === 201);
     await createModal.locator('[data-action="contract-create-submit"]').click();
     await contractCreateResponse;
     await expect(page.locator("#contract-create-v02-modal")).toBeHidden();
@@ -175,7 +175,7 @@ test.describe.serial("webapp-java UI", () => {
     await expect(savedDetail).toBeVisible();
     await expect(savedDetail).toHaveAttribute("data-modal-state", "open");
     const deleteResponse = page.waitForResponse((response) => response.url().match(/\/api\/operational\/contracts\/\d+$/) && response.request().method() === "DELETE" && response.status() === 200);
-    const catalogRefresh = page.waitForResponse((response) => response.url().endsWith("/api/operational/catalog") && response.request().method() === "GET" && response.status() === 200);
+    const catalogRefresh = page.waitForResponse((response) => response.url().endsWith("/api/bpm/operational/catalog") && response.request().method() === "GET" && response.status() === 200);
     page.once("dialog", (dialog) => dialog.accept());
     await page.locator('[data-action="contract-detail-delete"]').click();
     await deleteResponse;
@@ -264,7 +264,7 @@ test.describe.serial("webapp-java UI", () => {
     expect(savedBody.data.name).toBe(`${originalName} UI`);
     await expect(modal).toBeHidden();
 
-    const restoreResponse = await page.request.patch(`/api/operational/machines/${savedBody.data.id}`, {
+    const restoreResponse = await page.request.patch(`/api/bpm/operational/machines/${savedBody.data.id}`, {
       data: { name: originalName, machine_type_id: savedBody.data.machineTypeId },
     });
     expect(restoreResponse.status()).toBe(200);
@@ -287,7 +287,7 @@ test.describe.serial("webapp-java UI", () => {
     await page.locator('[data-action="tree-add-root-v02"]').click();
     await expect(page).toHaveURL(/#\/causa_detalle_v02\?contrato_id=1/);
 
-    const analysisTreeResponse = page.waitForResponse((response) => response.url().includes("/api/causas?view=analisis_causas_v2") && response.status() === 200);
+    const analysisTreeResponse = page.waitForResponse((response) => response.url().includes("/api/rca-tree/nodes?view=analisis_causas_v2") && response.status() === 200);
     await page.goto("/#/analisis_causas_v02?contract_id=1&analysis_id=1");
     await analysisTreeResponse;
     await expect(page.getByText("Analisis causas").first()).toBeVisible();

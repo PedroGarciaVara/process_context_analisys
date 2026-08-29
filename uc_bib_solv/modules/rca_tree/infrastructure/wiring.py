@@ -21,8 +21,8 @@ from ..application.use_cases import (
 from .application import RcaTreeApplication
 
 
-def build_rca_tree_application(*, persistence=None) -> RcaTreeApplication:
-    persistence = persistence or build_rca_tree_postgres_adapter()
+def build_rca_tree_application(*, persistence=None, contract_context=None) -> RcaTreeApplication:
+    persistence = persistence or build_rca_tree_postgres_adapter(contract_context=contract_context)
     causes = CauseRepositoryAdapter(persistence)
     hypotheses = HypothesisRepositoryAdapter(persistence)
     return RcaTreeApplication(
@@ -50,9 +50,12 @@ build_rca_tree_service = build_rca_tree_application
 build_causal_tree_service = build_rca_tree_application
 
 
-def build_rca_tree_postgres_adapter():
+def build_rca_tree_postgres_adapter(*, contract_context=None):
     """Compose temporary SQL repositories only at the RCA_TREE edge."""
     from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import causa_repo, hipotesis_repo, node_repo, relationship_repo
     from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import causas_repository
 
-    return RcaTreePostgresAdapter(causa_repo, hipotesis_repo, node_repo, relationship_repo, causas_repository)
+    return RcaTreePostgresAdapter(
+        causa_repo, hipotesis_repo, node_repo, relationship_repo, causas_repository,
+        contract_context=contract_context,
+    )

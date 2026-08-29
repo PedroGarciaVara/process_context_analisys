@@ -1,14 +1,14 @@
 import { test, expect } from "@playwright/test";
 
 test("req12: muestra los cuatro bloques del contexto de máquina", async ({ page }) => {
-  const machinesResponse = await page.request.get("/api/operational/machines");
+  const machinesResponse = await page.request.get("/api/bpm/operational/machines");
   expect(machinesResponse.ok()).toBe(true);
   const machinesPayload = await machinesResponse.json();
   const machines = machinesPayload.data?.data ?? machinesPayload.data ?? [];
 
   let seededMachine;
   for (const machine of machines) {
-    const contextResponse = await page.request.get(`/api/operational/machines/${machine.id}/context`);
+    const contextResponse = await page.request.get(`/api/bpm/operational/machines/${machine.id}/context`);
     if (!contextResponse.ok()) continue;
     const contextPayload = await contextResponse.json();
     const context = contextPayload.data?.data ?? contextPayload.data;
@@ -23,7 +23,7 @@ test("req12: muestra los cuatro bloques del contexto de máquina", async ({ page
   await expect(page.locator("main")).toBeVisible();
   const operation = seededMachine.operations?.[0];
   expect(operation, "La máquina sembrada debe conservar su identidad de operación BPM").toBeTruthy();
-  const operationKey = `${operation.operation_id}|${operation.process_version_id}`;
+  const operationKey = `${operation.operation_id}|${operation.process_id}`;
   await page.locator("#machine-v02-operation").selectOption(operationKey);
   const machineRow = page.locator(`[data-machine-row="${seededMachine.id}"]`);
   await expect(machineRow).toBeVisible();
@@ -41,8 +41,8 @@ test("req12: muestra los cuatro bloques del contexto de máquina", async ({ page
   await expect(blocks.nth(3)).not.toContainText("No existe configuración para esta operación");
 });
 
-test("req12: el contexto mantiene operation_id y process_version_id seleccionados", async ({ page }) => {
-  const machinesResponse = await page.request.get("/api/operational/machines");
+test("req12: el contexto mantiene operation_id y process_id seleccionados", async ({ page }) => {
+  const machinesResponse = await page.request.get("/api/bpm/operational/machines");
   expect(machinesResponse.ok()).toBe(true);
   const machinesPayload = await machinesResponse.json();
   const machines = machinesPayload.data?.data ?? machinesPayload.data ?? [];
@@ -51,21 +51,21 @@ test("req12: el contexto mantiene operation_id y process_version_id seleccionado
 
   const selected = machine.operations[0];
   const response = await page.request.get(
-    `/api/operational/machines/${machine.id}/context?operation_id=${selected.operation_id}&process_version_id=${selected.process_version_id}`,
+    `/api/bpm/operational/machines/${machine.id}/context?operation_id=${selected.operation_id}&process_id=${selected.process_id}`,
   );
   expect(response.ok()).toBe(true);
   const payload = await response.json();
   const context = payload.data?.data ?? payload.data;
   expect(context.operation.operation_id).toBe(selected.operation_id);
-  expect(context.operation.process_version_id).toBe(selected.process_version_id);
+  expect(context.operation.process_id).toBe(selected.process_id);
   expect(context.machine_operation_configurations).toHaveLength(1);
   expect(context.machine_operation_configurations[0].operation_id).toBe(selected.operation_id);
-  expect(context.machine_operation_configurations[0].process_version_id).toBe(selected.process_version_id);
+  expect(context.machine_operation_configurations[0].process_id).toBe(selected.process_id);
 });
 
 test("req12: PSA1 guarda una etapa y subetapa desde Gestionar máquina", async ({ page }) => {
   test.setTimeout(30000);
-  const response = await page.request.get("/api/operational/machines");
+  const response = await page.request.get("/api/bpm/operational/machines");
   expect(response.ok()).toBe(true);
   const payload = await response.json();
   const machines = payload.data?.data ?? payload.data ?? [];
@@ -76,7 +76,7 @@ test("req12: PSA1 guarda una etapa y subetapa desde Gestionar máquina", async (
   await page.goto("/#/maquinas_v02");
   const operation = psa1.operations[0];
   await expect(page.locator("#machine-v02-process")).toBeVisible();
-  const catalogRefresh = page.waitForResponse((item) => item.url().includes("/api/operational/page/maquinas"));
+  const catalogRefresh = page.waitForResponse((item) => item.url().includes("/api/bpm/operational/page/maquinas"));
   await page.locator("#machine-v02-process").selectOption(String(psa1.processId));
   await catalogRefresh;
   const row = page.locator(`[data-machine-row="${psa1.id}"]`);
@@ -130,7 +130,7 @@ test("req12: PSA1 guarda una etapa y subetapa desde Gestionar máquina", async (
   expect(body).toContain("Subetapa PSA1 E2E");
 });
 
-test("req12: filtra máquinas por identidad de operación BPM y versión", async ({ page }) => {
+test("req12: filtra máquinas por identidad de operación BPM y proceso", async ({ page }) => {
   await page.goto("/#/maquinas_v02");
   const operationFilter = page.locator("#machine-v02-operation");
   await expect(operationFilter).toBeVisible();
@@ -142,8 +142,8 @@ test("req12: filtra máquinas por identidad de operación BPM y versión", async
   const operationKey = await operationOptions.nth(1).getAttribute("value");
   expect(operationKey).toMatch(/^[0-9a-f-]+\|[0-9a-f-]+$/i);
   await operationFilter.selectOption(operationKey);
-  const [operationId, processVersionId] = operationKey.split("|");
-  const machinesResponse = await page.request.get(`/api/operational/machines?operation_id=${operationId}&process_version_id=${processVersionId}`);
+  const [operationId, processId] = operationKey.split("|");
+  const machinesResponse = await page.request.get(`/api/bpm/operational/machines?operation_id=${operationId}&process_id=${processId}`);
   expect(machinesResponse.ok()).toBe(true);
   const payload = await machinesResponse.json();
   const machines = payload.data?.data ?? payload.data ?? [];
@@ -153,7 +153,7 @@ test("req12: filtra máquinas por identidad de operación BPM y versión", async
   }
 });
 
-test("req12: cascada proceso-operación conserva el legacy processId y el BPM process_id", async ({ page }) => {
+test("req12: cascada proceso-operación conserva el proceso canónico", async ({ page }) => {
   await page.goto("/#/maquinas_v02");
   const processFilter = page.locator("#machine-v02-process");
   const operationFilter = page.locator("#machine-v02-operation");
@@ -171,9 +171,9 @@ test("req12: cascada proceso-operación conserva el legacy processId y el BPM pr
   expect(visibleOperationValues.every((value) => value.includes("|"))).toBe(true);
   const operationValue = visibleOperationValues[0];
   const requestPromise = page.waitForRequest((request) => (
-    request.url().includes("/api/operational/page/maquinas")
+    request.url().includes("/api/bpm/operational/page/maquinas")
     && request.url().includes("operation_id=")
-    && request.url().includes("process_version_id=")
+    && request.url().includes("process_id=")
   ));
   await operationFilter.selectOption(operationValue);
   const request = await requestPromise;
@@ -181,5 +181,5 @@ test("req12: cascada proceso-operación conserva el legacy processId y el BPM pr
   expect(params.get("processId")).toBe(processValue);
   expect(params.get("process_id")).toMatch(/^[0-9a-f-]{36}$/i);
   expect(params.get("operation_id")).toBe(operationValue.split("|")[0]);
-  expect(params.get("process_version_id")).toBe(operationValue.split("|")[1]);
+  expect(params.get("process_id")).toBe(operationValue.split("|")[1]);
 });

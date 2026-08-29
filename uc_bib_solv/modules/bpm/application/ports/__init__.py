@@ -1,10 +1,10 @@
 from .bpm_ports import BpmContextPort, BpmOperationalPort
+from .contract_context import ContractContextPort
 from .process_ports import (
     NodeRepositoryPort,
     OperationRepositoryPort,
     ProcessRepositoryPort,
     TransitionRepositoryPort,
-    VersionRepositoryPort,
 )
 from .operational_persistence import (
     ContractRepositoryPort,
@@ -12,20 +12,21 @@ from .operational_persistence import (
     MachineOperationConfigurationPort,
     MachineRepositoryPort,
 )
-from .process_modeling import BpmProcessModelingApplication, BpmProcessModelingPort
+from .process_modeling import BpmProcessModelingPort
+from .operational_capabilities import BpmOperationalDependencies
 
 __all__ = [
     "BpmContextPort",
     "BpmOperationalPort",
+    "ContractContextPort",
     "NodeRepositoryPort",
     "OperationRepositoryPort",
     "ProcessRepositoryPort",
     "TransitionRepositoryPort",
-    "VersionRepositoryPort",
     "ContractRepositoryPort",
     "MachineContractAssociationPort",
     "MachineOperationConfigurationPort",
     "MachineRepositoryPort",
-    "BpmProcessModelingApplication",
     "BpmProcessModelingPort",
+    "BpmOperationalDependencies",
 ]

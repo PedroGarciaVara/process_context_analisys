@@ -33,7 +33,6 @@ def build_fixture() -> dict[str, int | str]:
     prefix = f"TEST_REQ16_JAVA_{stamp}"
     with db_cursor() as cur:
         bpm_process_id = str(uuid.uuid4())
-        version_id = str(uuid.uuid4())
         operation_id = str(uuid.uuid4())
         cur.execute(
             """INSERT INTO bpm_process(process_id, process_code, name, status)
@@ -41,14 +40,9 @@ def build_fixture() -> dict[str, int | str]:
             (bpm_process_id, f"{prefix}_BPM", f"{prefix} BPM"),
         )
         cur.execute(
-            """INSERT INTO pm_process_version(version_id, process_id, version_number, status)
-               VALUES (%s, %s, 1, 'draft')""",
-            (version_id, bpm_process_id),
-        )
-        cur.execute(
-            """INSERT INTO pm_process_node(node_id, version_id, node_code, node_type, name)
+            """INSERT INTO pm_process_node(node_id, process_id, node_code, node_type, name)
                VALUES (%s, %s, %s, 'operation', %s)""",
-            (operation_id, version_id, f"{prefix}_OP", f"{prefix} operation"),
+            (operation_id, bpm_process_id, f"{prefix}_OP", f"{prefix} operation"),
         )
         cur.execute("INSERT INTO proceso(nombre, bpm_process_id) VALUES (%s, %s) RETURNING id", (f"{prefix}_PROCESS", bpm_process_id))
         process_id = int(cur.fetchone()["id"])
@@ -61,7 +55,7 @@ def build_fixture() -> dict[str, int | str]:
         machine_id = int(cur.fetchone()["id"])
         cur.execute(
             "INSERT INTO registro_maquina(maquina_id, codigo, numero_serie) VALUES (%s, %s, %s)",
-            (machine_id, "FIX-JAVA-001", "SERIE-FIX-001"),
+            (machine_id, f"{prefix}_FIX-JAVA-001", f"{prefix}_SERIE-FIX-001"),
         )
         cur.execute(
             """INSERT INTO contrato(proceso_id, bpm_node_id, nombre, metrica, objetivo)

@@ -1,6 +1,6 @@
 # UC_BIB_Solve — aplicación web de análisis causal y modelado de procesos
 
-Aplicación local con frontend estático **HTML/CSS/JavaScript**, backend **Flask** y persistencia **PostgreSQL**. Permite gestionar el contexto operativo, construir árboles causales, registrar hipótesis y análisis causa-raíz, y modelar procesos industriales versionados.
+Aplicación local con frontend estático **HTML/CSS/JavaScript**, backend **Flask** y persistencia **PostgreSQL**. Permite gestionar el contexto operativo, construir árboles causales, registrar hipótesis y análisis causa-raíz, y modelar procesos industriales.
 
 Dash queda retirado de la arquitectura y del arranque actuales. Las dependencias Dash que aún aparecen en `requirements.txt` y algunos textos de “paridad con Dash” son residuos legacy pendientes de limpieza; no forman parte del frontend ejecutable.
 
@@ -53,7 +53,7 @@ Para aplicar el esquema de forma idempotente y comprobar las tablas de process m
 python3 scripts/check_postgres_pm.py --apply-schema
 ```
 
-El esquema incluye el modelo operativo/causal (`proceso`, `contrato`, `maquina`, `causa`, `hipotesis`, análisis y grafo canónico) y el bounded context de modelado de procesos (`bpm_process`, `pm_process_version`, `pm_process_node`, `pm_process_transition`).
+El esquema incluye el modelo operativo/causal (`proceso`, `contrato`, `maquina`, `causa`, `hipotesis`, análisis y grafo canónico) y el bounded context de modelado de procesos (`bpm_process`, `pm_process_node`, `pm_process_transition`). Cada proceso posee un único grafo mutable; no se persiste histórico de versiones.
 
 ## Arranque
 
@@ -82,7 +82,7 @@ El script ejecuta `uc_bib_solv/local_server.py`, que:
 - Árbol causal por contrato con causas, efectos e hipótesis.
 - Búsqueda y vinculación de nodos causales reutilizables.
 - Sesiones de análisis causa-raíz y resultados trazables.
-- Definiciones y versiones de procesos industriales.
+- Procesos industriales y sus grafos operativos.
 - Nodos BPM de entrada, salida, operación, subproceso, decisión y stock.
 - Transiciones secuenciales y ramas con etiquetas/condiciones.
 - Validación de grafos y jerarquías.

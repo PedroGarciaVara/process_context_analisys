@@ -1,30 +1,30 @@
 from uc_bib_solv.modules.bpm.application.dto.serialization import jsonable
+from uc_bib_solv.modules.bpm.application.dto.commands import NodeCommand
 from uc_bib_solv.modules.bpm.application.use_cases.process_modeling_dependencies import ProcessModelingDependencies
 from uc_bib_solv.modules.bpm.domain.machines.validators import canonical_stages
-from uc_bib_solv.modules.bpm.domain.processes.entities import ProcessNode
+from uc_bib_solv.modules.bpm.domain.processes.entities import Process, ProcessNode
 from uc_bib_solv.modules.bpm.domain.processes.exceptions import NotFoundError, ProcessModelingError
+from uc_bib_solv.modules.bpm.domain.processes.rules import next_node_code
 
 
 class CreateProcessNode:
     def __init__(self, dependencies: ProcessModelingDependencies):
         self.dependencies = dependencies
 
-    def execute(self, version_id, data):
-        self.dependencies.draft(version_id)
-        node_data = {
-            key: value for key, value in data.items()
-            if key in {"node_id", "node_code", "node_type", "name", "description", "child_process_id", "output_role", "properties"}
-        }
+    def execute(self, process_id, data):
+        process = self.dependencies.process(process_id)
+        node_data = NodeCommand.from_payload(data).to_dict()
+        node_data["node_code"] = next_node_code(process.get("nodes", []), node_data.get("node_type"))
         if "etapas" in data:
             node_data.setdefault("properties", {})["etapas"] = canonical_stages(data["etapas"], envelope=True)
         if "stock" in data:
             node_data.setdefault("properties", {})["stock"] = data["stock"]
-        entity = ProcessNode(version_id=version_id, **node_data)
+        entity = ProcessNode(process_id=process_id, **node_data)
         if entity.child_process_id and not self.dependencies.processes.get(entity.child_process_id):
             raise NotFoundError("Proceso hijo no encontrado")
-        if entity.child_process_id and self.dependencies.hierarchy_contains(self.dependencies.version(version_id)["process_id"], entity.child_process_id):
+        if entity.child_process_id and self.dependencies.hierarchy_contains(process["process_id"], entity.child_process_id):
             raise ProcessModelingError("La jerarquía contiene un ciclo", "hierarchy_cycle")
-        existing = self.dependencies.version(version_id).get("nodes", [])
-        if any(item.get("node_code") == entity.node_code for item in existing):
-            raise ProcessModelingError("El código de nodo ya existe en la versión", "duplicate_node_code")
-        return jsonable(self.dependencies.nodes.create(version_id, entity.to_dict()))
+        existing = process.get("nodes", [])
+        process_entity = Process(**{key: process[key] for key in ("process_id", "process_code", "name", "description", "parent_process_id", "abstraction_level", "status")})
+        process_entity.assert_graph_consistent([*existing, entity], process.get("transitions", []))
+        return jsonable(self.dependencies.nodes.create(process_id, entity.to_dict()))

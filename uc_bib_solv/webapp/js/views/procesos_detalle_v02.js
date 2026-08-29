@@ -15,7 +15,6 @@ function optionsForParents(processes, currentId, selectedId) {
 function buildPage(state, bpm, processes) {
   const operational = state.currentProcess ? findProcess(state, state.currentProcess) : getProcesses(state)[0];
   const currentId = bpm?.process_id || operational?.bpmProcessId || "";
-  const versions = bpm?.versions || [];
   return `
     <div class="max-w-6xl mx-auto space-y-xl">
       ${renderDetailHeader({ eyebrow: "Ficha BPM", title: "Detalle del proceso", description: "Introduce y mantiene la información escrita de la definición BPM seleccionada.", backHref: "#/procesos_v02", backLabel: "Volver a procesos" })}
@@ -42,9 +41,8 @@ function buildPage(state, bpm, processes) {
           </div>
         </section>
         <section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-sm space-y-lg">
-          <div><h2 class="font-headline-sm text-headline-sm text-primary">Estado y versiones</h2></div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-lg"><label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Estado BPM</span><select id="process-page-status" name="status" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm"><option value="draft"${bpm.status === "draft" ? " selected" : ""}>Borrador</option><option value="active"${bpm.status === "active" ? " selected" : ""}>Activo</option></select></label><div class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Versiones existentes</span><p class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm">${versions.length} versión${versions.length === 1 ? "" : "es"}</p></div></div>
-          <div class="space-y-xs">${versions.length ? versions.map((version) => `<div class="flex justify-between gap-md border-b border-outline-variant py-sm text-body-sm"><span>Versión ${escapeHtml(version.version_number)}</span><span class="text-on-surface-variant">${escapeHtml(version.status)}</span></div>`).join("") : '<p class="text-[12px] text-on-surface-variant">No hay versiones registradas.</p>'}</div>
+          <div><h2 class="font-headline-sm text-headline-sm text-primary">Estado del proceso</h2></div>
+          <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Estado BPM</span><select id="process-page-status" name="status" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm"><option value="draft"${bpm.status === "draft" ? " selected" : ""}>Borrador</option><option value="active"${bpm.status === "active" ? " selected" : ""}>Activo</option></select></label>
         </section>
         <div class="flex justify-end gap-sm"><a href="#/modelado-procesos" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container">Abrir modelado BPM</a><button type="submit" id="process-page-save" data-action="process-page-save" class="px-lg py-sm bg-primary text-on-primary text-label-md font-label-md rounded hover:opacity-90">Guardar cambios</button></div>
       </form>` : '<section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-xl">No se pudo cargar la definición BPM.</section>'}

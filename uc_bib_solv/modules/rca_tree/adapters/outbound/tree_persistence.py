@@ -6,12 +6,13 @@ from __future__ import annotations
 class RcaTreePostgresAdapter:
     """Compose injected causal repositories without importing legacy modules."""
 
-    def __init__(self, cause_repo, hypothesis_repo, node_repo, relationship_repo, tree_repo):
+    def __init__(self, cause_repo, hypothesis_repo, node_repo, relationship_repo, tree_repo, *, contract_context=None):
         self.cause_repo = cause_repo
         self.hypothesis_repo = hypothesis_repo
         self.node_repo = node_repo
         self.relationship_repo = relationship_repo
         self.tree_repo = tree_repo
+        self.contract_context = contract_context
 
     def get(self, cause_id): return self.cause_repo.get_by_id(int(cause_id))
     def list_for_contract(self, contract_id): return self.cause_repo.get_by_contrato(int(contract_id))
@@ -27,10 +28,23 @@ class RcaTreePostgresAdapter:
     def get_by_legacy_ref(self, table, legacy_id): return self.node_repo.get_by_legacy_ref(table, int(legacy_id))
     def create_relationship(self, parent_node_id, child_node_id, relationship_type, **kwargs): return self.relationship_repo.create(int(parent_node_id), int(child_node_id), relationship_type, **kwargs)
     def list_structural_edges(self): return self.tree_repo.get_structural_edges()
-    def tree_payload(self, view="arbol", selected_cause_id=None, zoom=1.0, contract_id=None): return self.tree_repo.get_tree_payload(view, selected_cause_id, zoom, contract_id)
-    def search_reusable_nodes(self, node_type, text=None, limit=25): return self.tree_repo.search_reusable_nodes(node_type, text=text, limit=limit)
-    def link_reusable_node(self, **kwargs): return self.tree_repo.link_reusable_node(**kwargs)
-    def create_contract_child(self, *args, **kwargs): return self.tree_repo.create_contract_child(*args, **kwargs)
+    def tree_payload(self, view="arbol", selected_cause_id=None, zoom=1.0, contract_id=None):
+        if self.contract_context is None:
+            return self.tree_repo.get_tree_payload(view, selected_cause_id, zoom, contract_id)
+        return self.tree_repo.get_tree_payload(view, selected_cause_id, zoom, contract_id, contract_context=self.contract_context)
+    def search_reusable_nodes(self, node_type, text=None, limit=25):
+        kwargs = {"text": text, "limit": limit}
+        if self.contract_context is not None:
+            kwargs["contract_context"] = self.contract_context
+        return self.tree_repo.search_reusable_nodes(node_type, **kwargs)
+    def link_reusable_node(self, **kwargs):
+        if self.contract_context is not None:
+            kwargs["contract_context"] = self.contract_context
+        return self.tree_repo.link_reusable_node(**kwargs)
+    def create_contract_child(self, *args, **kwargs):
+        if self.contract_context is None:
+            return self.tree_repo.create_contract_child(*args, **kwargs)
+        return self.tree_repo.create_contract_child(*args, contract_context=self.contract_context, **kwargs)
 
 
 class CauseRepositoryAdapter:
@@ -63,4 +77,3 @@ class RelationshipRepositoryAdapter:
 
 
 __all__ = ["RcaTreePostgresAdapter", "CauseRepositoryAdapter", "HypothesisRepositoryAdapter", "NodeRepositoryAdapter", "RelationshipRepositoryAdapter"]
-

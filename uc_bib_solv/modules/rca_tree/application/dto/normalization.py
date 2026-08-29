@@ -1,6 +1,7 @@
 """Input normalization kept at the application boundary."""
 
 from typing import Any
+from urllib.parse import parse_qs
 
 from uc_bib_solv.modules.platform.application.ports import ContractRef
 
@@ -30,3 +31,11 @@ def normalize_cause_type(value: Any) -> str:
 def normalize_tree_view(value: Any) -> str:
     view = str(value or "arbol")
     return view if view in {"arbol", "analisis_causas_v2"} else "arbol"
+
+
+def parse_query_string(search: str | None) -> dict[str, str]:
+    """Normalize a legacy query string at the application boundary."""
+    if not search:
+        return {}
+    parsed = parse_qs(search.lstrip("?"), keep_blank_values=True)
+    return {key: values[-1] for key, values in parsed.items() if values}

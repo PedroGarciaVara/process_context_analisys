@@ -22,6 +22,12 @@ class UpdateProcess:
             "status": data.get("status", current.get("status", "draft")),
         }
         entity = Process(**values)
+        if "name" in data:
+            entity.rename(data["name"])
+        if "status" in data:
+            entity.change_status(data["status"])
+        if "parent_process_id" in data:
+            entity.set_parent(data["parent_process_id"])
         if entity.parent_process_id:
             parent = self.dependencies.processes.get(entity.parent_process_id)
             if not parent:

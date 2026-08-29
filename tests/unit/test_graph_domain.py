@@ -3,12 +3,12 @@ from __future__ import annotations
 from unittest import TestCase
 
 from uc_bib_solv.modules.rca_tree.domain.causal_graph.rules import (
-    GraphDomainError,
     project_graph_as_tree,
     validate_delete_allowed,
     validate_relationship_signature,
     would_create_cycle,
 )
+from uc_bib_solv.modules.rca_tree.domain.exceptions import InvalidRelationshipError, NodeDeletionError
 
 
 class GraphDomainTests(TestCase):
@@ -17,7 +17,7 @@ class GraphDomainTests(TestCase):
         self.assertEqual((parent, child, relation), ("CONTRACT", "CAUSE", "DEPENDS_ON"))
 
     def test_validate_relationship_signature_rejects_invalid_combinations(self):
-        with self.assertRaises(GraphDomainError):
+        with self.assertRaises(InvalidRelationshipError):
             validate_relationship_signature("machine", "cause", "causes")
 
     def test_would_create_cycle_detects_transitive_cycle(self):
@@ -46,9 +46,9 @@ class GraphDomainTests(TestCase):
         self.assertEqual(projection["reused_node_ids"], [30])
 
     def test_validate_delete_allowed_blocks_reused_or_referenced_nodes(self):
-        with self.assertRaises(GraphDomainError):
+        with self.assertRaises(NodeDeletionError):
             validate_delete_allowed(incoming_relationships=2, outgoing_relationships=0, analysis_references=0)
-        with self.assertRaises(GraphDomainError):
+        with self.assertRaises(NodeDeletionError):
             validate_delete_allowed(incoming_relationships=1, outgoing_relationships=1, analysis_references=0)
-        with self.assertRaises(GraphDomainError):
+        with self.assertRaises(NodeDeletionError):
             validate_delete_allowed(incoming_relationships=1, outgoing_relationships=0, analysis_references=1)

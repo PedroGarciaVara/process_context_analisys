@@ -27,41 +27,46 @@ from .use_cases.machines import (
 )
 from .use_cases.operations import ListOperations
 from .use_cases.processes import CreateOperationalProcess, DeleteOperationalProcess, ListOperationalProcesses, UpdateOperationalProcess
+from .ports.operational_capabilities import BpmOperationalDependencies
 
 
 class BpmOperationalApplication:
     """Compose named BPM use cases without containing domain logic."""
 
-    def __init__(self, persistence):
-        self.list_processes_use_case = ListOperationalProcesses(persistence)
-        self.create_process_use_case = CreateOperationalProcess(persistence)
-        self.update_process_use_case = UpdateOperationalProcess(persistence)
-        self.delete_process_use_case = DeleteOperationalProcess(persistence)
-        self.list_operations_use_case = ListOperations(persistence)
-        self.get_operational_catalog_use_case = GetOperationalCatalog(persistence)
-        self.get_operational_page_use_case = GetOperationalPage(persistence)
-        self.list_contracts_use_case = ListContracts(persistence)
-        self.get_contract_use_case = GetContract(persistence)
-        self.create_contract_use_case = CreateContract(persistence)
-        self.update_contract_use_case = UpdateContract(persistence)
-        self.toggle_contract_use_case = ToggleContract(persistence)
-        self.delete_contract_use_case = DeleteContract(persistence)
-        self.get_contract_machines_use_case = GetContractMachines(persistence)
-        self.assign_contract_machines_use_case = AssignContractMachines(persistence)
-        self.list_machines_use_case = ListMachines(persistence)
-        self.create_machine_use_case = CreateMachine(persistence)
-        self.update_machine_use_case = UpdateMachine(persistence)
-        self.delete_machine_use_case = DeleteMachine(persistence)
-        self.get_machine_context_use_case = GetMachineContext(persistence)
-        self.list_configurations_use_case = ListConfigurations(persistence)
-        self.create_configuration_use_case = CreateConfiguration(persistence)
+    def __init__(self, dependencies):
+        if not isinstance(dependencies, BpmOperationalDependencies):
+            dependencies = getattr(dependencies, "as_dependencies", lambda: BpmOperationalDependencies.from_legacy_backend(dependencies))()
+        self.dependencies = dependencies
+        narrow = dependencies.narrow
+        self.list_processes_use_case = ListOperationalProcesses(narrow(dependencies.processes, "list_processes"))
+        self.create_process_use_case = CreateOperationalProcess(narrow(dependencies.processes, "create_process"))
+        self.update_process_use_case = UpdateOperationalProcess(narrow(dependencies.processes, "update_process"))
+        self.delete_process_use_case = DeleteOperationalProcess(narrow(dependencies.processes, "delete_process"))
+        self.list_operations_use_case = ListOperations(narrow(dependencies.operations, "get_operational_catalog"))
+        self.get_operational_catalog_use_case = GetOperationalCatalog(narrow(dependencies.catalog, "get_operational_catalog"))
+        self.get_operational_page_use_case = GetOperationalPage(narrow(dependencies.pages, "get_operational_page_payload"))
+        self.list_contracts_use_case = ListContracts(narrow(dependencies.contracts, "list_contracts"))
+        self.get_contract_use_case = GetContract(narrow(dependencies.contracts, "get_contract", "list_contracts"))
+        self.create_contract_use_case = CreateContract(narrow(dependencies.contracts, "create_contract"))
+        self.update_contract_use_case = UpdateContract(narrow(dependencies.contracts, "update_contract"))
+        self.toggle_contract_use_case = ToggleContract(narrow(dependencies.contracts, "toggle_contract"))
+        self.delete_contract_use_case = DeleteContract(narrow(dependencies.contracts, "delete_contract"))
+        self.get_contract_machines_use_case = GetContractMachines(narrow(dependencies.associations, "get_contract_machines"))
+        self.assign_contract_machines_use_case = AssignContractMachines(narrow(dependencies.associations, "save_contract_machines"))
+        self.list_machines_use_case = ListMachines(narrow(dependencies.machines, "list_machines"))
+        self.create_machine_use_case = CreateMachine(narrow(dependencies.machines, "create_machine"))
+        self.update_machine_use_case = UpdateMachine(narrow(dependencies.machines, "update_machine"))
+        self.delete_machine_use_case = DeleteMachine(narrow(dependencies.machines, "delete_machine"))
+        self.get_machine_context_use_case = GetMachineContext(narrow(dependencies.machine_context, "get_machine_context"))
+        self.list_configurations_use_case = ListConfigurations(narrow(dependencies.configurations, "list_configurations"))
+        self.create_configuration_use_case = CreateConfiguration(narrow(dependencies.configurations, "create_configuration"))
 
     def list_processes(self): return self.list_processes_use_case.execute()
     def list_contracts(self, process_id=None, status=None): return self.list_contracts_use_case.execute(process_id, status)
     def get_contract(self, contract_id): return self.get_contract_use_case.execute(contract_id)
-    def list_operations(self, version_id=None): return self.list_operations_use_case.execute(version_id)
+    def list_operations(self, process_id=None): return self.list_operations_use_case.execute(process_id)
     def list_machines(self, *args): return self.list_machines_use_case.execute(*args)
-    def get_catalog(self, version_id=None): return self.get_operational_catalog_use_case.execute(version_id)
+    def get_catalog(self, process_id=None): return self.get_operational_catalog_use_case.execute(process_id)
     def get_page(self, page, params=None): return self.get_operational_page_use_case.execute(page, params)
     def create_process(self, payload): return self.create_process_use_case.execute(payload)
     def update_process(self, process_id, payload): return self.update_process_use_case.execute(process_id, payload)
@@ -75,7 +80,7 @@ class BpmOperationalApplication:
     def create_machine(self, payload): return self.create_machine_use_case.execute(payload)
     def update_machine(self, machine_id, payload): return self.update_machine_use_case.execute(machine_id, payload)
     def delete_machine(self, machine_id): return self.delete_machine_use_case.execute(machine_id)
-    def get_machine_context(self, machine_id, operation_id=None, process_version_id=None): return self.get_machine_context_use_case.execute(machine_id, operation_id, process_version_id)
+    def get_machine_context(self, machine_id, operation_id=None, process_id=None): return self.get_machine_context_use_case.execute(machine_id, operation_id, process_id)
     def list_configurations(self, machine_id): return self.list_configurations_use_case.execute(machine_id)
     def create_configuration(self, payload): return self.create_configuration_use_case.execute(payload)
 
