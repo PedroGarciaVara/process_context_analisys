@@ -30,8 +30,11 @@ CREATE TABLE IF NOT EXISTS relationship (
 CREATE TABLE IF NOT EXISTS proceso (
     id SERIAL PRIMARY KEY,
     nombre TEXT NOT NULL UNIQUE,
-    bpm_process_id UUID NOT NULL UNIQUE
+    bpm_process_id UUID NOT NULL UNIQUE,
+    node_id BIGINT REFERENCES node(id) ON DELETE RESTRICT
 );
+
+ALTER TABLE IF EXISTS proceso ADD COLUMN IF NOT EXISTS node_id BIGINT REFERENCES node(id) ON DELETE RESTRICT;
 
 CREATE TABLE IF NOT EXISTS maquinas_tipo (
     id SERIAL PRIMARY KEY,
@@ -44,6 +47,7 @@ CREATE TABLE IF NOT EXISTS maquina (
     id SERIAL PRIMARY KEY,
     nombre TEXT NOT NULL UNIQUE,
     maquinas_tipo_id INT REFERENCES maquinas_tipo(id) ON DELETE RESTRICT,
+    node_id BIGINT REFERENCES node(id) ON DELETE RESTRICT,
     parent_maquina_id INT REFERENCES maquina(id) ON DELETE RESTRICT,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT maquina_no_self_parent CHECK (parent_maquina_id IS NULL OR parent_maquina_id <> id)
@@ -60,6 +64,7 @@ CREATE TABLE IF NOT EXISTS registro_maquina (
 );
 
 ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS maquinas_tipo_id INT REFERENCES maquinas_tipo(id) ON DELETE RESTRICT;
+ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS node_id BIGINT REFERENCES node(id) ON DELETE RESTRICT;
 ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS parent_maquina_id INT REFERENCES maquina(id) ON DELETE RESTRICT;
 ALTER TABLE IF EXISTS maquina ADD COLUMN IF NOT EXISTS activo BOOLEAN NOT NULL DEFAULT TRUE;
 
@@ -115,6 +120,7 @@ CREATE TABLE IF NOT EXISTS contrato (
     proceso_id INT NOT NULL REFERENCES proceso(id) ON DELETE CASCADE,
     bpm_process_id UUID,
     bpm_node_id UUID,
+    node_id BIGINT REFERENCES node(id) ON DELETE RESTRICT,
     nombre TEXT NOT NULL,
     metrica TEXT,
     objetivo TEXT,
@@ -124,6 +130,7 @@ CREATE TABLE IF NOT EXISTS contrato (
 
 ALTER TABLE IF EXISTS contrato ADD COLUMN IF NOT EXISTS bpm_process_id UUID;
 ALTER TABLE IF EXISTS contrato ADD COLUMN IF NOT EXISTS bpm_node_id UUID;
+ALTER TABLE IF EXISTS contrato ADD COLUMN IF NOT EXISTS node_id BIGINT REFERENCES node(id) ON DELETE RESTRICT;
 
 CREATE TABLE IF NOT EXISTS contrato_maquina (
     contrato_id INT NOT NULL REFERENCES contrato(id) ON DELETE CASCADE,

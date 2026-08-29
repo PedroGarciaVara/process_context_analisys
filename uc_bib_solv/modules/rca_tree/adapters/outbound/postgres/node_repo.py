@@ -118,6 +118,48 @@ def get_by_id(node_id: int) -> dict | None:
         return dict(row) if row else None
 
 
+def get_for_contract(contract_id: int) -> dict | None:
+    with db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT n.id, n.node_type, n.code, n.name, n.description, n.status, n.metadata
+            FROM node n JOIN contrato c ON c.node_id=n.id
+            WHERE c.id=%s
+            """,
+            (contract_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_for_cause(cause_id: int) -> dict | None:
+    with db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT n.id, n.node_type, n.code, n.name, n.description, n.status, n.metadata
+            FROM node n JOIN causa c ON c.node_id=n.id
+            WHERE c.id=%s
+            """,
+            (cause_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_for_hypothesis(hypothesis_id: int) -> dict | None:
+    with db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT n.id, n.node_type, n.code, n.name, n.description, n.status, n.metadata
+            FROM node n JOIN hipotesis h ON h.node_id=n.id
+            WHERE h.id=%s
+            """,
+            (hypothesis_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def get_by_legacy_ref(legacy_table: str, legacy_id: int) -> dict | None:
     with db_cursor() as cur:
         cur.execute(

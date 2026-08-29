@@ -41,7 +41,7 @@ def create(
     if not descripcion or not descripcion.strip():
         raise ValueError("La descripción de la hipótesis es obligatoria.")
 
-    cause_node = node_repo.get_by_legacy_ref("causa", int(causa_id)) or graph_sync.sync_causa_graph(int(causa_id))
+    cause_node = node_repo.get_for_cause(int(causa_id)) or graph_sync.sync_causa_graph(int(causa_id))
     if not cause_node:
         raise ValueError("La causa indicada no existe.")
     validate_relationship_signature("CAUSE", "HYPOTHESIS", "VERIFIED_BY")
@@ -96,19 +96,11 @@ def create(
             ),
         )
         hipotesis_id = int(cur.fetchone()["id"])
-        cur.execute(
-            """
-            UPDATE node
-            SET legacy_table='hipotesis', legacy_id=%s, updated_at=NOW()
-            WHERE id=%s
-            """,
-            (hipotesis_id, int(node["id"])),
-        )
     relationship_repo.create(
         int(cause_node["id"]),
         int(node["id"]),
         "VERIFIED_BY",
-        metadata={"source": "app", "legacy_cause_id": causa_id},
+        metadata={"source": "app"},
         is_primary=True,
     )
     _replace_collection("hypothesis_required_data", int(node["id"]), required_data or [])
@@ -126,7 +118,7 @@ def get_by_id(hipotesis_id: int) -> dict | None:
     return graph_query_repo.get_hypothesis_record(int(hipotesis_id))
 
 
-def update_estado(hipotesis_id: int, estado: str) -> dict:
+def update_status(hypothesis_id: int, status: str) -> dict:
     with db_cursor() as cur:
         cur.execute(
             """
@@ -135,15 +127,15 @@ def update_estado(hipotesis_id: int, estado: str) -> dict:
             WHERE id=%s
             RETURNING id
             """,
-            (estado, hipotesis_id),
+            (status, hypothesis_id),
         )
         row = cur.fetchone()
         if not row:
             raise ValueError("Hipótesis no encontrada.")
-    hypothesis = get_by_id(int(hipotesis_id))
+    hypothesis = get_by_id(int(hypothesis_id))
     if hypothesis and hypothesis.get("node_id") is not None:
-        node_repo.update(int(hypothesis["node_id"]), status=estado)
-    return get_by_id(int(hipotesis_id)) or {"id": int(hipotesis_id), "estado": estado}
+        node_repo.update(int(hypothesis["node_id"]), status=status)
+    return get_by_id(int(hypothesis_id)) or {"id": int(hypothesis_id), "estado": status}
 
 
 def update(
@@ -228,7 +220,7 @@ def update(
 
 def delete(hipotesis_id: int) -> bool:
     graph_sync.sync_hypothesis_graph(int(hipotesis_id))
-    node = node_repo.get_by_legacy_ref("hipotesis", int(hipotesis_id))
+    node = node_repo.get_for_hypothesis(int(hipotesis_id))
     if not node:
         with db_cursor() as cur:
             cur.execute("DELETE FROM hipotesis WHERE id=%s", (hipotesis_id,))

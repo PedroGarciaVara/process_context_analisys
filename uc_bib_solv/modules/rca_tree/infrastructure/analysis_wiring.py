@@ -30,12 +30,6 @@ def build_rca_tree_analysis_application(*, persistence=None):
     )
 
 
-build_rca_tree_analysis_service = build_rca_tree_analysis_application
-
-
-build_causal_analysis_service = build_rca_tree_analysis_application
-
-
 class ParticipantAdapter:
     def __init__(self, persistence): self.persistence = persistence
     def list_for_analysis(self, analysis_id):

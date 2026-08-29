@@ -7,7 +7,6 @@ from typing import Any
 from uuid import uuid4
 
 from ..shared.exceptions import BpmDomainError
-from ..shared.value_objects import OperationRef
 from ..shared.value_objects import require_text as bpm_require_text
 from ..shared.value_objects import require_uuid as bpm_require_uuid
 from .exceptions import ProcessModelingError
@@ -75,41 +74,6 @@ class Process:
             return
         first = result["errors"][0]
         raise ProcessModelingError(first["message"], first["code"])
-
-
-@dataclass(frozen=True)
-class Operation:
-    node_id: str
-    process_id: str
-    code: str
-    name: str
-    description: str | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "node_id", bpm_require_uuid(self.node_id, "node_id"))
-        object.__setattr__(self, "process_id", bpm_require_uuid(self.process_id, "process_id"))
-        object.__setattr__(self, "code", bpm_require_text(self.code, "code"))
-        object.__setattr__(self, "name", bpm_require_text(self.name, "name"))
-        object.__setattr__(self, "metadata", dict(self.metadata or {}))
-
-    @property
-    def reference(self) -> OperationRef:
-        return OperationRef(self.node_id, self.process_id)
-
-
-@dataclass(frozen=True)
-class Stage:
-    code: str
-    name: str
-    sequence: int
-    description: str | None = None
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "code", bpm_require_text(self.code, "code"))
-        object.__setattr__(self, "name", bpm_require_text(self.name, "name"))
-        if isinstance(self.sequence, bool) or not isinstance(self.sequence, int) or self.sequence < 0:
-            raise BpmDomainError("sequence debe ser un entero no negativo", "invalid_integer", "sequence")
 
 
 @dataclass

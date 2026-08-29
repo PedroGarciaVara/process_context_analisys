@@ -13,29 +13,24 @@ from uc_bib_solv.modules.bpm.adapters.inbound.http.process_modeling import creat
 from uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring import create_process_modeling_handlers
 from uc_bib_solv.modules.bpm.infrastructure.wiring import build_bpm_operational_service
 from uc_bib_solv.modules.rca_tree.adapters.inbound.http.routes import create_blueprint as create_rca_tree_blueprint
-from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_service
-from uc_bib_solv.modules.rca_tree.infrastructure.analysis_wiring import build_rca_tree_analysis_service
-
-
-process_modeling_service = create_process_modeling_handlers()
-bpm_bp = create_bpm_blueprint(
-    build_bpm_operational_service(),
-    process_modeling_service,
-)
+from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_application
+from uc_bib_solv.modules.rca_tree.infrastructure.analysis_wiring import build_rca_tree_analysis_application
 
 
 def create_app(*, serve_webapp: bool = False, webapp_dir: Path | None = None) -> Flask:
     application = Flask(__name__)
     static_dir = webapp_dir or Path(__file__).resolve().parents[3] / "webapp"
+    process_modeling = create_process_modeling_handlers()
+    bpm_blueprint = create_bpm_blueprint(build_bpm_operational_service(), process_modeling)
     for blueprint in create_platform_blueprints():
         application.register_blueprint(blueprint)
     rca_tree_bp = create_rca_tree_blueprint(
-        build_rca_tree_service(contract_context=build_platform_contract_context()),
-        analysis_service=build_rca_tree_analysis_service(),
+        build_rca_tree_application(contract_context=build_platform_contract_context()),
+        analysis_service=build_rca_tree_analysis_application(),
     )
     for blueprint in (
         create_root_blueprint(serve_webapp=serve_webapp, static_dir=static_dir),
-        bpm_bp,
+        bpm_blueprint,
         rca_tree_bp,
     ):
         application.register_blueprint(blueprint)

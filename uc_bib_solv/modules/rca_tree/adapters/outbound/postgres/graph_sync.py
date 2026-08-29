@@ -8,39 +8,37 @@ def _sync_process_node(proceso_id: int | None) -> dict | None:
     if proceso_id is None:
         return None
     with db_cursor() as cur:
-        cur.execute("SELECT id, nombre FROM proceso WHERE id=%s", (proceso_id,))
+        cur.execute("SELECT id, nombre, node_id FROM proceso WHERE id=%s", (proceso_id,))
         row = cur.fetchone()
     if not row:
         return None
-    return node_repo.upsert_legacy_node(
-        "PROCESS",
-        "proceso",
-        int(row["id"]),
-        row["nombre"],
-        metadata={"source": "legacy"},
-    )
+    if row.get("node_id") is not None:
+        return node_repo.get_by_id(int(row["node_id"]))
+    node = node_repo.create("PROCESS", row["nombre"])
+    with db_cursor() as cur:
+        cur.execute("UPDATE proceso SET node_id=%s WHERE id=%s", (int(node["id"]), int(row["id"])))
+    return node
 
 
 def _sync_machine_node(maquina_id: int) -> dict | None:
     with db_cursor() as cur:
-        cur.execute("SELECT id, nombre FROM maquina WHERE id=%s", (maquina_id,))
+        cur.execute("SELECT id, nombre, node_id, activo FROM maquina WHERE id=%s", (maquina_id,))
         row = cur.fetchone()
     if not row:
         return None
-    return node_repo.upsert_legacy_node(
-        "MACHINE",
-        "maquina",
-        int(row["id"]),
-        row["nombre"],
-        metadata={"source": "legacy"},
-    )
+    if row.get("node_id") is not None:
+        return node_repo.get_by_id(int(row["node_id"]))
+    node = node_repo.create("MACHINE", row["nombre"], status="active" if row.get("activo") else "inactive")
+    with db_cursor() as cur:
+        cur.execute("UPDATE maquina SET node_id=%s WHERE id=%s", (int(node["id"]), int(row["id"])))
+    return node
 
 
 def sync_contract_graph(contrato_id: int) -> dict | None:
     with db_cursor() as cur:
         cur.execute(
             """
-            SELECT id, proceso_id, nombre, metrica, objetivo, version, activo
+            SELECT id, proceso_id, node_id, nombre, metrica, objetivo, version, activo
             FROM contrato
             WHERE id=%s
             """,
@@ -59,42 +57,21 @@ def sync_contract_graph(contrato_id: int) -> dict | None:
             (contrato_id,),
         )
         machines = [int(row["maquina_id"]) for row in cur.fetchall()]
-        cur.execute(
-            """
-            SELECT id
-            FROM causa
-            WHERE contrato_id=%s
-               OR id IN (
-                    SELECT legacy_child.legacy_id
-                    FROM relationship rel
-                    JOIN node legacy_parent ON legacy_parent.id = rel.parent_node_id
-                    JOIN node legacy_child ON legacy_child.id = rel.child_node_id
-                    WHERE legacy_parent.legacy_table='contrato'
-                      AND legacy_parent.legacy_id=%s
-                      AND legacy_child.legacy_table='causa'
-                      AND rel.relationship_type IN ('DEPENDS_ON', 'CAUSES')
-               )
-            ORDER BY id
-            """,
-            (contrato_id, contrato_id),
-        )
+        cur.execute("SELECT id FROM causa WHERE contrato_id=%s ORDER BY id", (contrato_id,))
         cause_ids = [int(row["id"]) for row in cur.fetchall()]
 
     process_node = _sync_process_node(contract["proceso_id"])
-    contract_node = node_repo.upsert_legacy_node(
-        "CONTRACT",
-        "contrato",
-        int(contract["id"]),
-        contract["nombre"],
-        description=contract.get("objetivo"),
-        status="active" if contract.get("activo") else "inactive",
-        metadata={
-            "source": "legacy",
-            "metrica": contract.get("metrica"),
-            "objetivo": contract.get("objetivo"),
-            "version": contract.get("version"),
-        },
-    )
+    contract_node = node_repo.get_by_id(int(contract["node_id"])) if contract.get("node_id") is not None else None
+    if contract_node is None:
+        contract_node = node_repo.create(
+            "CONTRACT",
+            contract["nombre"],
+            description=contract.get("objetivo"),
+            status="active" if contract.get("activo") else "inactive",
+            metadata={"metrica": contract.get("metrica"), "objetivo": contract.get("objetivo"), "version": contract.get("version")},
+        )
+        with db_cursor() as cur:
+            cur.execute("UPDATE contrato SET node_id=%s WHERE id=%s", (int(contract_node["id"]), int(contract["id"])))
 
     if process_node:
         relationship_repo.create(
@@ -138,35 +115,39 @@ def sync_causa_graph(causa_id: int) -> dict | None:
 
     contract_node = None
     if cause.get("contrato_id") is not None:
-        contract_node = node_repo.get_by_legacy_ref("contrato", int(cause["contrato_id"])) or sync_contract_graph(int(cause["contrato_id"]))
+        with db_cursor() as cur:
+            cur.execute("SELECT node_id FROM contrato WHERE id=%s", (int(cause["contrato_id"]),))
+            contract = cur.fetchone()
+        contract_node = node_repo.get_by_id(int(contract["node_id"])) if contract and contract.get("node_id") else None
+        contract_node = contract_node or sync_contract_graph(int(cause["contrato_id"]))
     cause_node = None
     if cause.get("node_id") is not None:
         cause_node = node_repo.get_by_id(int(cause["node_id"]))
     if cause_node is None:
-        cause_node = node_repo.upsert_legacy_node(
-            "CAUSE",
-            "causa",
-            int(cause["id"]),
-            cause["nombre"],
+        cause_node = node_repo.create(
+            "CAUSE", cause["nombre"],
             description=cause.get("descripcion"),
             metadata={
-                "source": "legacy",
+                "source": "graph_sync",
                 "categoria": cause.get("categoria"),
-                "legacy_tipo": cause.get("tipo") or "causa",
                 "contract_id": int(cause["contrato_id"]) if cause.get("contrato_id") is not None else None,
             },
         )
         with db_cursor() as cur:
             cur.execute("UPDATE causa SET node_id=%s WHERE id=%s", (int(cause_node["id"]), int(cause["id"])))
-    relationship_repo.delete_legacy_structural_links(int(cause_node["id"]))
+    relationship_repo.delete_structural_links(int(cause_node["id"]))
 
     if cause.get("parent_id") is not None:
-        parent_node = node_repo.get_by_legacy_ref("causa", int(cause["parent_id"])) or sync_causa_graph(int(cause["parent_id"]))
+        with db_cursor() as cur:
+            cur.execute("SELECT node_id FROM causa WHERE id=%s", (int(cause["parent_id"]),))
+            parent = cur.fetchone()
+        parent_node = node_repo.get_by_id(int(parent["node_id"])) if parent and parent.get("node_id") else None
+        parent_node = parent_node or sync_causa_graph(int(cause["parent_id"]))
         relationship_repo.create(
             int(parent_node["id"]),
             int(cause_node["id"]),
             "CAUSES",
-            metadata={"source": "legacy"},
+            metadata={"source": "graph_sync"},
             is_primary=True,
         )
     elif contract_node is not None:
@@ -174,7 +155,7 @@ def sync_causa_graph(causa_id: int) -> dict | None:
             int(contract_node["id"]),
             int(cause_node["id"]),
             "DEPENDS_ON",
-            metadata={"source": "legacy"},
+            metadata={"source": "graph_sync"},
             is_primary=True,
         )
 
@@ -217,23 +198,20 @@ def sync_hypothesis_graph(hipotesis_id: int) -> dict | None:
 
     cause_node = None
     if hypothesis.get("causa_id") is not None:
-        cause_node = node_repo.get_by_legacy_ref("causa", int(hypothesis["causa_id"])) or sync_causa_graph(int(hypothesis["causa_id"]))
+        with db_cursor() as cur:
+            cur.execute("SELECT node_id FROM causa WHERE id=%s", (int(hypothesis["causa_id"]),))
+            cause = cur.fetchone()
+        cause_node = node_repo.get_by_id(int(cause["node_id"])) if cause and cause.get("node_id") else None
+        cause_node = cause_node or sync_causa_graph(int(hypothesis["causa_id"]))
     hypothesis_node = None
     if hypothesis.get("node_id") is not None:
         hypothesis_node = node_repo.get_by_id(int(hypothesis["node_id"]))
     if hypothesis_node is None:
-        hypothesis_node = node_repo.upsert_legacy_node(
-            "HYPOTHESIS",
-            "hipotesis",
-            int(hypothesis["id"]),
-            hypothesis["descripcion"],
+        hypothesis_node = node_repo.create(
+            "HYPOTHESIS", hypothesis["descripcion"],
             description=hypothesis.get("criterio_validacion"),
             status=hypothesis.get("estado"),
-            metadata={
-                "source": "legacy",
-                "legacy_tipo": hypothesis.get("tipo") or "aceptacion",
-                "cause_id": int(hypothesis["causa_id"]) if hypothesis.get("causa_id") is not None else None,
-            },
+            metadata={"source": "graph_sync"},
         )
         with db_cursor() as cur:
             cur.execute("UPDATE hipotesis SET node_id=%s WHERE id=%s", (int(hypothesis_node["id"]), int(hypothesis["id"])))
@@ -244,7 +222,6 @@ def sync_hypothesis_graph(hipotesis_id: int) -> dict | None:
             DELETE FROM relationship
             WHERE child_node_id=%s
               AND relationship_type='VERIFIED_BY'
-              AND COALESCE(metadata->>'source', '')='legacy'
             """,
             (int(hypothesis_node["id"]),),
         )
@@ -254,7 +231,7 @@ def sync_hypothesis_graph(hipotesis_id: int) -> dict | None:
             int(cause_node["id"]),
             int(hypothesis_node["id"]),
             "VERIFIED_BY",
-            metadata={"source": "legacy"},
+            metadata={"source": "graph_sync"},
             is_primary=True,
         )
     return hypothesis_node

@@ -1,9 +1,7 @@
 import unittest
 
-from uc_bib_solv.agent_tools import ToolRequest as LegacyToolRequest
-from uc_bib_solv.agent_tools import build_default_registry as legacy_build
-from uc_bib_solv.agent_tools.errors import AgentToolError
 from uc_bib_solv.modules.platform.adapters.agent_tools import ToolRequest, ToolResult, build_default_registry
+from uc_bib_solv.modules.platform.adapters.agent_tools.domain.errors import AgentToolError
 from uc_bib_solv.modules.platform.adapters.agent_tools.domain.validation import object_args
 
 
@@ -22,9 +20,8 @@ class FakeGateway:
 
 
 class AgentToolsPortsTest(unittest.TestCase):
-    def test_public_contracts_and_legacy_shim_are_identical(self):
+    def test_public_contracts_are_exposed_from_canonical_boundary(self):
         request = ToolRequest({"version_id": "v1"}, actor="tester", trace_id="trace-1")
-        self.assertIs(LegacyToolRequest, ToolRequest)
         self.assertEqual(ToolResult({"ok": True}, request), ToolResult({"ok": True}, request))
         self.assertEqual(request.trace_id, "trace-1")
 
@@ -40,10 +37,6 @@ class AgentToolsPortsTest(unittest.TestCase):
         self.assertEqual(result.data, {"process_id": "p1"})
         self.assertEqual(result.to_dict()["trace"], {"trace_id": "trace-15", "source": "agent_tools", "tool": "process.get", "actor": "agent"})
         self.assertEqual(fake.calls, [("process", "p1")])
-
-    def test_legacy_builder_delegates_to_canonical_builder(self):
-        fake = FakeGateway()
-        self.assertEqual(legacy_build(fake).manifest(), build_default_registry(fake).manifest())
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ class RcaTreePostgresAdapter:
         self.contract_context = contract_context
 
     def get(self, cause_id): return self.cause_repo.get_by_id(int(cause_id))
-    def list_for_contract(self, contract_id): return self.cause_repo.get_by_contrato(int(contract_id))
+    def list_for_contract(self, contract_id): return self.cause_repo.list_by_contract(int(contract_id))
     def create(self, contract_id, name, description=None, kind="causa", category=None, parent_id=None): return self.cause_repo.create(int(contract_id), name, description, kind, category, parent_id=parent_id)
     def update(self, cause_id, name, description=None, kind="causa", category=None): return self.cause_repo.update(int(cause_id), name, description, kind, category)
     def delete(self, cause_id): return self.cause_repo.delete(int(cause_id))

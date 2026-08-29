@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "81b96e8357efa03a1342e3f0a22854e385b6aee1",
-    "indexed_at": "2026-08-29T14:20:29Z",
+    "commit": "0ec4ff4921de32014185abe843a83803161d3d07",
+    "indexed_at": "2026-08-29T15:15:19Z",
     "project": "home-pedro-proyectos-visual-studio-code-UC_BIB_Solve",
-    "nodes": 6185,
-    "edges": 19259,
-    "original_size": 20905984,
-    "compressed_size": 2891703,
+    "nodes": 6156,
+    "edges": 19236,
+    "original_size": 20840448,
+    "compressed_size": 2883018,
     "compression_level": 3
 }

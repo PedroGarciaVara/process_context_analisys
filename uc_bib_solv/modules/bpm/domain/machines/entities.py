@@ -52,7 +52,7 @@ class Machine:
 
     @classmethod
     def from_persistence(cls, data: dict[str, Any]) -> "Machine":
-        """Rehydrate the canonical machine from the PostgreSQL row shape."""
+        """Rehydrate the canonical machine from the persistence row shape."""
         values = dict(data)
         values.setdefault("name", values.pop("nombre", ""))
         values.setdefault("machine_type_id", values.pop("maquinas_tipo_id", None))
@@ -60,7 +60,7 @@ class Machine:
         return cls(**{key: value for key, value in values.items() if key in cls.__dataclass_fields__})
 
     def apply_update(self, payload: dict[str, Any]) -> None:
-        """Apply and validate a partial update on the entity itself."""
+        """Apply and validate a partial modification on the entity itself."""
         validated = validate_machine_payload(payload, partial=True)
         for key, value in validated.items():
             setattr(self, key, value)

@@ -113,14 +113,13 @@ def delete(parent_node_id: int, child_node_id: int, relationship_type: str) -> b
         return cur.rowcount > 0
 
 
-def delete_legacy_structural_links(child_node_id: int) -> int:
+def delete_structural_links(child_node_id: int) -> int:
     with db_cursor() as cur:
         cur.execute(
             """
             DELETE FROM relationship
             WHERE child_node_id=%s
               AND relationship_type IN ('DEPENDS_ON', 'CAUSES')
-              AND COALESCE(metadata->>'source', '') = 'legacy'
             """,
             (child_node_id,),
         )

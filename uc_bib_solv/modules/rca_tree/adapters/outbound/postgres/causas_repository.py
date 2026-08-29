@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uc_bib_solv.modules.rca_tree.domain.causal_graph.rules import validate_no_cycle, validate_relationship_signature
 from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import (
-    analisis_causas_repo,
+    analysis_repository,
     causa_repo,
     graph_query_repo,
     graph_sync,
@@ -57,14 +57,14 @@ def _ensure_contract_node(contract_id: int, *, contract_context) -> dict:
     contract = _get_contract(int(contract_id), contract_context)
     if not contract:
         raise ValueError("El contrato indicado no existe.")
-    return node_repo.get_by_legacy_ref("contrato", int(contract_id)) or graph_sync.sync_contract_graph(int(contract_id))
+    return node_repo.get_for_contract(int(contract_id)) or graph_sync.sync_contract_graph(int(contract_id))
 
 
 def _ensure_cause_node(causa_id: int) -> dict:
     cause = causa_repo.get_by_id(int(causa_id))
     if not cause:
         raise ValueError("La causa indicada no existe.")
-    return node_repo.get_by_legacy_ref("causa", int(causa_id)) or graph_sync.sync_causa_graph(int(causa_id))
+    return node_repo.get_for_cause(int(causa_id)) or graph_sync.sync_causa_graph(int(causa_id))
 
 
 def _resolve_parent_context(
@@ -138,7 +138,7 @@ def get_tree_payload(
     contract_context,
 ) -> dict:
     contract = _default_contract(contract_id, contract_context=contract_context)
-    causas = causa_repo.get_by_contrato(int(contract["id"])) if contract else []
+    causas = causa_repo.list_by_contract(int(contract["id"])) if contract else []
     tree = causa_repo.build_tree(causas)
     flat = _flatten(tree)
     selected_node = _default_selected_cause(causas, selected_cause_id)
@@ -148,7 +148,7 @@ def get_tree_payload(
     }
     analysis = None
     if contract and view == "analisis_causas_v2":
-        sessions = analisis_causas_repo.get_by_contrato(int(contract["id"]))
+        sessions = analysis_repository.list_by_contract(int(contract["id"]))
         analysis = next((item for item in sessions if item.get("estado") == "abierto"), None)
         if analysis is None and sessions:
             analysis = sessions[0]
@@ -348,7 +348,7 @@ def get_causa(causa_id: int) -> dict | None:
 
 
 def list_causas_for_contract(contrato_id: int) -> list[dict]:
-    return causa_repo.get_by_contrato(int(contrato_id))
+    return causa_repo.list_by_contract(int(contrato_id))
 
 
 def create_causa(

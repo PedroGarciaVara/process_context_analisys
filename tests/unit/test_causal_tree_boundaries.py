@@ -1,7 +1,7 @@
 import unittest
 
 from uc_bib_solv.modules.rca_tree.adapters.outbound.tree_persistence import RcaTreePostgresAdapter
-from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_causal_tree_service
+from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_application
 
 
 class CausalTreeBoundaryTests(unittest.TestCase):
@@ -21,7 +21,7 @@ class CausalTreeBoundaryTests(unittest.TestCase):
             "list_for_cause": lambda self, *args: [],
             "tree_payload": lambda self, *args: {},
         })()
-        service = build_causal_tree_service(persistence=fake)
+        service = build_rca_tree_application(persistence=fake)
         self.assertIsNotNone(service)
 
 

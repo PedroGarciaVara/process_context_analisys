@@ -28,6 +28,10 @@ class BpmDomainTests(unittest.TestCase):
         self.assertEqual(contract.bpm_process_id, process_id)
         self.assertEqual((association.contract_id, association.machine_id), (3, 1))
 
+    def test_operations_are_owned_by_operations_domain(self):
+        self.assertEqual(Operation.__module__, "uc_bib_solv.modules.bpm.domain.operations.entities")
+        self.assertEqual(Stage.__module__, "uc_bib_solv.modules.bpm.domain.operations.entities")
+
     def test_contract_requires_exactly_one_bpm_scope(self):
         with self.assertRaises(BpmDomainError):
             Contract(None, "Sin alcance")

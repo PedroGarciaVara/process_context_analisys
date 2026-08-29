@@ -8,12 +8,12 @@ class ExistingBackendGateway:
     """Concrete compatibility adapter for current backend services."""
 
     def __post_init__(self) -> None:
-        from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_service
-        from uc_bib_solv.modules.bpm.infrastructure.wiring import operational_service
+        from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_application
+        from uc_bib_solv.modules.bpm.infrastructure.wiring import build_bpm_operational_service
         from uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring import create_process_modeling_handlers
 
-        operational = operational_service()
-        self._causas = build_rca_tree_service()
+        operational = build_bpm_operational_service()
+        self._causas = build_rca_tree_application()
         self._machines = operational
         self._operational = operational
         self._process_modeling = create_process_modeling_handlers()

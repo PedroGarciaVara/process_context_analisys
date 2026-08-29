@@ -11,7 +11,7 @@ from .use_cases.processes import (
     UpdateProcess,
     ValidateProcess,
 )
-from .use_cases.transitions.transitions import CreateTransition, DeleteTransition
+from .use_cases.transitions import CreateTransition, DeleteTransition
 
 
 class ProcessModelingApplication:

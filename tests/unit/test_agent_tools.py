@@ -3,8 +3,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "uc_bib_solv"))
 
-from uc_bib_solv.agent_tools import ToolRequest, ToolRegistry, build_default_registry
-from uc_bib_solv.agent_tools.errors import AgentToolError
+from uc_bib_solv.modules.platform.adapters.agent_tools import ToolRequest, ToolRegistry, build_default_registry
+from uc_bib_solv.modules.platform.adapters.agent_tools.domain.errors import AgentToolError
 
 
 class FakeGateway:

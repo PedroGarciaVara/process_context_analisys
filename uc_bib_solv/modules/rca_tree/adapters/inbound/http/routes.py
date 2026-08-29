@@ -2,13 +2,13 @@
 
 from flask import Blueprint, request
 
-from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_service
+from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_application
 from uc_bib_solv.modules.rca_tree.domain.exceptions import CausalTreeError, CausalTreeNotFoundError, CausalTreeStateError, CausalTreeValidationError
 from uc_bib_solv.utils.http import error, ok
 
 
 def create_blueprint(service=None, analysis_service=None):
-    service = service or build_rca_tree_service()
+    service = service or build_rca_tree_application()
     bp = Blueprint("rca_tree_http", __name__)
 
     def json_payload():

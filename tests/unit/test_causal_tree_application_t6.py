@@ -1,6 +1,6 @@
 import unittest
 
-from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_causal_tree_service
+from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_application
 
 
 class FakeCause:
@@ -38,7 +38,6 @@ class FakePersistence:
 
 class CausalTreeApplicationT6Tests(unittest.TestCase):
     def test_fake_application_does_not_require_flask_or_postgres(self):
-        service = build_causal_tree_service(persistence=FakePersistence())
+        service = build_rca_tree_application(persistence=FakePersistence())
         self.assertEqual(service.save_cause({"contract_id": 7, "nombre": "Nueva"})["cause"]["nombre"], "Nueva")
         self.assertEqual(service.save_hypothesis({"cause_id": 1, "descripcion": "Comprobar"})["hypothesis"]["descripcion"], "Comprobar")
-

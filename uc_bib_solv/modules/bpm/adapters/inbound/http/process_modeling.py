@@ -72,8 +72,8 @@ def create_blueprint(operational, process_modeling):
 
     # Operational BPM API.  It is namespaced to avoid colliding with the
     # process-modeling aggregate at /api/bpm/processes.
-    bp.add_url_rule("/api/bpm/operational/catalog", "operational_catalog", lambda: operational_call(operational.get_catalog, request.args.get("process_id")), methods=["GET"])
-    bp.add_url_rule("/api/bpm/operational/page/<page>", "operational_page", lambda page: operational_call(operational.get_page, page, request.args.to_dict(flat=True)), methods=["GET"])
+    bp.add_url_rule("/api/bpm/operational/catalog", "operational_catalog", lambda: operational_call(operational.get_operational_catalog, request.args.get("process_id")), methods=["GET"])
+    bp.add_url_rule("/api/bpm/operational/page/<page>", "operational_page", lambda page: operational_call(operational.get_operational_page_payload, page, request.args.to_dict(flat=True)), methods=["GET"])
     bp.add_url_rule("/api/bpm/operational/processes", "operational_processes", lambda: operational_call(operational.list_processes), methods=["GET"])
     bp.add_url_rule("/api/bpm/operational/processes", "operational_process_create", lambda: created(operational_call(operational.create_process, payload())), methods=["POST"])
     bp.add_url_rule("/api/bpm/operational/processes/<process_id>", "operational_process_update", lambda process_id: operational_call(operational.update_process, process_id, payload()), methods=["PATCH"])

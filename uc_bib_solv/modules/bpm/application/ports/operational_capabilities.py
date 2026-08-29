@@ -70,22 +70,6 @@ class BpmOperationalDependencies:
         """Build the smallest runtime capability view for one use case."""
         return Capability(port, *methods)
 
-    @classmethod
-    def from_legacy_backend(cls, backend):
-        """Compatibility seam for old fakes, kept at composition boundary."""
-        return cls(
-            processes=Capability(backend, "list_processes", "create_process", "update_process", "delete_process"),
-            operations=Capability(backend, "get_operational_catalog"),
-            contracts=Capability(backend, "list_contracts", "get_contract", "create_contract", "update_contract", "toggle_contract", "delete_contract"),
-            associations=Capability(backend, "get_contract_machines", "save_contract_machines"),
-            machines=Capability(backend, "list_machines", "create_machine", "update_machine", "delete_machine"),
-            machine_context=Capability(backend, "get_machine_context"),
-            configurations=Capability(backend, "list_configurations", "create_configuration"),
-            catalog=Capability(backend, "get_operational_catalog"),
-            pages=Capability(backend, "get_operational_page_payload"),
-        )
-
-
 class Capability:
     def __init__(self, target, *methods):
         self._target = target

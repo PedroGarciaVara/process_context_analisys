@@ -14,8 +14,8 @@ from uc_bib_solv.modules.bpm.adapters.outbound.postgres import (
     proceso_repo,
 )
 from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import (
-    analisis_causas_detalle_repo,
-    analisis_causas_repo,
+    analysis_detail_repository,
+    analysis_repository,
     causa_repo,
     hipotesis_repo,
     node_repo,
@@ -32,7 +32,7 @@ def run_smoke_test():
     raiz = causa_repo.create(contrato["id"], f"CausaRaiz_{suffix}", "Descripción", "causa", "metodo", None)
     hijo = causa_repo.create(contrato["id"], f"CausaHija_{suffix}", "Desc", "efecto", "maquina", raiz["id"])
 
-    causas = causa_repo.get_by_contrato(contrato["id"])
+    causas = causa_repo.list_by_contract(contrato["id"])
     assert not validate_no_cycle(causas, raiz["id"], hijo["id"])
     assert validate_no_cycle(causas, hijo["id"], raiz["id"])
 
@@ -43,20 +43,20 @@ def run_smoke_test():
         "criterio",
         "pendiente",
     )
-    hipotesis_repo.update_estado(hip["id"], "validada")
+    hipotesis_repo.update_status(hip["id"], "validada")
     updated = hipotesis_repo.get_by_id(hip["id"])
     assert updated and updated["estado"] == "validada"
     assert node_repo.get_by_legacy_ref("causa", int(raiz["id"])) is not None
     assert node_repo.get_by_legacy_ref("hipotesis", int(hip["id"])) is not None
 
-    analisis = analisis_causas_repo.create(
+    analisis = analysis_repository.create(
         contrato["id"],
         proceso["id"],
         maquina["id"],
         f"Persona_{suffix}",
         f"Apertura_{suffix}",
     )
-    detalle = analisis_causas_detalle_repo.upsert(
+    detalle = analysis_detail_repository.upsert(
         analisis["id"],
         "causa",
         "retenida",
@@ -65,9 +65,9 @@ def run_smoke_test():
     )
     assert detalle["evaluacion"] == "retenida"
     assert detalle["node_id"] is not None
-    assert analisis_causas_repo.get_open_by_contrato(contrato["id"])["id"] == analisis["id"]
-    analisis_causas_repo.update_estado(analisis["id"], "cerrado")
-    assert analisis_causas_repo.get_by_id(analisis["id"])["estado"] == "cerrado"
+    assert analysis_repository.get_open_by_contract(contrato["id"])["id"] == analisis["id"]
+    analysis_repository.update_status(analisis["id"], "cerrado")
+    assert analysis_repository.get_by_id(analisis["id"])["estado"] == "cerrado"
 
     tree = causa_repo.build_tree(causas)
     assert len(tree) >= 1
@@ -75,7 +75,7 @@ def run_smoke_test():
     proceso_repo.delete(proceso["id"]) if False else None
 
     start = time.perf_counter()
-    _ = causa_repo.get_by_contrato(contrato["id"])
+    _ = causa_repo.list_by_contract(contrato["id"])
     elapsed_ms = (time.perf_counter() - start) * 1000
     assert elapsed_ms < 2000
 

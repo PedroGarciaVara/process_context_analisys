@@ -42,14 +42,6 @@ def build_rca_tree_application(*, persistence=None, contract_context=None) -> Rc
     )
 
 
-# Compatibility factory name retained at the infrastructure boundary while
-# inbound adapters migrate from the old service terminology.
-build_rca_tree_service = build_rca_tree_application
-
-
-build_causal_tree_service = build_rca_tree_application
-
-
 def build_rca_tree_postgres_adapter(*, contract_context=None):
     """Compose temporary SQL repositories only at the RCA_TREE edge."""
     from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import causa_repo, hipotesis_repo, node_repo, relationship_repo

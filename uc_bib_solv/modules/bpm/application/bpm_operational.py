@@ -35,7 +35,7 @@ class BpmOperationalApplication:
 
     def __init__(self, dependencies):
         if not isinstance(dependencies, BpmOperationalDependencies):
-            dependencies = getattr(dependencies, "as_dependencies", lambda: BpmOperationalDependencies.from_legacy_backend(dependencies))()
+            raise TypeError("BpmOperationalApplication requiere BpmOperationalDependencies")
         self.dependencies = dependencies
         narrow = dependencies.narrow
         self.list_processes_use_case = ListOperationalProcesses(narrow(dependencies.processes, "list_processes"))

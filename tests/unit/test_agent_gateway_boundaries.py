@@ -9,8 +9,8 @@ class AgentGatewayBoundaryTests(unittest.TestCase):
         operational = object()
         tree = object()
         process = object()
-        with patch("uc_bib_solv.modules.bpm.infrastructure.wiring.operational_service", return_value=operational), \
-             patch("uc_bib_solv.modules.rca_tree.infrastructure.wiring.build_rca_tree_service", return_value=tree):
+        with patch("uc_bib_solv.modules.bpm.infrastructure.wiring.build_bpm_operational_service", return_value=operational), \
+             patch("uc_bib_solv.modules.rca_tree.infrastructure.wiring.build_rca_tree_application", return_value=tree):
             with patch("uc_bib_solv.modules.bpm.infrastructure.process_modeling_wiring.create_process_modeling_handlers", return_value=process):
                 gateway = ExistingBackendGateway()
         self.assertIs(operational, gateway._machines)

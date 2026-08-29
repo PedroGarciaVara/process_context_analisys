@@ -12,8 +12,8 @@ sys.path.insert(1, str(BACKEND_DIR))
 
 from uc_bib_solv.modules.bpm.adapters.outbound.postgres import contrato_repo, proceso_repo
 from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import (
-    analisis_causas_detalle_repo,
-    analisis_causas_repo,
+    analysis_detail_repository,
+    analysis_repository,
     causa_repo,
     graph_sync,
     graph_query_repo,
@@ -245,7 +245,7 @@ class GraphDbIntegrationTests(TestCase):
         self.assertEqual(int(tree_root["children"][0]["parent_id"]), int(self.root_cause["id"]))
 
     def test_analysis_detail_backfills_node_id(self):
-        analysis = analisis_causas_repo.create(
+        analysis = analysis_repository.create(
             int(self.contract["id"]),
             int(self.process["id"]),
             None,
@@ -253,7 +253,7 @@ class GraphDbIntegrationTests(TestCase):
             "opening",
         )
         self.created_analysis_ids.append(int(analysis["id"]))
-        detail = analisis_causas_detalle_repo.upsert(
+        detail = analysis_detail_repository.upsert(
             int(analysis["id"]),
             "hipotesis",
             "validada",

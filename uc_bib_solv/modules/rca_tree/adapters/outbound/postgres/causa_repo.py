@@ -17,7 +17,7 @@ def _get_contract_node(contrato_id: int) -> dict:
         contract = cur.fetchone()
     if not contract:
         raise ValueError("El contrato indicado no existe.")
-    return node_repo.get_by_legacy_ref("contrato", int(contrato_id)) or graph_sync.sync_contract_graph(int(contrato_id))
+    return node_repo.get_for_contract(int(contrato_id)) or graph_sync.sync_contract_graph(int(contrato_id))
 
 
 def _get_cause_record(causa_id: int) -> dict:
@@ -28,11 +28,11 @@ def _get_cause_record(causa_id: int) -> dict:
 
 
 def _get_cause_node(causa_id: int) -> dict:
-    cause_node = node_repo.get_by_legacy_ref("causa", int(causa_id))
+    cause_node = node_repo.get_for_cause(int(causa_id))
     if cause_node:
         return cause_node
     graph_sync.sync_causa_graph(int(causa_id))
-    cause_node = node_repo.get_by_legacy_ref("causa", int(causa_id))
+    cause_node = node_repo.get_for_cause(int(causa_id))
     if not cause_node:
         raise ValueError("No se pudo resolver el nodo canónico de la causa.")
     return cause_node
@@ -93,14 +93,6 @@ def create(
         causa_id = int(cur.fetchone()["id"])
         cur.execute(
             """
-            UPDATE node
-            SET legacy_table='causa', legacy_id=%s, updated_at=NOW()
-            WHERE id=%s
-            """,
-            (causa_id, int(node["id"])),
-        )
-        cur.execute(
-            """
             INSERT INTO relationship(
                 parent_node_id, child_node_id, relationship_type, metadata, is_primary
             )
@@ -115,20 +107,16 @@ def create(
                 int(parent_node["id"]),
                 int(node["id"]),
                 relationship_type,
-                psycopg2.extras.Json({
-                    "source": "app",
-                    "legacy_parent_id": parent_id,
-                    "contract_id": contrato_id,
-                }),
+                psycopg2.extras.Json({"source": "app", "contract_id": contrato_id}),
                 True,
             ),
         )
     return get_by_id(causa_id) or {"id": causa_id, "node_id": node["id"], "nombre": nombre.strip()}
 
 
-def get_by_contrato(contrato_id: int) -> list[dict]:
-    graph_sync.sync_contract_graph(int(contrato_id))
-    return graph_query_repo.get_projected_causes_for_contract(int(contrato_id))["rows"]
+def list_by_contract(contract_id: int) -> list[dict]:
+    graph_sync.sync_contract_graph(int(contract_id))
+    return graph_query_repo.get_projected_causes_for_contract(int(contract_id))["rows"]
 
 
 def get_by_id(causa_id: int) -> dict | None:
@@ -140,7 +128,7 @@ def get_children(causa_id: int) -> list[dict]:
     cause = get_by_id(int(causa_id))
     if not cause:
         return []
-    causes = get_by_contrato(int(cause["contrato_id"]))
+    causes = list_by_contract(int(cause["contrato_id"]))
     return [item for item in causes if item.get("parent_id") == int(causa_id)]
 
 
@@ -148,7 +136,7 @@ def get_ancestors(causa_id: int) -> list[int]:
     current = get_by_id(int(causa_id))
     if not current:
         return []
-    contract_rows = get_by_contrato(int(current["contrato_id"]))
+    contract_rows = list_by_contract(int(current["contrato_id"]))
     by_id = {int(row["id"]): row for row in contract_rows}
     ancestors: list[int] = []
     walker = current
@@ -200,7 +188,7 @@ def update(
 
 def delete(causa_id: int) -> bool:
     graph_sync.sync_causa_graph(int(causa_id))
-    node = node_repo.get_by_legacy_ref("causa", int(causa_id))
+    node = node_repo.get_for_cause(int(causa_id))
     if not node:
         with db_cursor() as cur:
             cur.execute("DELETE FROM causa WHERE id=%s", (causa_id,))

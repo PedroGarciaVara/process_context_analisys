@@ -46,10 +46,9 @@ class BpmUseCaseStructureTests(unittest.TestCase):
         self.assertIsInstance(CreateContract, type)
         self.assertIsInstance(CreateMachine, type)
 
-    def test_composition_preserves_compatibility_api(self):
-        use_cases = BpmOperationalApplication(FakePersistence())
-        self.assertEqual(use_cases.list_processes(), [{"id": 1, "name": "Proceso"}])
-        self.assertEqual(use_cases.list_operations(), [{"id": "op-1"}])
+    def test_application_rejects_generic_persistence(self):
+        with self.assertRaises(TypeError):
+            BpmOperationalApplication(FakePersistence())
 
     def test_generic_operational_use_case_module_is_retired(self):
         path = Path(__file__).parents[2] / "uc_bib_solv/modules/bpm/application/use_cases/operational.py"

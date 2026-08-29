@@ -8,7 +8,7 @@ nueva fuente de verdad.
 ## Uso
 
 ```python
-from uc_bib_solv.agent_tools import build_default_registry
+from uc_bib_solv.modules.platform.adapters.agent_tools import build_default_registry
 
 registry = build_default_registry()
 registry.manifest()                 # descubrimiento

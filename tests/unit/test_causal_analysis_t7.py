@@ -1,7 +1,7 @@
 import unittest
 
 from uc_bib_solv.modules.rca_tree.domain.analyses.entities import AnalysisResult, normalize_state, validate_evaluation
-from uc_bib_solv.modules.rca_tree.infrastructure.analysis_wiring import build_rca_tree_analysis_service
+from uc_bib_solv.modules.rca_tree.infrastructure.analysis_wiring import build_rca_tree_analysis_application
 
 
 class FakePersistence:
@@ -31,7 +31,7 @@ class CausalAnalysisT7Tests(unittest.TestCase):
 
     def test_application_uses_fake_ports_without_postgres(self):
         fake = FakePersistence()
-        service = build_rca_tree_analysis_service(persistence=fake)
+        service = build_rca_tree_analysis_application(persistence=fake)
         created = service.create({"template_contract_id": 7, "process_id": 2, "participant": " Ana ", "indication": " desviacion "})
         self.assertEqual(created["id"], 9)
         self.assertEqual(created["participants"], ["Ana"])
@@ -39,4 +39,4 @@ class CausalAnalysisT7Tests(unittest.TestCase):
         self.assertEqual(service.save_result(9, {"element_type": "causa", "cause_id": 3})["id"], 4)
 
     def test_canonical_analysis_application_is_the_only_service_boundary(self):
-        self.assertTrue(hasattr(build_rca_tree_analysis_service(persistence=FakePersistence()), "list_recent"))
+        self.assertTrue(hasattr(build_rca_tree_analysis_application(persistence=FakePersistence()), "list_recent"))

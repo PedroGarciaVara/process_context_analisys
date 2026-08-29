@@ -54,15 +54,6 @@ class RcaTreeAnalysisPostgresAdapter:
                 (contract_id, process_id, payload.get("machine_id"), participants[0], indication, payload.get("opening_date"), indication))
             return dict(cur.fetchone())
 
-    def create_legacy(self, contrato_id, proceso_id, maquina_id, persona_inicializacion, descripcion_apertura):
-        return self.create({
-            "contract_id": contrato_id,
-            "process_id": proceso_id,
-            "machine_id": maquina_id,
-            "participants": [persona_inicializacion],
-            "indication": descripcion_apertura,
-        })
-
     def add(self, analysis_id, participant):
         with self.transaction.cursor() as cur:
             cur.execute("INSERT INTO analisis_participante(analisis_id, participante) VALUES (%s,%s) ON CONFLICT DO NOTHING RETURNING analisis_id, participante", (analysis_id, participant))
@@ -137,12 +128,14 @@ class RcaTreeAnalysisPostgresAdapter:
             row = cur.fetchone()
             return dict(row) if row else None
 
-    def get_by_id(self, analysis_id): return self.get(analysis_id)
-    def get_by_contrato(self, contrato_id, estado=None): return [item for item in self.list_recent(100, estado) if item.get("contrato_id") == int(contrato_id)]
-    def get_open_by_contrato(self, contrato_id):
-        items = self.get_by_contrato(contrato_id, "abierto")
+    def list_by_contract(self, contract_id, status=None):
+        return [item for item in self.list_recent(100, status) if item.get("contrato_id") == int(contract_id)]
+
+    def get_open_by_contract(self, contract_id):
+        items = self.list_by_contract(contract_id, "abierto")
         return items[0] if items else None
-    def update_estado(self, analysis_id, estado): return self.update(analysis_id, {"status": estado})
+
+    def update_status(self, analysis_id, status): return self.update(analysis_id, {"status": status})
     def list_summary(self): return self.list_recent(100)
 
 

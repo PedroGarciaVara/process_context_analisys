@@ -39,7 +39,22 @@ class BpmOperationalService:
 
 def build_bpm_operational_service(*, persistence=None):
     adapter = persistence or build_bpm_operational_postgres_adapter()
-    return BpmOperationalService(BpmOperationalApplication(BpmOperationalDependencies.from_legacy_backend(adapter)))
+    return BpmOperationalService(BpmOperationalApplication(_operational_dependencies(adapter)))
+
+
+def _operational_dependencies(adapter):
+    narrow = BpmOperationalDependencies.narrow
+    return BpmOperationalDependencies(
+        processes=narrow(adapter, "list_processes", "create_process", "update_process", "delete_process"),
+        operations=narrow(adapter, "get_operational_catalog"),
+        contracts=narrow(adapter, "list_contracts", "get_contract", "create_contract", "update_contract", "toggle_contract", "delete_contract"),
+        associations=narrow(adapter, "get_contract_machines", "save_contract_machines"),
+        machines=narrow(adapter, "get_machine", "list_machines", "create_machine", "update_machine", "delete_machine"),
+        machine_context=narrow(adapter, "get_machine_context"),
+        configurations=narrow(adapter, "list_configurations", "create_configuration"),
+        catalog=narrow(adapter, "get_operational_catalog"),
+        pages=narrow(adapter, "get_operational_page_payload"),
+    )
 
 
 def build_bpm_process_modeling_application(handler):
@@ -81,44 +96,3 @@ def build_bpm_contract_context_port():
     from uc_bib_solv.modules.bpm.adapters.outbound.postgres import contrato_repo
 
     return contrato_repo
-
-
-class OperationalService(BpmOperationalService):
-    """Compatibility name for the BPM operational service."""
-
-
-def build_operational_service(*, persistence=None):
-    adapter = persistence or build_bpm_operational_postgres_adapter()
-    return OperationalService(BpmOperationalApplication(BpmOperationalDependencies.from_legacy_backend(adapter)))
-
-
-_operational_service = None
-
-
-def operational_service():
-    global _operational_service
-    if _operational_service is None:
-        _operational_service = build_operational_service()
-    return _operational_service
-
-
-def create_contract(payload): return operational_service().create_contract(payload)
-def update_contract(contract_id, payload): return operational_service().update_contract(contract_id, payload)
-def toggle_contract(contract_id): return operational_service().toggle_contract(contract_id)
-def delete_contract(contract_id): return operational_service().delete_contract(contract_id)
-def get_contract_machines(contract_id): return operational_service().get_contract_machines(contract_id)
-def save_contract_machines(contract_id, payload): return operational_service().save_contract_machines(contract_id, payload)
-def create_machine(payload): return operational_service().create_machine(payload)
-def update_machine(machine_id, payload): return operational_service().update_machine(machine_id, payload)
-def delete_machine(machine_id): return operational_service().delete_machine(machine_id)
-def create_process(payload): return operational_service().create_process(payload)
-def update_process(process_id, payload): return operational_service().update_process(process_id, payload)
-def delete_process(process_id): return operational_service().delete_process(process_id)
-def get_operational_catalog(process_id=None): return operational_service().get_operational_catalog(process_id)
-def get_operational_page_payload(page, params=None): return operational_service().get_operational_page_payload(page, params)
-def list_contracts(*args, **kwargs): return operational_service().list_contracts(*args, **kwargs)
-def list_machines(*args, **kwargs): return operational_service().list_machines(*args, **kwargs)
-def list_processes(): return operational_service().list_processes()
-def get_machine_context(*args, **kwargs): return operational_service().get_machine_context(*args, **kwargs)
-def list_configurations(machine_id): return operational_service().list_configurations(machine_id)
-def create_configuration(payload): return operational_service().create_configuration(payload)
