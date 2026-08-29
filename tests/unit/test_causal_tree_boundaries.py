@@ -1,24 +1,17 @@
 import unittest
 
-from uc_bib_solv.modules.rca_tree.adapters.outbound.persistence import (
-    CausalTreePostgresAdapter,
-    LegacyCausalPersistenceAdapter,
-)
+from uc_bib_solv.modules.rca_tree.adapters.outbound.tree_persistence import RcaTreePostgresAdapter
 from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_causal_tree_service
 
 
 class CausalTreeBoundaryTests(unittest.TestCase):
     def test_canonical_tree_adapter_composes_injected_repositories(self):
-        adapter = CausalTreePostgresAdapter("causes", "hypotheses", "nodes", "relationships", "queries")
+        adapter = RcaTreePostgresAdapter("causes", "hypotheses", "nodes", "relationships", "queries", contract_context="bpm")
         self.assertEqual("causes", adapter.cause_repo)
         self.assertEqual("hypotheses", adapter.hypothesis_repo)
         self.assertEqual("nodes", adapter.node_repo)
         self.assertEqual("relationships", adapter.relationship_repo)
         self.assertEqual("queries", adapter.tree_repo)
-
-    def test_legacy_tree_adapter_is_compatibility_subclass(self):
-        adapter = LegacyCausalPersistenceAdapter("c", "h", "n", "r", "q")
-        self.assertIsInstance(adapter, CausalTreePostgresAdapter)
 
     def test_tree_wiring_accepts_fake_persistence(self):
         fake = type("Persistence", (), {

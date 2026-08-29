@@ -2,7 +2,7 @@
 
 from .causal_graph.entities import Cause, Hypothesis, Node, Relationship
 from .analyses.entities import Analysis, AnalysisParticipant, AnalysisResult
-from .exceptions import CausalTreeError, CycleDetectedError, InvalidRelationshipError, NodeDeletionError
+from .exceptions import CausalTreeError, CausalTreeNotFoundError, CausalTreeStateError, CausalTreeValidationError, CycleDetectedError, InvalidRelationshipError, NodeDeletionError
 from .value_objects import NodeId, NodeType, RelationshipType
 
 __all__ = [
@@ -11,6 +11,9 @@ __all__ = [
     "Node",
     "Relationship",
     "CausalTreeError",
+    "CausalTreeNotFoundError",
+    "CausalTreeStateError",
+    "CausalTreeValidationError",
     "CycleDetectedError",
     "InvalidRelationshipError",
     "NodeDeletionError",

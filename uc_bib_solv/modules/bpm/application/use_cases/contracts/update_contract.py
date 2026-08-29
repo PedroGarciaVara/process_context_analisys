@@ -1,5 +1,4 @@
-from uc_bib_solv.modules.bpm.domain.contracts.rules import validate_name
-from uc_bib_solv.modules.bpm.application.dto.commands import ContractCommand
+from uc_bib_solv.modules.bpm.domain.contracts.entities import Contract
 
 
 class UpdateContract:
@@ -9,9 +8,9 @@ class UpdateContract:
         self.contract_port = contract_port
 
     def execute(self, contract_id, payload):
-        validated = dict(payload)
-        if "name" in payload:
-            command = ContractCommand.from_payload(payload)
-            validate_name(command.name)
-            validated["name"] = command.name
-        return self.contract_port.update_contract(contract_id, validated)
+        current = self.contract_port.get_contract(contract_id)
+        if not current:
+            raise ValueError("Contrato no encontrado.")
+        contract = Contract.from_persistence(current)
+        contract.apply_update(payload)
+        return self.contract_port.update_contract(contract_id, contract.to_payload())

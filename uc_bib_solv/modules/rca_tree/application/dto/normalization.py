@@ -4,6 +4,7 @@ from typing import Any
 from urllib.parse import parse_qs
 
 from uc_bib_solv.modules.platform.application.ports import ContractRef
+from ...domain.exceptions import CausalTreeValidationError
 
 
 def integer(value: Any) -> int | None:
@@ -24,7 +25,7 @@ def normalize_cause_type(value: Any) -> str:
         "effect": "efecto",
     }.get(str(value or "causa").strip().lower(), str(value or "causa").strip().lower())
     if normalized not in {"causa", "efecto"}:
-        raise ValueError("El tipo de causa debe ser causa o efecto.")
+        raise CausalTreeValidationError("El tipo de causa debe ser causa o efecto.")
     return normalized
 
 

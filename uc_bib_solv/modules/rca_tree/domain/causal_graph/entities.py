@@ -7,6 +7,7 @@ from typing import Any
 
 from .rules import validate_relationship_signature
 from ..value_objects import NodeId, NodeType, RelationshipType, normalize_node_type, normalize_relationship_type
+from ..exceptions import CausalTreeValidationError
 
 
 @dataclass
@@ -21,7 +22,7 @@ class Node:
     def __post_init__(self) -> None:
         self.node_type = normalize_node_type(self.node_type)
         if not str(self.name).strip():
-            raise ValueError("El nombre del nodo es obligatorio.")
+            raise CausalTreeValidationError("El nombre del nodo es obligatorio.")
 
 
 @dataclass
@@ -36,7 +37,7 @@ class Cause:
 
     def __post_init__(self) -> None:
         if self.contract_id <= 0 or not self.name.strip():
-            raise ValueError("Una causa requiere contrato y nombre.")
+            raise CausalTreeValidationError("Una causa requiere contrato y nombre.")
 
 
 @dataclass
@@ -50,7 +51,7 @@ class Hypothesis:
 
     def __post_init__(self) -> None:
         if self.cause_id <= 0 or not self.description.strip():
-            raise ValueError("Una hipótesis requiere causa y descripción.")
+            raise CausalTreeValidationError("Una hipótesis requiere causa y descripción.")
 
 
 @dataclass(frozen=True)

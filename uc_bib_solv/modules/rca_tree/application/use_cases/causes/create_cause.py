@@ -2,6 +2,7 @@ from typing import Any
 
 from ...dto import normalize_cause_type, integer
 from ...ports.outbound import CauseRepositoryPort
+from ....domain.exceptions import CausalTreeValidationError
 
 
 class CreateCause:
@@ -14,7 +15,7 @@ class CreateCause:
         contract_id = integer(payload.get("contract_id"))
         parent_id = integer(payload.get("parent_id"))
         if not contract_id:
-            raise ValueError("Se requiere un contrato para crear una causa.")
+            raise CausalTreeValidationError("Se requiere un contrato para crear una causa.")
         name = (payload.get("nombre") or "").strip()
         return {
             "cause": self.causes.create(

@@ -1,5 +1,6 @@
 from ...dto import integer
 from ...ports.outbound import CauseRepositoryPort, HypothesisRepositoryPort
+from ....domain.exceptions import CausalTreeNotFoundError
 
 
 class GetHypothesisDeletePreview:
@@ -13,7 +14,7 @@ class GetHypothesisDeletePreview:
         resolved_id = integer(hypothesis_id)
         hypothesis = self.hypotheses.get(resolved_id) if resolved_id else None
         if not hypothesis:
-            raise ValueError("Hipotesis no encontrada.")
+            raise CausalTreeNotFoundError("Hipotesis no encontrada.")
         cause = self.causes.get(int(hypothesis["causa_id"]))
         return {
             "hipotesis_id": int(hypothesis["id"]),

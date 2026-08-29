@@ -56,6 +56,7 @@ class BpmOperationalPostgresAdapter:
     def update_process(self, process_id, payload): return BpmOperationalMapper.process(self.backend.update_process(process_id, payload))
     def delete_process(self, process_id): return self.backend.delete_process(process_id)
     def list_contracts(self, process_id=None, status=None): return [BpmOperationalMapper.contract(item) for item in self.backend.list_contracts(process_id, status)]
+    def get_contract(self, contract_id): return BpmOperationalMapper.contract(self.contracts.get_by_id(int(contract_id)))
     def create_contract(self, payload): return BpmOperationalMapper.contract(self.backend.create_contract(payload))
     def update_contract(self, contract_id, payload): return BpmOperationalMapper.contract(self.backend.update_contract(contract_id, payload))
     def toggle_contract(self, contract_id): return self.backend.toggle_contract(contract_id)
@@ -64,6 +65,7 @@ class BpmOperationalPostgresAdapter:
     def save_contract_machines(self, contract_id, payload): return self.backend.save_contract_machines(contract_id, payload)
     def list_machines(self, process_id=None, contract_id=None, operation_id=None, process_id_bpm=None, bpm_process_id=None):
         return BpmOperationalMapper.machines(self.backend.list_machines(process_id, contract_id, operation_id, process_id_bpm, bpm_process_id))
+    def get_machine(self, machine_id): return BpmOperationalMapper.machine(self.machines.get_by_id(int(machine_id)))
     def create_machine(self, payload): return BpmOperationalMapper.machine(self.backend.create_machine(payload))
     def update_machine(self, machine_id, payload): return BpmOperationalMapper.machine(self.backend.update_machine(machine_id, payload))
     def delete_machine(self, machine_id): return self.backend.delete_machine(machine_id)

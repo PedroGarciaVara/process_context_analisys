@@ -1,6 +1,7 @@
 from typing import Any
 
 from ...ports.outbound import TreeQueryPort
+from ....domain.exceptions import CausalTreeValidationError
 
 
 class LinkReusableNode:
@@ -12,7 +13,7 @@ class LinkReusableNode:
     def execute(self, payload: dict[str, Any]) -> dict[str, Any]:
         child_node_id = payload.get("child_node_id")
         if not child_node_id:
-            raise ValueError("Selecciona un nodo reutilizable antes de vincular.")
+            raise CausalTreeValidationError("Selecciona un nodo reutilizable antes de vincular.")
         result = self.queries.link_reusable_node(
             child_node_id=int(child_node_id),
             contract_id=payload.get("contract_id"),

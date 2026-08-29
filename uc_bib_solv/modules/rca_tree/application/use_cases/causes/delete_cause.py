@@ -1,5 +1,6 @@
 from ...dto import integer
 from ...ports.outbound import CauseRepositoryPort
+from ....domain.exceptions import CausalTreeNotFoundError
 
 
 class DeleteCause:
@@ -11,5 +12,5 @@ class DeleteCause:
     def execute(self, cause_id: int | str) -> dict[str, object]:
         resolved_id = integer(cause_id)
         if not resolved_id or not self.causes.delete(resolved_id):
-            raise ValueError("Causa no encontrada.")
+            raise CausalTreeNotFoundError("Causa no encontrada.")
         return {"deleted": True, "message": "Causa eliminada."}

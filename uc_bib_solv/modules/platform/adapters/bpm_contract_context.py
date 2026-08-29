@@ -21,22 +21,4 @@ class BpmContractContextAdapter:
         return self._contract_port.create(process_id, name, metric, objective, bpm_process_id, bpm_node_id)
 
 
-def _injected_context_required():
-    raise RuntimeError("El contexto de contratos BPM debe inyectarse desde el composition root.")
-
-
-# Kept as patch points for legacy RCA_TREE repository tests. Production wiring
-# uses BpmContractContextAdapter and never calls these compatibility functions.
-def get_contract(contract_id: int):
-    return _injected_context_required()
-
-
-def list_contracts():
-    return _injected_context_required()
-
-
-def create_contract(process_id, name, metric=None, objective=None, bpm_process_id=None, bpm_node_id=None):
-    return _injected_context_required()
-
-
-__all__ = ["BpmContractContextAdapter", "get_contract", "list_contracts", "create_contract"]
+__all__ = ["BpmContractContextAdapter"]

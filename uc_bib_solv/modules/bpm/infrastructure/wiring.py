@@ -33,10 +33,8 @@ class BpmOperationalService:
         return self.use_cases.get_machine_context(machine_id, operation_id, process_id)
     def list_configurations(self, machine_id): return self.use_cases.list_configurations(machine_id)
     def create_configuration(self, payload): return self.use_cases.create_configuration(payload)
-    def get_operational_catalog(self, process_id=None): return self.use_cases.get_catalog(process_id)
-    def get_operational_page_payload(self, page, params=None): return self.use_cases.get_page(page, params)
-    def get_catalog(self, process_id=None): return self.use_cases.get_catalog(process_id)
-    def get_page(self, page, params=None): return self.use_cases.get_page(page, params)
+    def get_operational_catalog(self, process_id=None): return self.use_cases.get_operational_catalog(process_id)
+    def get_operational_page_payload(self, page, params=None): return self.use_cases.get_operational_page_payload(page, params)
 
 
 def build_bpm_operational_service(*, persistence=None):
@@ -116,8 +114,8 @@ def delete_machine(machine_id): return operational_service().delete_machine(mach
 def create_process(payload): return operational_service().create_process(payload)
 def update_process(process_id, payload): return operational_service().update_process(process_id, payload)
 def delete_process(process_id): return operational_service().delete_process(process_id)
-def get_operational_catalog(process_id=None): return operational_service().get_catalog(process_id)
-def get_operational_page_payload(page, params=None): return operational_service().get_page(page, params)
+def get_operational_catalog(process_id=None): return operational_service().get_operational_catalog(process_id)
+def get_operational_page_payload(page, params=None): return operational_service().get_operational_page_payload(page, params)
 def list_contracts(*args, **kwargs): return operational_service().list_contracts(*args, **kwargs)
 def list_machines(*args, **kwargs): return operational_service().list_machines(*args, **kwargs)
 def list_processes(): return operational_service().list_processes()

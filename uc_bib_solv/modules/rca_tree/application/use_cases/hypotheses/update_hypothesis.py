@@ -2,6 +2,7 @@ from typing import Any
 
 from ...dto import integer
 from ...ports.outbound import HypothesisRepositoryPort
+from ....domain.exceptions import CausalTreeValidationError
 
 
 class UpdateHypothesis:
@@ -13,7 +14,7 @@ class UpdateHypothesis:
     def execute(self, payload: dict[str, Any]) -> dict[str, Any]:
         hypothesis_id = integer(payload.get("hypothesis_id"))
         if not hypothesis_id:
-            raise ValueError("Se requiere una hipotesis para actualizarla.")
+            raise CausalTreeValidationError("Se requiere una hipotesis para actualizarla.")
         description = (payload.get("descripcion") or "").strip()
         saved = self.hypotheses.update(
             hypothesis_id,

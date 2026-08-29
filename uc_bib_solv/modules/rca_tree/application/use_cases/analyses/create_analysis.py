@@ -3,6 +3,7 @@ from typing import Any
 from uc_bib_solv.modules.platform.application.ports import ContractRef, ProcessRef
 from ....domain.analyses.entities import Analysis
 from ...ports.outbound import AnalysisRepositoryPort, ParticipantRepositoryPort
+from ....domain.exceptions import CausalTreeValidationError
 
 
 class CreateAnalysis:
@@ -15,7 +16,7 @@ class CreateAnalysis:
     def execute(self, payload: dict[str, Any]) -> dict[str, Any]:
         contract_id = payload.get("template_contract_id") or payload.get("contract_id")
         if contract_id is None:
-            raise ValueError("Debe seleccionar una plantilla de causas.")
+            raise CausalTreeValidationError("Debe seleccionar una plantilla de causas.")
         contract_ref = ContractRef.from_value(contract_id)
         process_ref = ProcessRef.from_value(payload["process_id"]) if payload.get("process_id") is not None else None
         participants = [

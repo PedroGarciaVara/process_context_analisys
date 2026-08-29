@@ -2,6 +2,7 @@ from typing import Any
 
 from ...dto import integer
 from ...ports.outbound import TreeQueryPort
+from ....domain.exceptions import CausalTreeValidationError
 
 
 class CreateContractNode:
@@ -14,7 +15,7 @@ class CreateContractNode:
         contract_id = integer(payload.get("contract_id"))
         name = (payload.get("nombre") or "").strip()
         if not contract_id or not name:
-            raise ValueError("Se requiere un contrato activo y un nombre para crear un contrato hijo.")
+            raise CausalTreeValidationError("Se requiere un contrato activo y un nombre para crear un contrato hijo.")
         result = self.queries.create_contract_child(
             contract_id,
             name,

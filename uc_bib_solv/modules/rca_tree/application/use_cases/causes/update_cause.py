@@ -2,6 +2,7 @@ from typing import Any
 
 from ...dto import integer, normalize_cause_type
 from ...ports.outbound import CauseRepositoryPort
+from ....domain.exceptions import CausalTreeValidationError
 
 
 class UpdateCause:
@@ -13,7 +14,7 @@ class UpdateCause:
     def execute(self, payload: dict[str, Any]) -> dict[str, Any]:
         cause_id = integer(payload.get("causa_id"))
         if not cause_id:
-            raise ValueError("Se requiere una causa para actualizarla.")
+            raise CausalTreeValidationError("Se requiere una causa para actualizarla.")
         name = (payload.get("nombre") or "").strip()
         return {
             "cause": self.causes.update(

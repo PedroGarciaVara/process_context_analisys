@@ -50,6 +50,29 @@ class Machine:
         for key, value in validated.items():
             setattr(self, key, value)
 
+    @classmethod
+    def from_persistence(cls, data: dict[str, Any]) -> "Machine":
+        """Rehydrate the canonical machine from the PostgreSQL row shape."""
+        values = dict(data)
+        values.setdefault("name", values.pop("nombre", ""))
+        values.setdefault("machine_type_id", values.pop("maquinas_tipo_id", None))
+        values.pop("operational_status", None)
+        return cls(**{key: value for key, value in values.items() if key in cls.__dataclass_fields__})
+
+    def apply_update(self, payload: dict[str, Any]) -> None:
+        """Apply and validate a partial update on the entity itself."""
+        validated = validate_machine_payload(payload, partial=True)
+        for key, value in validated.items():
+            setattr(self, key, value)
+
+    def to_update_payload(self) -> dict[str, Any]:
+        """Return the canonical writable state expected by the persistence port."""
+        return {key: value for key, value in self.__dict__.items() if key not in {"id", "contract_id"}}
+
+    def to_create_payload(self) -> dict[str, Any]:
+        """Return the canonical writable state for machine creation."""
+        return {key: value for key, value in self.__dict__.items() if key != "id"}
+
     def rename(self, name: str) -> None:
         validated = validate_machine_payload({"name": name}, partial=True)
         self.name = validated["name"]

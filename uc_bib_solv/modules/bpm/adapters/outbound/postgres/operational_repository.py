@@ -586,7 +586,14 @@ def update_contract(contract_id: str, payload: dict) -> dict:
     target_metrica = payload.get("metrica", current.get("metrica"))
     target_objetivo = payload.get("objetivo", current.get("objetivo"))
 
-    contrato_repo.update(contract_id_int, target_name, target_metrica, target_objetivo)
+    contrato_repo.update(
+        contract_id_int,
+        target_name,
+        target_metrica,
+        target_objetivo,
+        payload.get("bpm_process_id"),
+        payload.get("bpm_node_id"),
+    )
     return next(item for item in _contract_records() if int(item["id"]) == contract_id_int)
 
 

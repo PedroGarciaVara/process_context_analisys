@@ -2,6 +2,7 @@ from typing import Any
 
 from ...dto import integer
 from ...ports.outbound import HypothesisRepositoryPort
+from ....domain.exceptions import CausalTreeValidationError
 
 
 class CreateHypothesis:
@@ -13,7 +14,7 @@ class CreateHypothesis:
     def execute(self, payload: dict[str, Any]) -> dict[str, Any]:
         cause_id = integer(payload.get("cause_id"))
         if not cause_id:
-            raise ValueError("Se requiere una causa para crear una hipotesis.")
+            raise CausalTreeValidationError("Se requiere una causa para crear una hipotesis.")
         description = (payload.get("descripcion") or "").strip()
         saved = self.hypotheses.create(
             cause_id,

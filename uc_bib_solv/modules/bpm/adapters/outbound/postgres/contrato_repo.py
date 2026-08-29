@@ -76,18 +76,18 @@ def get_by_id(contrato_id: int) -> dict | None:
         return dict(row) if row else None
 
 
-def update(contrato_id: int, nombre: str, metrica: str | None = None, objetivo: str | None = None) -> dict:
+def update(contrato_id: int, nombre: str, metrica: str | None = None, objetivo: str | None = None, bpm_process_id=None, bpm_node_id=None) -> dict:
     if not nombre or not nombre.strip():
         raise ValueError("El nombre del contrato es obligatorio.")
     with db_cursor() as cur:
         cur.execute(
             """
             UPDATE contrato
-            SET nombre=%s, metrica=%s, objetivo=%s
+            SET nombre=%s, metrica=%s, objetivo=%s, bpm_process_id=%s, bpm_node_id=%s
             WHERE id=%s
             RETURNING id, proceso_id, bpm_process_id, bpm_node_id, nombre, metrica, objetivo, version, activo
             """,
-            (nombre.strip(), metrica, objetivo, contrato_id),
+            (nombre.strip(), metrica, objetivo, bpm_process_id, bpm_node_id, contrato_id),
         )
         row = cur.fetchone()
         if not row:

@@ -1,6 +1,4 @@
 from uc_bib_solv.modules.bpm.domain.machines.entities import Machine
-from uc_bib_solv.modules.bpm.domain.machines.payload_rules import validate_machine_payload
-from uc_bib_solv.modules.bpm.application.dto.commands import MachineCommand
 
 
 class UpdateMachine:
@@ -10,13 +8,9 @@ class UpdateMachine:
         self.machine_port = machine_port
 
     def execute(self, machine_id, payload):
-        validated = validate_machine_payload(payload, partial=True)
-        if "name" in validated:
-            command = MachineCommand.from_payload(validated)
-            Machine(
-                id=int(machine_id),
-                name=command.name,
-                machine_type_id=command.machine_type_id,
-                specific_description=command.specific_description,
-            )
-        return self.machine_port.update_machine(machine_id, validated)
+        current = self.machine_port.get_machine(machine_id)
+        if not current:
+            raise ValueError("Máquina no encontrada.")
+        machine = Machine.from_persistence(current)
+        machine.apply_update(payload)
+        return self.machine_port.update_machine(machine_id, machine.to_update_payload())

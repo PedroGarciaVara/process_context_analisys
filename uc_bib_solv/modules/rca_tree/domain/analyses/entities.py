@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from ..exceptions import CausalTreeStateError, CausalTreeValidationError
 
 
 ANALYSIS_STATES = ("abierto", "cerrado")
@@ -14,7 +15,7 @@ HYPOTHESIS_EVALUATIONS = ("validada", "rechazada")
 def normalize_state(value: str | None) -> str:
     state = (value or "abierto").strip().lower()
     if state not in ANALYSIS_STATES:
-        raise ValueError(f"Estado de análisis inválido: {value!r}")
+        raise CausalTreeValidationError(f"Estado de análisis inválido: {value!r}")
     return state
 
 
@@ -22,13 +23,13 @@ def validate_transition(current: str, requested: str) -> str:
     current_state, requested_state = normalize_state(current), normalize_state(requested)
     if current_state == requested_state or {current_state, requested_state} == {"abierto", "cerrado"}:
         return requested_state
-    raise ValueError(f"Transición de análisis no permitida: {current!r} -> {requested!r}")
+    raise CausalTreeStateError(f"Transición de análisis no permitida: {current!r} -> {requested!r}")
 
 
 def normalize_result_type(value: str | None) -> str:
     result_type = (value or "").strip().lower()
     if result_type not in RESULT_TYPES:
-        raise ValueError("element_type debe ser causa o hipotesis.")
+        raise CausalTreeValidationError("element_type debe ser causa o hipotesis.")
     return result_type
 
 
@@ -37,7 +38,7 @@ def validate_evaluation(result_type: str, evaluation: str) -> str:
     normalized = (evaluation or "").strip().lower()
     allowed = CAUSE_EVALUATIONS if normalized_type == "causa" else HYPOTHESIS_EVALUATIONS
     if normalized not in allowed:
-        raise ValueError(f"Evaluación de {normalized_type} inválida: {evaluation!r}")
+        raise CausalTreeValidationError(f"Evaluación de {normalized_type} inválida: {evaluation!r}")
     return normalized
 
 
@@ -54,7 +55,7 @@ class Analysis:
 
     def __post_init__(self) -> None:
         if self.contract_id <= 0 or not self.initializer.strip() or not self.opening_description.strip():
-            raise ValueError("El análisis requiere contrato, participante e indicio de apertura.")
+            raise CausalTreeValidationError("El análisis requiere contrato, participante e indicio de apertura.")
         normalize_state(self.state)
 
 
@@ -65,7 +66,7 @@ class AnalysisParticipant:
 
     def __post_init__(self) -> None:
         if self.analysis_id <= 0 or not self.name.strip():
-            raise ValueError("El participante del análisis es obligatorio.")
+            raise CausalTreeValidationError("El participante del análisis es obligatorio.")
 
 
 @dataclass(frozen=True)
@@ -81,8 +82,8 @@ class AnalysisResult:
     def __post_init__(self) -> None:
         result_type = normalize_result_type(self.result_type)
         if result_type == "causa" and (self.cause_id is None or self.hypothesis_id is not None):
-            raise ValueError("Falta la identidad del resultado.")
+            raise CausalTreeValidationError("Falta la identidad del resultado.")
         if result_type == "hipotesis" and (self.hypothesis_id is None or self.cause_id is not None):
-            raise ValueError("Falta la identidad del resultado.")
+            raise CausalTreeValidationError("Falta la identidad del resultado.")
         if self.analysis_id <= 0:
-            raise ValueError("El análisis es obligatorio.")
+            raise CausalTreeValidationError("El análisis es obligatorio.")
