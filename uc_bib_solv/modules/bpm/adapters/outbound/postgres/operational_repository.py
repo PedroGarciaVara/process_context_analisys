@@ -244,7 +244,9 @@ def _contract_records() -> list[dict]:
                 "bpmNodeId": str(contract["bpm_node_id"]) if contract.get("bpm_node_id") else None,
                 "scopeType": "process" if contract.get("bpm_process_id") else "operation",
                 "machineCount": len(machine_ids),
-                "metrica": contract.get("metrica"),
+                "kpi_description": contract.get("kpi_description"),
+                "kpi_args": contract.get("kpi_args", ""),
+                "kpi_function": contract.get("kpi_function", ""),
                 "objetivo": contract.get("objetivo"),
                 "activo": bool(contract.get("activo", True)),
                 "version": int(contract.get("version") or 1),
@@ -280,8 +282,8 @@ def _decorate_machine(
         None,
     )
     # A BPM configuration is the authoritative scope when an operation filter
-    # is active.  contrato_maquina remains a compatibility relation, but its
-    # sorted first row must not replace the configuration's contract identity.
+    # is active. The contract-machine relation must not replace the
+    # configuration's contract identity with its sorted first row.
     if scoped_operation and scoped_operation["contract_id"] is not None:
         selected_contract_id = scoped_operation["contract_id"]
         contract = contracts_by_id.get(selected_contract_id)
@@ -293,7 +295,7 @@ def _decorate_machine(
         "contractId": int(contract["id"]) if contract else None,
         "processId": int(process["id"]) if process else None,
         "name": machine.get("nombre") or f"Maquina {machine['id']}",
-        "area": (contract.get("metrica") or process.get("name") if contract and process else (contract.get("metrica") if contract else None)) or operation_process_name or "Unassigned",
+        "area": (contract.get("kpi_description") or process.get("name") if contract and process else (contract.get("kpi_description") if contract else None)) or operation_process_name or "Unassigned",
         "processName": process.get("name") if process else (operation_process_name or "Unscoped"),
         "contractName": contract.get("name") if contract else "Unscoped",
         "contractIds": links,
@@ -545,16 +547,18 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
 
 def create_contract(payload: dict) -> dict:
     name = str(payload.get("name") or "").strip()
-    metrica = payload.get("metrica")
+    kpi_description = payload.get("kpi_description")
     objetivo = payload.get("objetivo")
     process_id, _ = _resolve_contract_scope(payload)
     created = contrato_repo.create(
         process_id,
         name,
-        metrica,
+        kpi_description,
         objetivo,
         payload.get("bpm_process_id"),
         payload.get("bpm_node_id"),
+        payload.get("kpi_args", ""),
+        payload.get("kpi_function", ""),
     )
     return next(item for item in _contract_records() if int(item["id"]) == int(created["id"]))
 
@@ -566,16 +570,20 @@ def update_contract(contract_id: str, payload: dict) -> dict:
         raise ValueError("Contrato no encontrado.")
 
     target_name = str(payload.get("name") or current["nombre"] or "").strip()
-    target_metrica = payload.get("metrica", current.get("metrica"))
+    target_kpi = payload.get("kpi_description", current.get("kpi_description"))
     target_objetivo = payload.get("objetivo", current.get("objetivo"))
+    target_bpm_process = payload.get("bpm_process_id", current.get("bpm_process_id"))
+    target_bpm_node = payload.get("bpm_node_id", current.get("bpm_node_id"))
 
     contrato_repo.update(
         contract_id_int,
         target_name,
-        target_metrica,
+        target_kpi,
         target_objetivo,
-        payload.get("bpm_process_id"),
-        payload.get("bpm_node_id"),
+        target_bpm_process,
+        target_bpm_node,
+        payload.get("kpi_args", current.get("kpi_args", "")),
+        payload.get("kpi_function", current.get("kpi_function", "")),
     )
     return next(item for item in _contract_records() if int(item["id"]) == contract_id_int)
 
@@ -774,6 +782,8 @@ def _save_machine_type(payload: dict, machine_type_id: int | str | None = None) 
 
 
 def delete_machine(machine_id: str) -> dict:
+    # Intención: conservar la capacidad de eliminar entidades maquina del
+    # modelo operativo; no es equivalente a eliminar un nodo BPM.
     maquina_repo.delete(int(machine_id))
     return {
         "deleted": int(machine_id),

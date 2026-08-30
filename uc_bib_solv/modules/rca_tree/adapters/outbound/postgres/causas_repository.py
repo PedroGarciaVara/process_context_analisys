@@ -97,7 +97,7 @@ def _build_search_result_item(row: dict, *, already_linked: bool) -> dict:
     metadata = row.get("metadata") or {}
     if node_type == "CONTRACT":
         process_name = row.get("process_name")
-        meta_parts = [value for value in [process_name, row.get("contract_metric")] if value]
+        meta_parts = [value for value in [process_name, row.get("contract_kpi_description")] if value]
         context_label = process_name or "Proceso sin asignar"
         detail_text = row.get("contract_goal") or row.get("description") or "Sin objetivo registrado."
     else:
@@ -117,7 +117,7 @@ def _build_search_result_item(row: dict, *, already_linked: bool) -> dict:
         "context_label": context_label,
         "process_name": process_name,
         "contract_name": row.get("contract_name") or row.get("owner_contract_name"),
-        "metric": row.get("contract_metric") or row.get("owner_contract_metric"),
+        "kpi_description": row.get("contract_kpi_description") or row.get("owner_contract_kpi_description"),
         "goal": row.get("contract_goal") or row.get("owner_contract_goal"),
         "detail_text": detail_text,
         "meta": [part for part in meta_parts if part],
@@ -136,14 +136,23 @@ def get_tree_payload(
     contract_context,
 ) -> dict:
     contract = _default_contract(contract_id, contract_context=contract_context)
-    causas = causa_repo.list_by_contract(int(contract["id"])) if contract else []
-    tree = causa_repo.build_tree(causas)
-    flat = _flatten(tree)
+    contract_node = (
+        node_repo.get_for_contract(int(contract["id"]))
+        or graph_sync.sync_contract_graph(int(contract["id"]))
+    ) if contract else None
+    projection = (
+        graph_query_repo._structural_projection(int(contract_node["id"]), int(contract["id"]))
+        if contract_node
+        else {"tree": [], "rows": []}
+    )
+    tree = projection["tree"]
+    flat = projection["rows"]
+    causas = [row for row in flat if row.get("node_type") == "CAUSE"]
     selected_node = _default_selected_cause(causas, selected_cause_id)
-    hypotheses_by_cause = {
-        str(int(causa["id"])): hipotesis_repo.get_by_causa(int(causa["id"]))
-        for causa in causas
-    }
+    hypotheses_by_cause = {str(int(causa["id"])): [] for causa in causas}
+    for row in flat:
+        if row.get("node_type") == "HYPOTHESIS" and row.get("causa_id") is not None:
+            hypotheses_by_cause.setdefault(str(int(row["causa_id"])), []).append(row)
     analysis = None
     if contract and view == "analisis_causas_v2":
         sessions = analysis_repository.list_by_contract(int(contract["id"]))
@@ -292,7 +301,7 @@ def create_contract_child(
     nombre: str,
     *,
     objetivo: str | None = None,
-    metrica: str | None = None,
+    kpi_description: str = "Pendiente de definir KPI",
     contract_context,
 ) -> dict:
     parent_contract = _get_contract(int(parent_contract_id), contract_context)
@@ -302,7 +311,7 @@ def create_contract_child(
     created_contract = _create_contract(
         int(parent_contract["proceso_id"]),
         nombre,
-        metrica,
+        kpi_description,
         objetivo,
         parent_contract.get("bpm_process_id"),
         parent_contract.get("bpm_node_id"),

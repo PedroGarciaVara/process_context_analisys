@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import psycopg2.extras
+import uuid
 
 from uc_bib_solv.modules.rca_tree.domain.causal_graph.rules import (
     validate_delete_allowed,
@@ -48,7 +49,7 @@ def _resolve_parent_context(
         if parent_record.get("contrato_id") and int(parent_record["contrato_id"]) != int(contrato_id):
             raise ValueError("La causa padre pertenece a otro contrato.")
         return parent_node, "CAUSES"
-    return _get_contract_node(int(contrato_id)), "DEPENDS_ON"
+    return _get_contract_node(int(contrato_id)), "CAUSES"
 
 
 def create(
@@ -72,16 +73,12 @@ def create(
     )
 
     with db_cursor() as cur:
-        node = node_repo.create(
-            "CAUSE",
-            nombre.strip(),
-            description=descripcion,
-            metadata={
-                "source": "app",
-                "type": tipo,
-                "category": categoria,
-            },
-        )
+        cur.execute("""INSERT INTO node(node_type, code, name, description, metadata)
+                       VALUES ('CAUSE', %s, %s, %s, %s)
+                       RETURNING id, node_type, code, name, description, status, metadata""",
+                    (f"CAUSE:{uuid.uuid4().hex}", nombre.strip(), descripcion,
+                     psycopg2.extras.Json({"source": "app", "type": tipo, "category": categoria})))
+        node = dict(cur.fetchone())
         cur.execute(
             """
             INSERT INTO causa(node_id, contrato_id, parent_id, nombre, descripcion, tipo, categoria)
@@ -161,17 +158,10 @@ def update(
 
     cause = _get_cause_record(int(causa_id))
     node_id = int(cause["node_id"]) if cause.get("node_id") else int(_get_cause_node(int(causa_id))["id"])
-    node_repo.update(
-        node_id,
-        name=nombre.strip(),
-        description=descripcion,
-        metadata={
-            **(cause.get("metadata") or {}),
-            "type": tipo,
-            "category": categoria,
-        },
-    )
     with db_cursor() as cur:
+        cur.execute("""UPDATE node SET name=%s, description=%s, metadata=%s, updated_at=NOW()
+                       WHERE id=%s""", (nombre.strip(), descripcion,
+                       psycopg2.extras.Json({**(cause.get("metadata") or {}), "type": tipo, "category": categoria}), node_id))
         cur.execute(
             """
             UPDATE causa
@@ -183,10 +173,20 @@ def update(
         )
         if not cur.fetchone():
             raise ValueError("Causa no encontrada.")
+        if cause.get("is_initial_template"):
+            cur.execute(
+                "UPDATE contrato SET nombre=%s, objetivo=%s WHERE id=%s",
+                (nombre.strip(), descripcion, cause["contrato_id"]),
+            )
     return get_by_id(int(causa_id)) or cause
 
 
 def delete(causa_id: int) -> bool:
+    with db_cursor() as cur:
+        cur.execute("SELECT is_initial_template FROM causa WHERE id=%s", (causa_id,))
+        row = cur.fetchone()
+    if row and row.get("is_initial_template"):
+        raise ValueError("La causa raíz inicial del contrato está protegida contra borrado.")
     graph_sync.sync_causa_graph(int(causa_id))
     node = node_repo.get_for_cause(int(causa_id))
     if not node:

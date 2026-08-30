@@ -1,5 +1,55 @@
 import { test, expect } from "@playwright/test";
 
+test("el árbol HTTP conserva hipótesis como hijas de su causa tras crear un contrato", async ({ page }) => {
+  test.setTimeout(60_000);
+  const suffix = Date.now();
+  let contractId;
+  let causeId;
+  let hypothesisId;
+  try {
+    const contractResponse = await page.request.post("/api/bpm/contracts", {
+      data: {
+        proceso_id: 1,
+        nombre: `TEST_Contrato árbol ${suffix}`,
+        kpi_description: `TEST_KPI ${suffix}`,
+        kpi_args: "",
+        kpi_function: "",
+        objetivo: `TEST_Objetivo ${suffix}`,
+      },
+    });
+    expect(contractResponse.status()).toBe(201);
+    const contractBody = await contractResponse.json();
+    const contract = contractBody.data?.data || contractBody.data || contractBody.contract;
+    contractId = Number(contract.id);
+
+    const causeResponse = await page.request.post("/api/rca-tree/causes", {
+      data: { contrato_id: contractId, nombre: `TEST_Causa ${suffix}`, descripcion: "TEST" },
+    });
+    expect(causeResponse.status()).toBe(201);
+    const causeBody = await causeResponse.json();
+    const cause = causeBody.data?.cause || causeBody.data || causeBody.cause;
+    causeId = Number(cause.id);
+
+    const hypothesisResponse = await page.request.post(`/api/rca-tree/causes/${causeId}/hypotheses`, {
+      data: { descripcion: `TEST_Hipótesis ${suffix}`, tipo: "aceptacion", criterio_validacion: "TEST" },
+    });
+    expect(hypothesisResponse.status()).toBe(201);
+    const hypothesisBody = await hypothesisResponse.json();
+    hypothesisId = Number((hypothesisBody.data?.hypothesis || hypothesisBody.data || hypothesisBody.hypothesis).id);
+
+    const treeResponse = await page.request.get(`/api/rca-tree/nodes?view=arbol&contract_id=${contractId}`);
+    expect(treeResponse.ok()).toBeTruthy();
+    const payload = await treeResponse.json();
+    const tree = payload.data || payload;
+    const causeNode = (tree.tree || []).find((node) => Number(node.id) === causeId);
+    expect(causeNode?.children?.some((node) => Number(node.id) === hypothesisId && node.node_type === "HYPOTHESIS")).toBeTruthy();
+  } finally {
+    if (hypothesisId) await page.request.delete(`/api/rca-tree/hypotheses/${hypothesisId}`);
+    if (causeId) await page.request.delete(`/api/rca-tree/causes/${causeId}`);
+    if (contractId) await page.request.delete(`/api/bpm/contracts/${contractId}`);
+  }
+});
+
 test("permite seleccionar un contrato y crear la primera causa raiz", async ({ page }) => {
   await page.goto("/#/arboles_v02");
   const processSelect = page.locator("#arbol-v02-process-select");

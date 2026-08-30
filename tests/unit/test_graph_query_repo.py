@@ -25,6 +25,37 @@ class _FakeCursor:
 
 
 class GraphQueryRepoTests(TestCase):
+    def test_projection_serializes_hypothesis_as_cause_child(self):
+        rows = [
+            {
+                "parent_node_id": 100, "child_node_id": 301, "relationship_type": "CAUSES",
+                "parent_node_type": "CONTRACT", "node_type": "CAUSE", "child_node_type": "CAUSE",
+                "code": "CAUSE:301", "name": "Causa", "description": "desc", "status": "active",
+                "child_cause_id": 501, "parent_contract_id": 42, "metadata": {},
+            },
+            {
+                "parent_node_id": 301, "child_node_id": 302, "relationship_type": "HAS_HYPOTHESIS",
+                "parent_node_type": "CAUSE", "node_type": "HYPOTHESIS", "child_node_type": "HYPOTHESIS",
+                "code": "HYPOTHESIS:302", "name": "Hipótesis", "description": "legacy",
+                "status": "pendiente", "child_hypothesis_id": 601, "child_hypothesis_cause_id": 501,
+                "child_hypothesis_description": "Hipótesis inicial", "child_hypothesis_type": "aceptacion",
+                "child_hypothesis_validation_criterion": "Criterio", "child_hypothesis_status": "pendiente",
+                "parent_cause_id": 501, "metadata": {},
+            },
+        ]
+        cursor = _FakeCursor(rows)
+        with (
+            patch("uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.graph_query_repo._contract_node", return_value={"id": 100}),
+            patch("uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.graph_query_repo.db_cursor", return_value=nullcontext(cursor)),
+        ):
+            projected = graph_query_repo.get_projected_causes_for_contract(42)
+
+        hypothesis = projected["tree"][0]["children"][0]
+        self.assertEqual(hypothesis["id"], 601)
+        self.assertEqual(hypothesis["node_type"], "HYPOTHESIS")
+        self.assertEqual(hypothesis["parent_id"], 501)
+        self.assertEqual(hypothesis["nombre"], "Hipótesis inicial")
+
     def test_get_projected_causes_for_contract_includes_child_contract_causes(self):
         rows = [
             {

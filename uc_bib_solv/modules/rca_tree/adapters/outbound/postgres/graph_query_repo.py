@@ -8,7 +8,7 @@ from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import node_repo, r
 from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
 
 
-STRUCTURAL_RELATIONSHIP_TYPES = ("DEPENDS_ON", "CAUSES")
+STRUCTURAL_RELATIONSHIP_TYPES = ("DEPENDS_ON", "CAUSES", "HAS_HYPOTHESIS")
 
 
 def _flatten_tree(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -46,7 +46,7 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
                 FROM relationship r
                 WHERE r.parent_node_id = %s
                   AND %s IS NOT NULL
-                  AND r.relationship_type IN ('DEPENDS_ON', 'CAUSES')
+                  AND r.relationship_type IN ('DEPENDS_ON', 'CAUSES', 'HAS_HYPOTHESIS')
 
                 UNION ALL
 
@@ -59,7 +59,7 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
                 FROM relationship r
                 JOIN graph_walk gw
                   ON gw.child_node_id = r.parent_node_id
-                WHERE r.relationship_type IN ('DEPENDS_ON', 'CAUSES')
+                WHERE r.relationship_type IN ('DEPENDS_ON', 'CAUSES', 'HAS_HYPOTHESIS')
                   AND NOT (r.child_node_id = ANY(gw.path_ids))
             )
             SELECT
@@ -78,6 +78,12 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
                 child.status,
                 child_contract.id AS child_contract_id,
                 child_cause.id AS child_cause_id,
+                child_hypothesis.id AS child_hypothesis_id,
+                child_hypothesis.causa_id AS child_hypothesis_cause_id,
+                child_hypothesis.descripcion AS child_hypothesis_description,
+                child_hypothesis.tipo AS child_hypothesis_type,
+                child_hypothesis.criterio_validacion AS child_hypothesis_validation_criterion,
+                child_hypothesis.estado AS child_hypothesis_status,
                 child.metadata,
                 gw.depth
             FROM graph_walk gw
@@ -87,6 +93,7 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
             LEFT JOIN causa parent_cause ON parent_cause.node_id = parent.id
             LEFT JOIN contrato child_contract ON child_contract.node_id = child.id
             LEFT JOIN causa child_cause ON child_cause.node_id = child.id
+            LEFT JOIN hipotesis child_hypothesis ON child_hypothesis.node_id = child.id
             ORDER BY gw.depth, gw.parent_node_id, gw.child_node_id
             """,
             (int(contract_node_id), int(contract_id)),
@@ -102,7 +109,11 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
         graph_child_id = int(row["child_node_id"])
         metadata = _normalize_metadata(row.get("metadata"))
         node_type = row.get("node_type") or row.get("child_node_type")
-        child_business_id = row.get("child_cause_id") or row.get("child_contract_id")
+        child_business_id = (
+            row.get("child_cause_id")
+            or row.get("child_contract_id")
+            or row.get("child_hypothesis_id")
+        )
         if node_type == "CAUSE":
             business_id = int(child_business_id) if child_business_id is not None else graph_child_id
             nombre = row["name"]
@@ -117,10 +128,11 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
             tipo = "contrato"
         else:
             business_id = graph_child_id
-            nombre = row["name"]
-            descripcion = row.get("description")
-            categoria = node_type.lower()
-            tipo = node_type.lower()
+            business_id = int(row.get("child_hypothesis_id") or graph_child_id)
+            nombre = row.get("child_hypothesis_description") or row["name"]
+            descripcion = row.get("child_hypothesis_description") or row.get("description")
+            categoria = "hipotesis"
+            tipo = row.get("child_hypothesis_type") or "hipotesis"
 
         parent_business_id = row.get("parent_cause_id") or row.get("parent_contract_id")
         if parent_business_id is None:
@@ -142,6 +154,14 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
             "relationship_type": row["relationship_type"],
             "metadata": metadata,
         }
+        if node_type == "HYPOTHESIS":
+            nodes_by_graph_id[graph_child_id].update(
+                {
+                    "causa_id": row.get("child_hypothesis_cause_id") or row.get("parent_cause_id"),
+                    "criterio_validacion": row.get("child_hypothesis_validation_criterion"),
+                    "estado": row.get("child_hypothesis_status") or row.get("status"),
+                }
+            )
         incoming_counts[graph_child_id] += 1
 
         if (
@@ -282,7 +302,7 @@ def get_hypotheses_for_cause(causa_id: int) -> list[dict[str, Any]]:
             JOIN node n ON n.id = h.node_id
             JOIN relationship rel
               ON rel.child_node_id = h.node_id
-             AND rel.relationship_type = 'VERIFIED_BY'
+             AND rel.relationship_type = 'HAS_HYPOTHESIS'
             JOIN causa linked_cause
               ON linked_cause.node_id = rel.parent_node_id
             WHERE linked_cause.id = %s
@@ -370,7 +390,7 @@ def get_hypothesis_record(hipotesis_id: int) -> dict[str, Any] | None:
             LEFT JOIN node n ON n.id = h.node_id
             LEFT JOIN relationship rel
               ON rel.child_node_id = h.node_id
-             AND rel.relationship_type = 'VERIFIED_BY'
+             AND rel.relationship_type = 'HAS_HYPOTHESIS'
             LEFT JOIN causa linked_cause
               ON linked_cause.node_id = rel.parent_node_id
             WHERE h.id = %s
@@ -421,7 +441,7 @@ def get_structural_incoming_count(node_id: int) -> int:
             SELECT COUNT(*) AS total
             FROM relationship
             WHERE child_node_id=%s
-              AND relationship_type IN ('DEPENDS_ON', 'CAUSES')
+              AND relationship_type IN ('DEPENDS_ON', 'CAUSES', 'HAS_HYPOTHESIS')
             """,
             (node_id,),
         )
@@ -455,7 +475,7 @@ def get_outgoing_dependency_count(node_id: int) -> int:
             SELECT COUNT(*) AS total
             FROM relationship
             WHERE parent_node_id=%s
-              AND relationship_type IN ('DEPENDS_ON', 'CAUSES', 'VERIFIED_BY')
+              AND relationship_type IN ('DEPENDS_ON', 'CAUSES', 'HAS_HYPOTHESIS')
             """,
             (node_id,),
         )
@@ -492,13 +512,13 @@ def search_reusable_nodes(node_type: str, text: str | None = None, *, limit: int
                 contract.id AS contract_id,
                 cause.id AS cause_id,
                 contract.nombre AS contract_name,
-                contract.metrica AS contract_metric,
+                contract.kpi_description AS contract_kpi_description,
                 contract.objetivo AS contract_goal,
                 process.id AS process_id,
                 process.nombre AS process_name,
                 owner_contract.id AS owner_contract_id,
                 owner_contract.nombre AS owner_contract_name,
-                owner_contract.metrica AS owner_contract_metric,
+                owner_contract.kpi_description AS owner_contract_kpi_description,
                 owner_contract.objetivo AS owner_contract_goal,
                 owner_process.id AS owner_process_id,
                 owner_process.nombre AS owner_process_name,
@@ -537,11 +557,11 @@ def search_reusable_nodes(node_type: str, text: str | None = None, *, limit: int
                      OR n.code ILIKE %s
                      OR COALESCE(n.description, '') ILIKE %s
                      OR COALESCE(contract.nombre, '') ILIKE %s
-                     OR COALESCE(contract.metrica, '') ILIKE %s
+                     OR COALESCE(contract.kpi_description, '') ILIKE %s
                      OR COALESCE(contract.objetivo, '') ILIKE %s
                      OR COALESCE(process.nombre, '') ILIKE %s
                      OR COALESCE(owner_contract.nombre, '') ILIKE %s
-                     OR COALESCE(owner_contract.metrica, '') ILIKE %s
+                     OR COALESCE(owner_contract.kpi_description, '') ILIKE %s
                      OR COALESCE(owner_contract.objetivo, '') ILIKE %s
                      OR COALESCE(owner_process.nombre, '') ILIKE %s
                      OR COALESCE(n.metadata::text, '') ILIKE %s

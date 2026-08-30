@@ -2,7 +2,7 @@
 
 from .use_cases.context.context_records import CalculateContextKpi, CreateContextRecord, GetContext
 from .use_cases.nodes import CreateProcessNode, CreateProcessNodeWithTransition, DeleteProcessNode, GetNodeMetadata, UpdateNodeMetadata, UpdateProcessNode
-from .use_cases.operations import CreateProcessOperation, DeleteProcessOperation, GetProcessOperation, UpdateProcessOperationStages
+from .use_cases.operations import GetProcessOperation, UpdateProcessOperationStages
 from .use_cases.process_modeling_dependencies import ProcessModelingDependencies
 from .use_cases.processes import (
     CreateProcess,
@@ -31,8 +31,6 @@ class ProcessModelingApplication:
         self._get_node_metadata = GetNodeMetadata(dependencies)
         self._update_node_metadata = UpdateNodeMetadata(dependencies)
         self._get_operation = GetProcessOperation(dependencies)
-        self._create_operation = CreateProcessOperation(dependencies)
-        self._delete_operation = DeleteProcessOperation(dependencies)
         self._update_operation_stages = UpdateProcessOperationStages(dependencies)
         self._create_context_record = CreateContextRecord(dependencies)
         self._get_context = GetContext(dependencies)
@@ -51,13 +49,13 @@ class ProcessModelingApplication:
     def delete_node(self, node_id): return self._delete_node.execute(node_id)
     def get_node_metadata(self, node_id): return self._get_node_metadata.execute(node_id)
     def update_node_metadata(self, node_id, data): return self._update_node_metadata.execute(node_id, data)
-    def get_operation(self, operation_id): return self._get_operation.execute(operation_id)
-    def create_operation(self, process_id, data): return self._create_operation.execute(process_id, data)
-    def delete_operation(self, operation_id): return self._delete_operation.execute(operation_id)
     def update_operation_stages(self, operation_id, data): return self._update_operation_stages.execute(operation_id, data)
     def get_context(self, process_id, node_id=None, family=None, record_type=None): return self._get_context.execute(process_id, node_id, family, record_type)
     def create_context_record(self, node_id, data): return self._create_context_record.execute(node_id, data)
-    def calculate_context_kpi(self, data): return self._calculate_context_kpi.execute(data)
+    def calculate_context_kpi(self, data):
+        # TODO fase calculo automatico KPI: integrar con kpi_description,
+        # kpi_args y kpi_function de los contratos en una fase posterior.
+        return self._calculate_context_kpi.execute(data)
     def create_transition(self, process_id, data): return self._create_transition.execute(process_id, data)
     def delete_transition(self, transition_id): return self._delete_transition.execute(transition_id)
 

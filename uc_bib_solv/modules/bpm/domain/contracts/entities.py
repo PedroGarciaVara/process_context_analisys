@@ -15,13 +15,19 @@ class Contract:
     bpm_process_id: str | None = None
     bpm_node_id: str | None = None
     process_id: int | None = None
-    metric: str | None = None
+    kpi_description: str = ""
+    kpi_args: str = ""
+    kpi_function: str = ""
     objective: str | None = None
 
     def __post_init__(self) -> None:
         if self.contract_id is not None:
             object.__setattr__(self, "contract_id", require_positive_int(self.contract_id, "contract_id"))
         object.__setattr__(self, "name", require_text(self.name, "name"))
+        if not isinstance(self.kpi_description, str) or self.kpi_description == "":
+            raise BpmDomainError("kpi_description es obligatorio.", "invalid_kpi_description")
+        if not isinstance(self.kpi_args, str) or not isinstance(self.kpi_function, str):
+            raise BpmDomainError("kpi_args y kpi_function deben ser texto.", "invalid_kpi_metadata")
         has_process = bool(self.bpm_process_id)
         has_operation = bool(self.bpm_node_id)
         if has_process == has_operation:
@@ -42,7 +48,9 @@ class Contract:
             "bpm_process_id": self.bpm_process_id,
             "bpm_node_id": self.bpm_node_id,
             "process_id": self.process_id,
-            "metrica": self.metric,
+            "kpi_description": self.kpi_description,
+            "kpi_args": self.kpi_args,
+            "kpi_function": self.kpi_function,
             "objetivo": self.objective,
         }
 
@@ -54,15 +62,23 @@ class Contract:
             bpm_process_id=data.get("bpm_process_id", data.get("bpmProcessId")),
             bpm_node_id=data.get("bpm_node_id", data.get("bpmNodeId")),
             process_id=data.get("process_id", data.get("processId", data.get("proceso_id"))),
-            metric=data.get("metric", data.get("metrica")),
+            kpi_description=data.get("kpi_description", ""),
+            kpi_args=data.get("kpi_args", ""),
+            kpi_function=data.get("kpi_function", ""),
             objective=data.get("objective", data.get("objetivo")),
         )
 
     def apply_update(self, payload: dict) -> None:
         if "name" in payload or "nombre" in payload:
             self.rename(payload.get("name", payload.get("nombre")))
-        if "metrica" in payload or "metric" in payload:
-            self.metric = payload.get("metrica", payload.get("metric"))
+        if "kpi_description" in payload:
+            if payload["kpi_description"] == "":
+                raise BpmDomainError("kpi_description es obligatorio.", "invalid_kpi_description")
+            self.kpi_description = payload["kpi_description"]
+        if "kpi_args" in payload:
+            self.kpi_args = payload["kpi_args"]
+        if "kpi_function" in payload:
+            self.kpi_function = payload["kpi_function"]
         if "objetivo" in payload or "objective" in payload:
             self.objective = payload.get("objetivo", payload.get("objective"))
         if "process_id" in payload or "processId" in payload or "proceso_id" in payload:

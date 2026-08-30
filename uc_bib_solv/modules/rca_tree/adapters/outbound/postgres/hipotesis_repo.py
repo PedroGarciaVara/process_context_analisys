@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import uuid
+import psycopg2.extras
+
 from uc_bib_solv.modules.rca_tree.domain.causal_graph.rules import validate_delete_allowed, validate_relationship_signature
 from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import graph_query_repo, graph_sync, node_repo, relationship_repo
 from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
@@ -37,6 +40,8 @@ def create(
     decision_rule: str | None = None,
     required_data: list[str] | None = None,
     expected_evidence: list[str] | None = None,
+    kpi_args: str = "",
+    kpi_function: str = "",
 ) -> dict:
     if not descripcion or not descripcion.strip():
         raise ValueError("La descripción de la hipótesis es obligatoria.")
@@ -44,25 +49,24 @@ def create(
     cause_node = node_repo.get_for_cause(int(causa_id)) or graph_sync.sync_causa_graph(int(causa_id))
     if not cause_node:
         raise ValueError("La causa indicada no existe.")
-    validate_relationship_signature("CAUSE", "HYPOTHESIS", "VERIFIED_BY")
+    validate_relationship_signature("CAUSE", "HYPOTHESIS", "HAS_HYPOTHESIS")
 
-    node = node_repo.create(
-        "HYPOTHESIS",
-        descripcion.strip(),
-        description=criterio_validacion,
-        status=estado,
-        metadata={
-            "source": "app",
-            "type": tipo,
-        },
-    )
     with db_cursor() as cur:
+        cur.execute("""INSERT INTO node(node_type, code, name, description, status, metadata)
+                       VALUES ('HYPOTHESIS', %s, %s, %s, %s, %s)
+                       RETURNING id, node_type, code, name, description, status, metadata""",
+                    (f"HYPOTHESIS:{uuid.uuid4().hex}", descripcion.strip(), criterio_validacion,
+                     estado, psycopg2.extras.Json({"source": "app", "type": tipo})))
+        node = dict(cur.fetchone())
         cur.execute(
             """
             INSERT INTO hipotesis(
                 node_id,
                 causa_id,
+                nombre,
                 descripcion,
+                kpi_args,
+                kpi_function,
                 tipo,
                 criterio_validacion,
                 estado,
@@ -75,13 +79,16 @@ def create(
                 analysis_window,
                 decision_rule
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
                 int(node["id"]),
                 int(causa_id),
                 descripcion.strip(),
+                descripcion.strip(),
+                kpi_args,
+                kpi_function,
                 tipo,
                 criterio_validacion,
                 estado,
@@ -96,15 +103,17 @@ def create(
             ),
         )
         hipotesis_id = int(cur.fetchone()["id"])
-    relationship_repo.create(
-        int(cause_node["id"]),
-        int(node["id"]),
-        "VERIFIED_BY",
-        metadata={"source": "app"},
-        is_primary=True,
-    )
-    _replace_collection("hypothesis_required_data", int(node["id"]), required_data or [])
-    _replace_collection("hypothesis_expected_evidence", int(node["id"]), expected_evidence or [])
+        cur.execute("""INSERT INTO relationship(parent_node_id, child_node_id, relationship_type, metadata, is_primary)
+                       VALUES (%s, %s, 'HAS_HYPOTHESIS', %s, TRUE)
+                       ON CONFLICT (parent_node_id, child_node_id, relationship_type)
+                       DO UPDATE SET is_primary=TRUE, updated_at=NOW()""",
+                    (int(cause_node["id"]), int(node["id"]), psycopg2.extras.Json({"source": "app"})))
+        for table_name, values in (("hypothesis_required_data", required_data or []),
+                                   ("hypothesis_expected_evidence", expected_evidence or [])):
+            for position, value in enumerate(values):
+                if value and str(value).strip():
+                    cur.execute(f"INSERT INTO {table_name}(hypothesis_node_id, position, value) VALUES (%s,%s,%s)",
+                                (int(node["id"]), position, str(value).strip()))
     return get_by_id(hipotesis_id) or {"id": hipotesis_id, "node_id": node["id"]}
 
 
@@ -155,6 +164,8 @@ def update(
     decision_rule: str | None = None,
     required_data: list[str] | None = None,
     expected_evidence: list[str] | None = None,
+    kpi_args: str = "",
+    kpi_function: str = "",
 ) -> dict:
     if not descripcion or not descripcion.strip():
         raise ValueError("La descripción de la hipótesis es obligatoria.")
@@ -167,6 +178,7 @@ def update(
             """
             UPDATE hipotesis
             SET
+                nombre=%s,
                 descripcion=%s,
                 tipo=%s,
                 criterio_validacion=%s,
@@ -179,11 +191,14 @@ def update(
                 industrial_asset=%s,
                 analysis_window=%s,
                 decision_rule=%s,
+                kpi_args=%s,
+                kpi_function=%s,
                 updated_at=NOW()
             WHERE id=%s
             RETURNING id
             """,
             (
+                descripcion.strip(),
                 descripcion.strip(),
                 tipo,
                 criterio_validacion,
@@ -196,29 +211,43 @@ def update(
                 industrial_asset,
                 analysis_window,
                 decision_rule,
+                kpi_args,
+                kpi_function,
                 hipotesis_id,
             ),
         )
         if not cur.fetchone():
             raise ValueError("Hipótesis no encontrada.")
-
-    if current.get("node_id") is not None:
-        node_repo.update(
-            int(current["node_id"]),
-            name=descripcion.strip(),
-            description=criterio_validacion,
-            status=estado,
-            metadata={
-                **(current.get("metadata") or {}),
-                "type": tipo,
-            },
-        )
-        _replace_collection("hypothesis_required_data", int(current["node_id"]), required_data or [])
-        _replace_collection("hypothesis_expected_evidence", int(current["node_id"]), expected_evidence or [])
+        if current.get("is_initial_template"):
+            cur.execute(
+                """UPDATE contrato SET kpi_description=%s, kpi_args=%s, kpi_function=%s
+                   WHERE id=(SELECT c.contrato_id FROM causa c WHERE c.id=%s)""",
+                (descripcion.strip(), kpi_args, kpi_function, current["causa_id"]),
+            )
+        # Entity, node, KPI synchronization, and collection replacement are
+        # all committed together; a failed write rolls back the entity too.
+        if current.get("node_id") is not None:
+            cur.execute("""UPDATE node SET name=%s, description=%s, status=%s,
+                           metadata=%s, updated_at=NOW() WHERE id=%s""",
+                        (descripcion.strip(), criterio_validacion, estado,
+                         psycopg2.extras.Json({**(current.get("metadata") or {}), "type": tipo}),
+                         int(current["node_id"])))
+            for table_name, values in (("hypothesis_required_data", required_data or []),
+                                       ("hypothesis_expected_evidence", expected_evidence or [])):
+                cur.execute(f"DELETE FROM {table_name} WHERE hypothesis_node_id=%s", (int(current["node_id"]),))
+                for position, value in enumerate(values):
+                    if value and str(value).strip():
+                        cur.execute(f"INSERT INTO {table_name}(hypothesis_node_id, position, value) VALUES (%s,%s,%s)",
+                                    (int(current["node_id"]), position, str(value).strip()))
     return get_by_id(int(hipotesis_id)) or current
 
 
 def delete(hipotesis_id: int) -> bool:
+    with db_cursor() as cur:
+        cur.execute("SELECT is_initial_template FROM hipotesis WHERE id=%s", (hipotesis_id,))
+        row = cur.fetchone()
+    if row and row.get("is_initial_template"):
+        raise ValueError("La hipótesis inicial del contrato está protegida contra borrado.")
     graph_sync.sync_hypothesis_graph(int(hipotesis_id))
     node = node_repo.get_for_hypothesis(int(hipotesis_id))
     if not node:

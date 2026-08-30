@@ -46,13 +46,10 @@ def create_blueprint(operational, process_modeling):
     bp.add_url_rule("/api/bpm/processes/<process_id>", "process_update", lambda process_id: process_call("update_process", process_id, payload()), methods=["PATCH"])
     bp.add_url_rule("/api/bpm/processes/<process_id>/nodes", "node_create", lambda process_id: created(process_call("create_node", process_id, payload())), methods=["POST"])
     bp.add_url_rule("/api/bpm/processes/<process_id>/nodes-with-transition", "node_with_transition_create", lambda process_id: created(process_call("create_node_with_transition", process_id, payload())), methods=["POST"])
-    bp.add_url_rule("/api/bpm/processes/<process_id>/operations", "operation_create", lambda process_id: created(process_call("create_operation", process_id, payload())), methods=["POST"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>", "node_update", lambda node_id: process_call("update_node", node_id, payload()), methods=["PATCH"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>", "node_delete", lambda node_id: process_call("delete_node", node_id), methods=["DELETE"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>/metadata", "node_metadata_get", lambda node_id: process_call("get_node_metadata", node_id), methods=["GET"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>/metadata", "node_metadata_update", lambda node_id: process_call("update_node_metadata", node_id, payload()), methods=["PATCH"])
-    bp.add_url_rule("/api/bpm/operations/<operation_id>", "operation_get", lambda operation_id: process_call("get_operation", operation_id), methods=["GET"])
-    bp.add_url_rule("/api/bpm/operations/<operation_id>", "operation_delete", lambda operation_id: process_call("delete_operation", operation_id), methods=["DELETE"])
     bp.add_url_rule("/api/bpm/operations", "operations_list", lambda: operational_call(operational.list_operations, request.args.get("process_id")), methods=["GET"])
     bp.add_url_rule("/api/bpm/operations/<operation_id>/stages", "operation_stages", lambda operation_id: process_call("update_operation_stages", operation_id, payload()), methods=["PATCH"])
     bp.add_url_rule("/api/bpm/processes/<process_id>/context", "process_context", lambda process_id: process_call("get_context", process_id, request.args.get("node_id"), request.args.get("family"), request.args.get("record_type")), methods=["GET"])
@@ -89,6 +86,8 @@ def create_blueprint(operational, process_modeling):
     bp.add_url_rule("/api/bpm/machines/<machine_id>", "machine_delete", lambda machine_id: operational_call(operational.delete_machine, machine_id), methods=["DELETE"])
     bp.add_url_rule("/api/bpm/machines/<machine_id>/context", "machine_context", lambda machine_id: operational_call(operational.get_machine_context, machine_id, request.args.get("operation_id") or request.args.get("operationId"), request.args.get("process_id")), methods=["GET"])
     bp.add_url_rule("/api/bpm/machines/<machine_id>/configurations", "machine_configurations", lambda machine_id: operational_call(operational.list_configurations, int(machine_id)), methods=["GET"])
+    # Intención: crear la configuración contextual máquina-operación; no es
+    # equivalente a editar la entidad maquina de forma independiente.
     bp.add_url_rule("/api/bpm/machines/<machine_id>/configurations", "machine_configuration_create", lambda machine_id: created(operational_call(operational.create_configuration, {**payload(), "machine_id": int(machine_id)})), methods=["POST"])
 
     return bp

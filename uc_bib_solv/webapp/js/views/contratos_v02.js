@@ -193,10 +193,12 @@ function buildCenter(state) {
               <span class="font-label-md text-label-md text-secondary">Nombre</span>
               <input id="contract-create-v02-name" name="name" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="text" placeholder="Nombre del contrato" required>
             </label>
-            <label class="block space-y-xs" for="contract-create-v02-metrica">
-              <span class="font-label-md text-label-md text-secondary">Metrica</span>
-              <input id="contract-create-v02-metrica" name="metrica" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="text" placeholder="Metrica">
+            <label class="block space-y-xs" for="contract-create-v02-kpi-description">
+              <span class="font-label-md text-label-md text-secondary">KPI (obligatorio)</span>
+              <input id="contract-create-v02-kpi-description" name="kpi_description" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="text" placeholder="Descripción del KPI" required>
             </label>
+            <label class="block space-y-xs" for="contract-create-v02-kpi-args"><span class="font-label-md text-label-md text-secondary">Argumentos KPI</span><input id="contract-create-v02-kpi-args" name="kpi_args" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm" type="text" value=""></label>
+            <label class="block space-y-xs" for="contract-create-v02-kpi-function"><span class="font-label-md text-label-md text-secondary">Función KPI</span><input id="contract-create-v02-kpi-function" name="kpi_function" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm" type="text" value=""></label>
             <label class="block space-y-xs" for="contract-create-v02-objetivo">
               <span class="font-label-md text-label-md text-secondary">Objetivo</span>
               <input id="contract-create-v02-objetivo" name="objetivo" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="text" placeholder="Objetivo">
@@ -233,10 +235,12 @@ function buildDetailModal(activeContract, allMachines, selectedMachineIds, isOpe
             <span class="font-label-md text-label-md text-secondary">Nombre</span>
             <input id="contract-detail-v02-name" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="text" value="${escapeHtml(activeContract?.name || "")}" required>
           </label>
-          <label class="block space-y-xs" for="contract-detail-v02-metrica">
+          <label class="block space-y-xs" for="contract-detail-v02-kpi-description">
             <span class="font-label-md text-label-md text-secondary">Métrica</span>
-            <input id="contract-detail-v02-metrica" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="text" value="${escapeHtml(activeContract?.metrica || "")}">
+            <input id="contract-detail-v02-kpi-description" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="text" value="${escapeHtml(activeContract?.kpi_description || "")}" required>
           </label>
+          <label class="block space-y-xs" for="contract-detail-v02-kpi-args"><span class="font-label-md text-label-md text-secondary">Argumentos KPI</span><input id="contract-detail-v02-kpi-args" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm" type="text" value="${escapeHtml(activeContract?.kpi_args || "")}"></label>
+          <label class="block space-y-xs" for="contract-detail-v02-kpi-function"><span class="font-label-md text-label-md text-secondary">Función KPI</span><input id="contract-detail-v02-kpi-function" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm" type="text" value="${escapeHtml(activeContract?.kpi_function || "")}"></label>
           <label class="block space-y-xs" for="contract-detail-v02-objetivo">
             <span class="font-label-md text-label-md text-secondary">Objetivo</span>
             <input id="contract-detail-v02-objetivo" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="text" value="${escapeHtml(activeContract?.objetivo || "")}">
@@ -355,7 +359,9 @@ export function renderContratosV02(state, bus) {
       const detailForm = mountRoot.querySelector("[data-contract-detail-form]");
       const detailAlert = mountRoot.querySelector("#contract-detail-v02-alert");
       const detailNameInput = mountRoot.querySelector("#contract-detail-v02-name");
-      const detailMetricInput = mountRoot.querySelector("#contract-detail-v02-metrica");
+      const detailMetricInput = mountRoot.querySelector("#contract-detail-v02-kpi-description");
+      const detailKpiArgsInput = mountRoot.querySelector("#contract-detail-v02-kpi-args");
+      const detailKpiFunctionInput = mountRoot.querySelector("#contract-detail-v02-kpi-function");
       const detailTargetInput = mountRoot.querySelector("#contract-detail-v02-objetivo");
       const detailMachinesInput = mountRoot.querySelector("#contract-detail-v02-machines");
       const detailSaveButton = mountRoot.querySelector("[data-action='contract-detail-save']");
@@ -371,7 +377,9 @@ export function renderContratosV02(state, bus) {
       const createOperationScopeInput = mountRoot.querySelector("#contract-create-v02-operation-scope");
       const createOperationHelp = mountRoot.querySelector("#contract-create-v02-operation-help");
       const createNameInput = mountRoot.querySelector("#contract-create-v02-name");
-      const createMetricInput = mountRoot.querySelector("#contract-create-v02-metrica");
+      const createMetricInput = mountRoot.querySelector("#contract-create-v02-kpi-description");
+      const createKpiArgsInput = mountRoot.querySelector("#contract-create-v02-kpi-args");
+      const createKpiFunctionInput = mountRoot.querySelector("#contract-create-v02-kpi-function");
       const createTargetInput = mountRoot.querySelector("#contract-create-v02-objetivo");
       const createAlert = mountRoot.querySelector("#contract-create-v02-alert");
       const createSubmit = mountRoot.querySelector("[data-action='contract-create-submit']");
@@ -548,7 +556,9 @@ export function renderContratosV02(state, bus) {
               ? { bpmNodeId: createOperationScopeInput?.value || "" }
               : { bpmProcessId: createProcessScopeInput?.value || "" }),
             name: createNameInput?.value || "",
-            metrica: createMetricInput?.value || "",
+            kpi_description: createMetricInput?.value || "",
+            kpi_args: createKpiArgsInput?.value || "",
+            kpi_function: createKpiFunctionInput?.value || "",
             objetivo: createTargetInput?.value || "",
           });
           const contract = response?.data || null;
@@ -583,7 +593,9 @@ export function renderContratosV02(state, bus) {
           setDetailState("submitting");
           await updateContract(contract.id, {
             name: detailNameInput?.value || "",
-            metrica: detailMetricInput?.value || "",
+            kpi_description: detailMetricInput?.value || "",
+            kpi_args: detailKpiArgsInput?.value || "",
+            kpi_function: detailKpiFunctionInput?.value || "",
             objetivo: detailTargetInput?.value || "",
           });
           await saveContractMachines(contract.id, Array.from(detailMachinesInput?.selectedOptions || []).map((item) => Number(item.value)));

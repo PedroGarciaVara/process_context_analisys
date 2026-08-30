@@ -12,6 +12,7 @@ class CreateContextRecord:
         self.dependencies = dependencies
 
     def execute(self, node_id, data):
+        # TODO agregacion de contexto a elementos BPM
         node = self.dependencies.nodes.get(node_id)
         if not node:
             raise NotFoundError("Nodo no encontrado")

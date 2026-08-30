@@ -66,6 +66,7 @@ function buildWorkspacePanel() {
       <p id="analysis-workspace-status" class="text-[12px] text-on-surface-variant mt-sm">Cargando analisis...</p>
     </div>
     <div class="p-lg space-y-lg">
+      <div id="analysis-template-differences" class="p-md bg-surface-container-low rounded-lg border border-outline-variant text-[12px]" aria-live="polite">Comparando plantilla actual por IDs...</div>
       <div class="space-y-sm">
         <h3 class="font-label-md text-label-md text-primary uppercase">Apertura</h3>
         <label class="block space-y-xs"><span class="text-[12px] text-secondary">Dia</span><input id="analysis-open-date" type="date" class="w-full border border-outline rounded-lg p-sm"></label>
@@ -156,7 +157,20 @@ export function renderAnalisisCausasV02Shell(state) {
         mountRoot.querySelector("#analysis-open-date").value = String(analysis.fecha_apertura || analysis.fecha_inicializacion || "").slice(0, 10);
         mountRoot.querySelector("#analysis-indication").value = analysis.indicio_apertura || analysis.descripcion_apertura || "";
         mountRoot.querySelector("#analysis-final-conclusion").value = analysis.conclusion_final || "";
-        statusNode.textContent = `Analisis #${analysis.id} · ${analysis.estado} · ${analysis.results?.length || 0} resultados trazados`;
+        statusNode.textContent = `Analisis #${analysis.id} · ${analysis.estado} · ${analysis.estado === "cerrado" ? "solo lectura" : "editable"} · ${analysis.results?.length || 0} resultados trazados`;
+        const comparison = analysis.template_comparison || {};
+        const differenceNode = mountRoot.querySelector("#analysis-template-differences");
+        if (differenceNode) {
+          const newCount = (comparison.new_ids || []).length;
+          const missingCount = (comparison.missing_ids || []).length;
+          differenceNode.innerHTML = `<strong>Plantilla actual</strong><br>${newCount ? `${newCount} elemento(s) nuevo(s): causa/hipótesis no existente en el momento del análisis.` : "Sin elementos nuevos."}<br>${missingCount ? comparison.missing_message : "0 causas/hipótesis no encontradas en la plantilla actual"}`;
+          differenceNode.dataset.missingCount = String(missingCount);
+        }
+        const readOnly = analysis.estado === "cerrado";
+        ["#analysis-open-date", "#analysis-indication", "#analysis-final-conclusion", "#analysis-save-opening"].forEach((selector) => {
+          const node = mountRoot.querySelector(selector);
+          if (node) node.disabled = readOnly;
+        });
       };
       loadAnalysis().catch((error) => setAlert(alertNode, error.message, "error"));
       mountRoot.querySelector("#analysis-save-opening").addEventListener("click", async () => {

@@ -4,12 +4,18 @@ import json
 
 from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
 from uc_bib_solv.modules.bpm.domain.machines.validators import canonical_stages
-from uc_bib_solv.modules.bpm.domain.shared.value_objects import require_uuid as _uuid
+from uc_bib_solv.modules.bpm.domain.shared.value_objects import require_uuid as _require_uuid
+
+
+def _uuid(value):
+    """Normalize repository identifiers before passing them to PostgreSQL."""
+    return _require_uuid(value, "identifier")
 
 def _node_record(row):
     result = dict(row)
     properties = dict(result.get("properties") or {})
     if result.get("node_type") == "operation":
+        # TODO estudiar migracion stages a modelo independiente o dentro de grafo de ralaciones node
         try:
             stages = canonical_stages(properties.get("etapas"), envelope=True)
         except ValueError:

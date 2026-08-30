@@ -11,7 +11,7 @@ class RcaTreeAnalysisPostgresAdapter:
     def list_templates(self, process_id=None):
         with self.transaction.cursor() as cur:
             where, params = ("WHERE c.proceso_id = %s", [int(process_id)]) if process_id else ("", [])
-            cur.execute(f"""SELECT c.id, c.proceso_id, c.nombre, c.metrica, c.objetivo,
+            cur.execute(f"""SELECT c.id, c.proceso_id, c.nombre, c.kpi_description, c.kpi_args, c.kpi_function, c.objetivo,
                 COUNT(DISTINCT ca.id) AS causa_count, COUNT(DISTINCT h.id) AS hypothesis_count
                 FROM contrato c LEFT JOIN causa ca ON ca.contrato_id = c.id
                 LEFT JOIN hipotesis h ON h.causa_id = ca.id {where}
@@ -68,10 +68,38 @@ class RcaTreeAnalysisPostgresAdapter:
     def get(self, analysis_id):
         with self.transaction.cursor() as cur:
             cur.execute("SELECT * FROM analisis_causas WHERE id=%s", (analysis_id,)); row = cur.fetchone()
-            return dict(row) if row else None
+            if not row:
+                return None
+            result = dict(row)
+            cur.execute("""SELECT DISTINCT causa_id, hipotesis_id FROM analisis_resultado
+                WHERE analisis_id=%s AND (causa_id IS NOT NULL OR hipotesis_id IS NOT NULL)""", (analysis_id,))
+            historical = [dict(item) for item in cur.fetchall()]
+            cur.execute("""SELECT ca.id AS causa_id, h.id AS hipotesis_id
+                FROM causa ca LEFT JOIN hipotesis h ON h.causa_id=ca.id
+                WHERE ca.contrato_id=%s""", (result["contrato_id"],))
+            current = [dict(item) for item in cur.fetchall()]
+            current_ids = {int(x) for item in current for x in (item.get("causa_id"), item.get("hipotesis_id")) if x is not None}
+            historical_ids = {int(x) for item in historical for x in (item.get("causa_id"), item.get("hipotesis_id")) if x is not None}
+            result["template_comparison"] = {
+                "current_ids": sorted(current_ids),
+                "historical_ids": sorted(historical_ids),
+                "new_ids": sorted(current_ids - historical_ids),
+                "missing_ids": sorted(historical_ids - current_ids),
+                "missing_message": f"{len(historical_ids - current_ids)} causas/hipótesis no encontradas en la plantilla actual",
+            }
+            return result
 
     def update(self, analysis_id, payload):
         fields, values = [], []
+        with self.transaction.cursor() as cur:
+            cur.execute("SELECT estado FROM analisis_causas WHERE id=%s", (analysis_id,))
+            current = cur.fetchone()
+        if not current:
+            raise ValueError("Analisis no encontrado.")
+        requested_status = payload.get("status")
+        content_changes = any(key != "status" for key in payload)
+        if current["estado"] == "cerrado" and content_changes and requested_status != "abierto":
+            raise ValueError("El análisis cerrado es de solo lectura; reábrelo para editarlo.")
         if payload.get("status") is not None:
             if payload["status"] not in {"abierto", "cerrado"}: raise ValueError("status debe ser abierto o cerrado.")
             fields += ["estado=%s", "fecha_cierre=CASE WHEN %s='cerrado' THEN NOW() ELSE NULL END"]; values += [payload["status"], payload["status"]]
@@ -91,6 +119,11 @@ class RcaTreeAnalysisPostgresAdapter:
         hypothesis_id = payload.get("hypothesis_id") if kind == "hipotesis" else None
         if cause_id is None and hypothesis_id is None: raise ValueError("Falta la identidad del resultado.")
         with self.transaction.cursor() as cur:
+            cur.execute("SELECT estado FROM analisis_causas WHERE id=%s", (analysis_id,))
+            analysis = cur.fetchone()
+            if not analysis: raise ValueError("Analisis no encontrado.")
+            if analysis["estado"] == "cerrado":
+                raise ValueError("El análisis cerrado es de solo lectura; reábrelo para editarlo.")
             cur.execute("""INSERT INTO analisis_resultado(analisis_id,tipo_elemento,causa_id,hipotesis_id,evidencia,conclusion,evaluacion)
                 VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (analisis_id,tipo_elemento,causa_id,hipotesis_id)
                 DO UPDATE SET evidencia=EXCLUDED.evidencia, conclusion=EXCLUDED.conclusion, evaluacion=EXCLUDED.evaluacion, fecha=NOW()

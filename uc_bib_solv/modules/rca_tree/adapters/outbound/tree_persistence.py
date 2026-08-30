@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 class RcaTreePostgresAdapter:
-    """Compose injected causal repositories without importing legacy modules."""
+    """Compose injected causal repositories at the RCA_TREE boundary."""
 
     def __init__(self, cause_repo, hypothesis_repo, node_repo, relationship_repo, tree_repo, *, contract_context):
         self.cause_repo = cause_repo

@@ -151,8 +151,22 @@ function subtreeWidth(node) {
 }
 
 function renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload) {
+  const isHypothesis = String(node.node_type || node.tipo || "").toUpperCase() === "HYPOTHESIS";
+  if (isHypothesis) {
+    const card = createElement("div", "acv2-tree-hypothesis-node");
+    card.dataset.hypothesisId = String(node.id);
+    card.append(
+      createElement("div", "acv2-tree-card-kicker", "hipotesis"),
+      createElement("div", "acv2-tree-hypothesis-title", node.nombre || node.descripcion || "Hipotesis sin descripcion"),
+      createElement("div", "acv2-tree-hypothesis-meta", node.criterio_validacion || "Sin criterio de validacion"),
+    );
+    return card;
+  }
   const causeId = Number(node.id);
-  const hypotheses = hypothesesByCause[String(causeId)] || [];
+  const childHypotheses = (node.children || []).filter(
+    (child) => String(child.node_type || child.tipo || "").toUpperCase() === "HYPOTHESIS",
+  );
+  const hypotheses = childHypotheses.length > 0 ? childHypotheses : (hypothesesByCause[String(causeId)] || []);
   const state = hypotheses.length ? readStatus(hypotheses[0].analysis_result?.evaluacion || hypotheses[0].estado) : "pending";
   const isActive = selectedCauseId !== null && Number(selectedCauseId) === causeId;
   const projectionMetadata = readProjectionMetadata(payload);

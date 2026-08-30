@@ -61,7 +61,9 @@ class ContractCommand(PayloadCommand):
     bpm_process_id: str | None = None
     bpm_node_id: str | None = None
     process_id: int | None = None
-    metrica: str | None = None
+    kpi_description: str = ""
+    kpi_args: str = ""
+    kpi_function: str = ""
     objetivo: str | None = None
 
 

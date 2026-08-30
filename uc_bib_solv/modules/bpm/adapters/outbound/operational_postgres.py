@@ -18,7 +18,7 @@ from .mappers import BpmOperationalMapper
 
 
 class BpmOperationalPostgresAdapter:
-    """Compose low-level BPM repositories and legacy operational projections."""
+    """Compose low-level BPM repositories and operational projections."""
 
     machines: MachineRepositoryPort
     contracts: ContractRepositoryPort

@@ -5,7 +5,6 @@ from types import SimpleNamespace
 
 from uc_bib_solv.modules.bpm.application import ProcessModelingApplication
 from uc_bib_solv.modules.bpm.application.ports import process_modeling as process_modeling_port
-from uc_bib_solv.modules.bpm.application.use_cases.operations import CreateProcessOperation, DeleteProcessOperation
 from uc_bib_solv.modules.bpm.application.use_cases.processes import ListProcesses
 from uc_bib_solv.modules.bpm.application.ports.process_ports import (
     NodeRepositoryPort as NodePort,
@@ -31,18 +30,12 @@ class ProcessModelingModuleBoundaryTests(unittest.TestCase):
 
     def test_application_is_composed_from_named_use_cases(self):
         self.assertTrue(hasattr(ProcessModelingApplication, "list_processes"))
-        self.assertTrue(hasattr(ProcessModelingApplication, "create_operation"))
-        self.assertTrue(hasattr(ProcessModelingApplication, "delete_operation"))
         self.assertTrue(hasattr(ProcessModelingApplication, "update_operation_stages"))
 
     def test_process_modeling_port_module_exposes_only_the_inbound_contract(self):
         self.assertEqual(["BpmProcessModelingPort"], process_modeling_port.__all__)
         self.assertTrue(hasattr(process_modeling_port, "BpmProcessModelingPort"))
         self.assertFalse(hasattr(process_modeling_port, "BpmProcessModelingApplication"))
-
-    def test_operations_have_explicit_create_and_delete_use_cases(self):
-        self.assertTrue(hasattr(CreateProcessOperation, "execute"))
-        self.assertTrue(hasattr(DeleteProcessOperation, "execute"))
 
     def test_ports_are_runtime_replaceable_contracts(self):
         self.assertTrue(all(port is not None for port in (NodePort, OperationPort, ProcessPort, TransitionPort)))
@@ -56,7 +49,6 @@ class ProcessModelingModuleBoundaryTests(unittest.TestCase):
         fake = SimpleNamespace(processes="p", nodes="n", transitions="t")
         application = ProcessModelingApplication(fake.processes, fake.nodes, fake.transitions)
         self.assertIsInstance(application._list_processes, ListProcesses)
-        self.assertIsInstance(application._create_operation, CreateProcessOperation)
         self.assertEqual("p", application._list_processes.dependencies.processes)
         self.assertTrue(hasattr(application, "_get_process"))
 

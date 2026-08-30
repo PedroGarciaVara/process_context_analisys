@@ -20,7 +20,7 @@ class CreateContractNode:
             contract_id,
             name,
             objetivo=(payload.get("descripcion") or "").strip() or None,
-            metrica=(payload.get("categoria") or "").strip() or None,
+            kpi_description=(payload.get("categoria") or "Pendiente de definir KPI").strip(),
         )
         result["message"] = "Contrato creado y vinculado."
         return result

@@ -1,7 +1,7 @@
 """Persistence adapter for the three-level machine model.
 
-The legacy ``contrato_maquina`` relation is intentionally read only here for
-compatibility.  Machine-operation participation is stored in the dedicated
+Contract-machine association remains represented by ``contrato_maquina``.
+Machine-operation participation is stored in the dedicated
 ``machine_operation_configuration`` table.
 """
 
@@ -77,8 +77,8 @@ def get_machine_context(machine_id: int, operation_id: str | None = None, proces
         configurations = [dict(row) for row in cur.fetchall()]
 
     row = dict(machine)
-    # Keep legacy column names available, but expose the canonical identity
-    # expected by the machine model contract explicitly.
+    # Keep the physical database column names available, but expose the
+    # canonical identity expected by the machine model contract explicitly.
     canonical_machine_type_id = row.get("maquinas_tipo_id")
     row["machine_type_id"] = canonical_machine_type_id
     row["machine_id"] = row.get("id")

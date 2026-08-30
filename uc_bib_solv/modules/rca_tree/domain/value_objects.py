@@ -19,7 +19,7 @@ class NodeType(StrEnum):
 class RelationshipType(StrEnum):
     DEPENDS_ON = "DEPENDS_ON"
     CAUSES = "CAUSES"
-    VERIFIED_BY = "VERIFIED_BY"
+    HAS_HYPOTHESIS = "HAS_HYPOTHESIS"
     BELONGS_TO = "BELONGS_TO"
 
 

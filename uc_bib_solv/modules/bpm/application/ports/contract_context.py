@@ -12,10 +12,12 @@ class ContractContextPort(Protocol):
         self,
         process_id: int,
         name: str,
-        metric: str | None = None,
+        kpi_description: str = "Pendiente de definir KPI",
         objective: str | None = None,
         bpm_process_id: str | None = None,
         bpm_node_id: str | None = None,
+        kpi_args: str = "",
+        kpi_function: str = "",
     ) -> dict[str, Any]: ...
 
 

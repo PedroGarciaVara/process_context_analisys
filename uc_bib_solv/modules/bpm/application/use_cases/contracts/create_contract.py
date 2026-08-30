@@ -16,7 +16,9 @@ class CreateContract:
             bpm_process_id=validated.get("bpm_process_id"),
             bpm_node_id=validated.get("bpm_node_id"),
             process_id=validated.get("process_id"),
-            metric=validated.get("metrica"),
+            kpi_description=validated["kpi_description"],
+            kpi_args=validated.get("kpi_args", ""),
+            kpi_function=validated.get("kpi_function", ""),
             objective=validated.get("objetivo"),
         )
         canonical = dict(validated)

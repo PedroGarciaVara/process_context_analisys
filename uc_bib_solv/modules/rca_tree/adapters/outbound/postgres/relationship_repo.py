@@ -94,7 +94,7 @@ def list_structural_edges() -> list[dict]:
             """
             SELECT id, parent_node_id, child_node_id, relationship_type, metadata, is_primary
             FROM relationship
-            WHERE relationship_type IN ('DEPENDS_ON', 'CAUSES')
+            WHERE relationship_type IN ('DEPENDS_ON', 'CAUSES', 'HAS_HYPOTHESIS')
             ORDER BY parent_node_id, child_node_id, id
             """
         )
@@ -119,7 +119,7 @@ def delete_structural_links(child_node_id: int) -> int:
             """
             DELETE FROM relationship
             WHERE child_node_id=%s
-              AND relationship_type IN ('DEPENDS_ON', 'CAUSES')
+              AND relationship_type IN ('DEPENDS_ON', 'CAUSES', 'HAS_HYPOTHESIS')
             """,
             (child_node_id,),
         )

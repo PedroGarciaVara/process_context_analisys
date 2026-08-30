@@ -38,7 +38,7 @@ def sync_contract_graph(contrato_id: int) -> dict | None:
     with db_cursor() as cur:
         cur.execute(
             """
-            SELECT id, proceso_id, node_id, nombre, metrica, objetivo, version, activo
+            SELECT id, proceso_id, node_id, nombre, kpi_description, kpi_args, kpi_function, objetivo, version, activo
             FROM contrato
             WHERE id=%s
             """,
@@ -68,7 +68,7 @@ def sync_contract_graph(contrato_id: int) -> dict | None:
             contract["nombre"],
             description=contract.get("objetivo"),
             status="active" if contract.get("activo") else "inactive",
-            metadata={"metrica": contract.get("metrica"), "objetivo": contract.get("objetivo"), "version": contract.get("version")},
+            metadata={"kpi_description": contract.get("kpi_description"), "kpi_args": contract.get("kpi_args", ""), "kpi_function": contract.get("kpi_function", ""), "objetivo": contract.get("objetivo"), "version": contract.get("version")},
         )
         with db_cursor() as cur:
             cur.execute("UPDATE contrato SET node_id=%s WHERE id=%s", (int(contract_node["id"]), int(contract["id"])))
@@ -154,7 +154,7 @@ def sync_causa_graph(causa_id: int) -> dict | None:
         relationship_repo.create(
             int(contract_node["id"]),
             int(cause_node["id"]),
-            "DEPENDS_ON",
+            "CAUSES",
             metadata={"source": "graph_sync"},
             is_primary=True,
         )
@@ -169,7 +169,7 @@ def sync_causa_graph(causa_id: int) -> dict | None:
                     SELECT rel.child_node_id
                     FROM relationship rel
                     WHERE rel.parent_node_id=%s
-                      AND rel.relationship_type='VERIFIED_BY'
+                      AND rel.relationship_type='HAS_HYPOTHESIS'
                )
             ORDER BY id
             """,
@@ -186,7 +186,7 @@ def sync_hypothesis_graph(hipotesis_id: int) -> dict | None:
     with db_cursor() as cur:
         cur.execute(
             """
-            SELECT id, node_id, causa_id, descripcion, tipo, criterio_validacion, estado
+            SELECT id, node_id, causa_id, nombre, descripcion, tipo, criterio_validacion, estado
             FROM hipotesis
             WHERE id=%s
             """,
@@ -208,7 +208,7 @@ def sync_hypothesis_graph(hipotesis_id: int) -> dict | None:
         hypothesis_node = node_repo.get_by_id(int(hypothesis["node_id"]))
     if hypothesis_node is None:
         hypothesis_node = node_repo.create(
-            "HYPOTHESIS", hypothesis["descripcion"],
+            "HYPOTHESIS", hypothesis["nombre"],
             description=hypothesis.get("criterio_validacion"),
             status=hypothesis.get("estado"),
             metadata={"source": "graph_sync"},
@@ -221,7 +221,7 @@ def sync_hypothesis_graph(hipotesis_id: int) -> dict | None:
             """
             DELETE FROM relationship
             WHERE child_node_id=%s
-              AND relationship_type='VERIFIED_BY'
+              AND relationship_type='HAS_HYPOTHESIS'
             """,
             (int(hypothesis_node["id"]),),
         )
@@ -230,7 +230,7 @@ def sync_hypothesis_graph(hipotesis_id: int) -> dict | None:
         relationship_repo.create(
             int(cause_node["id"]),
             int(hypothesis_node["id"]),
-            "VERIFIED_BY",
+            "HAS_HYPOTHESIS",
             metadata={"source": "graph_sync"},
             is_primary=True,
         )

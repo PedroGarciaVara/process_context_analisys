@@ -95,7 +95,7 @@ function getEditorConfig(mode, payload) {
   if (mode === "new_contract") {
     return {
       title: "Alta de contrato reutilizable",
-      help: "Crea un contrato hijo heredando el proceso del contrato activo. El campo Categoria se guarda como metrica y Descripcion como objetivo.",
+      help: "Crea un contrato hijo heredando el proceso del contrato activo. El KPI y el objetivo se sincronizan con su plantilla RCA.",
       nameLabel: "Nombre del contrato",
       categoryLabel: "Metrica",
       descriptionLabel: "Objetivo",

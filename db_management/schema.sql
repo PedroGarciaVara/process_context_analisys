@@ -119,15 +119,28 @@ CREATE TABLE IF NOT EXISTS contrato (
     bpm_node_id UUID,
     node_id BIGINT REFERENCES node(id) ON DELETE RESTRICT,
     nombre TEXT NOT NULL,
-    metrica TEXT,
+    kpi_description TEXT NOT NULL,
+    kpi_args TEXT NOT NULL DEFAULT '',
+    kpi_function TEXT NOT NULL DEFAULT '',
     objetivo TEXT,
     version INT NOT NULL DEFAULT 1,
-    activo BOOLEAN NOT NULL DEFAULT TRUE
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT contrato_kpi_description_chk CHECK (kpi_description <> '')
 );
 
 ALTER TABLE IF EXISTS contrato ADD COLUMN IF NOT EXISTS bpm_process_id UUID;
 ALTER TABLE IF EXISTS contrato ADD COLUMN IF NOT EXISTS bpm_node_id UUID;
 ALTER TABLE IF EXISTS contrato ADD COLUMN IF NOT EXISTS node_id BIGINT REFERENCES node(id) ON DELETE RESTRICT;
+ALTER TABLE IF EXISTS contrato ADD COLUMN IF NOT EXISTS kpi_description TEXT;
+ALTER TABLE IF EXISTS contrato ADD COLUMN IF NOT EXISTS kpi_args TEXT NOT NULL DEFAULT '';
+ALTER TABLE IF EXISTS contrato ADD COLUMN IF NOT EXISTS kpi_function TEXT NOT NULL DEFAULT '';
+UPDATE contrato SET kpi_description = 'Pendiente de definir KPI'
+ WHERE kpi_description IS NULL OR kpi_description = '';
+ALTER TABLE IF EXISTS contrato ALTER COLUMN kpi_description SET NOT NULL;
+DO $$ BEGIN
+    ALTER TABLE contrato ADD CONSTRAINT contrato_kpi_description_chk CHECK (kpi_description <> '');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS contrato_maquina (
     contrato_id INT NOT NULL REFERENCES contrato(id) ON DELETE CASCADE,
@@ -147,6 +160,7 @@ CREATE TABLE IF NOT EXISTS causa (
     nombre TEXT NOT NULL,
     descripcion TEXT,
     tipo TEXT NOT NULL DEFAULT 'causa' CHECK (tipo IN ('causa', 'efecto')),
+    is_initial_template BOOLEAN NOT NULL DEFAULT FALSE,
     categoria TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -156,7 +170,11 @@ CREATE TABLE IF NOT EXISTS hipotesis (
     id SERIAL PRIMARY KEY,
     node_id BIGINT UNIQUE REFERENCES node(id) ON DELETE CASCADE,
     causa_id INT REFERENCES causa(id) ON DELETE CASCADE,
-    descripcion TEXT NOT NULL,
+    nombre TEXT NOT NULL,
+    descripcion TEXT,
+    kpi_args TEXT NOT NULL DEFAULT '',
+    kpi_function TEXT NOT NULL DEFAULT '',
+    is_initial_template BOOLEAN NOT NULL DEFAULT FALSE,
     tipo TEXT NOT NULL DEFAULT 'aceptacion' CHECK (tipo IN ('aceptacion', 'rechazo')),
     criterio_validacion TEXT,
     estado TEXT NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'validada', 'rechazada')),
@@ -168,9 +186,15 @@ CREATE TABLE IF NOT EXISTS hipotesis (
 );
 
 ALTER TABLE IF EXISTS causa ADD COLUMN IF NOT EXISTS node_id BIGINT REFERENCES node(id) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS causa ADD COLUMN IF NOT EXISTS is_initial_template BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE IF EXISTS causa ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NOT NULL DEFAULT NOW();
 ALTER TABLE IF EXISTS causa ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT NOW();
 ALTER TABLE IF EXISTS hipotesis ADD COLUMN IF NOT EXISTS node_id BIGINT REFERENCES node(id) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS hipotesis ADD COLUMN IF NOT EXISTS nombre TEXT;
+ALTER TABLE IF EXISTS hipotesis ADD COLUMN IF NOT EXISTS descripcion TEXT;
+ALTER TABLE IF EXISTS hipotesis ADD COLUMN IF NOT EXISTS kpi_args TEXT NOT NULL DEFAULT '';
+ALTER TABLE IF EXISTS hipotesis ADD COLUMN IF NOT EXISTS kpi_function TEXT NOT NULL DEFAULT '';
+ALTER TABLE IF EXISTS hipotesis ADD COLUMN IF NOT EXISTS is_initial_template BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE IF EXISTS hipotesis ADD COLUMN IF NOT EXISTS business_reason TEXT;
 ALTER TABLE IF EXISTS hipotesis ADD COLUMN IF NOT EXISTS analysis_method TEXT;
 ALTER TABLE IF EXISTS hipotesis ADD COLUMN IF NOT EXISTS expected_result TEXT;
@@ -252,6 +276,11 @@ CREATE INDEX IF NOT EXISTS idx_causa_contrato ON causa(contrato_id);
 CREATE INDEX IF NOT EXISTS idx_causa_parent ON causa(parent_id);
 CREATE INDEX IF NOT EXISTS idx_analisis_contrato ON analisis_causas(contrato_id);
 CREATE INDEX IF NOT EXISTS idx_analisis_resultado ON analisis_resultado(analisis_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_contract_template_node ON contrato(node_id) WHERE node_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_initial_cause_per_contract ON causa(contrato_id)
+    WHERE is_initial_template;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_initial_hypothesis_per_cause ON hipotesis(causa_id)
+    WHERE is_initial_template;
 CREATE INDEX IF NOT EXISTS idx_machine_parent ON maquina(parent_maquina_id);
 CREATE INDEX IF NOT EXISTS idx_machine_type ON maquina(maquinas_tipo_id);
 
@@ -323,6 +352,7 @@ CREATE TABLE IF NOT EXISTS pm_process_node (
 -- AMD-02-003: operation stages are an additive, versioned JSONB envelope.
 -- The application validates the two-level tree; no parallel table/column is
 -- introduced and existing node properties remain the source of truth.
+-- TODO estudiar migracion stages a modelo independiente o dentro de grafo de ralaciones node
 CREATE INDEX IF NOT EXISTS idx_pm_process_node_operation_stages
     ON pm_process_node USING GIN ((properties -> 'etapas'));
 

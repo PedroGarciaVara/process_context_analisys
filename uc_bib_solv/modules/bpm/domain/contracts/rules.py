@@ -11,6 +11,12 @@ def validate_contract_payload(payload: dict) -> dict:
         raise BpmDomainError("contract debe ser un objeto", "invalid_payload")
     result = dict(payload)
     result["name"] = validate_name(payload.get("name"))
+    kpi = payload.get("kpi_description")
+    if not isinstance(kpi, str) or kpi == "":
+        raise BpmDomainError("kpi_description es obligatorio.", "invalid_kpi_description")
+    result["kpi_description"] = kpi
+    result["kpi_args"] = payload.get("kpi_args", "")
+    result["kpi_function"] = payload.get("kpi_function", "")
     process_id = payload.get("bpmProcessId", payload.get("bpm_process_id"))
     node_id = payload.get("bpmNodeId", payload.get("bpm_node_id"))
     if bool(process_id) == bool(node_id):

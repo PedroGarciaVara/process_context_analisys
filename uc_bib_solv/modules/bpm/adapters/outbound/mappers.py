@@ -7,7 +7,7 @@ from typing import Any
 
 
 class BpmOperationalMapper:
-    """Normalize legacy rows at the BPM outbound boundary."""
+    """Normalize persistence rows at the BPM outbound boundary."""
 
     @staticmethod
     def row(value: Any) -> Any:

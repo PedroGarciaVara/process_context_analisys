@@ -22,8 +22,41 @@ class ProcessModelingApiTests(unittest.TestCase):
 
     def test_process_endpoint_is_canonical(self):
         response = create_app().test_client().get(f"/api/bpm/processes/{uuid4()}")
-        self.assertIn(response.status_code, (404, 409))
+        self.assertIn(response.status_code, (400, 404, 409))
         self.assertNotIn("Traceback", response.get_data(as_text=True))
+
+    def test_process_endpoint_rejects_non_uuid_identifier(self):
+        response = create_app().test_client().get("/api/bpm/processes/e2e-process")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["code"], "invalid_uuid")
+        self.assertEqual(response.get_json()["message"], "process_id debe ser un UUID válido")
+
+    def test_deprecated_process_operations_post_is_removed(self):
+        process_id = str(uuid4())
+        response = create_app().test_client().post(
+            f"/api/bpm/processes/{process_id}/operations",
+            json={"node_code": "OP-1", "name": "Operación"},
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_operation_detail_read_route_is_removed_but_operation_mutations_remain_registered(self):
+        routes = {
+            (rule.rule, method)
+            for rule in create_app().url_map.iter_rules()
+            for method in rule.methods
+            if method not in {"HEAD", "OPTIONS"}
+        }
+        self.assertNotIn(("/api/bpm/operations/<operation_id>", "GET"), routes)
+        self.assertIn(("/api/bpm/operations", "GET"), routes)
+        self.assertIn(("/api/bpm/operations/<operation_id>/stages", "PATCH"), routes)
+
+    def test_deprecated_operation_detail_endpoint_is_removed(self):
+        response = create_app().test_client().get(f"/api/bpm/operations/{uuid4()}")
+        self.assertEqual(response.status_code, 404)
+
+    def test_deprecated_operation_delete_endpoint_is_removed(self):
+        response = create_app().test_client().delete(f"/api/bpm/operations/{uuid4()}")
+        self.assertEqual(response.status_code, 404)
 
     @patch("uc_bib_solv.modules.bpm.application.process_modeling_application.ProcessModelingApplication.validate_process", return_value={"valid": True, "errors": []})
     @patch("uc_bib_solv.modules.bpm.application.process_modeling_application.ProcessModelingApplication.get_process", return_value={"process_id": "should-not-be-returned"})

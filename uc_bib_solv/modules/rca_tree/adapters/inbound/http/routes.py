@@ -21,10 +21,6 @@ def create_blueprint(service=None, analysis_service=None):
         except Exception as exc:
             return _handle_exception(exc)
 
-    @bp.get("/api/rca-tree/tree")
-    def tree():
-        return nodes()
-
     @bp.get("/api/rca-tree/causes/detail")
     def cause_detail():
         try:
