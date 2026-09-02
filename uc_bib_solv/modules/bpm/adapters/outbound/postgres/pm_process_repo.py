@@ -89,6 +89,38 @@ class ProcessRepository:
                 cur.execute("UPDATE proceso SET nombre=%s WHERE bpm_process_id=%s", (row["name"], row["process_id"]))
             return dict(row) if row else None
 
+    def delete(self, process_id, cascade=False):
+        with db_cursor() as cur:
+            process_uuid = _uuid(process_id)
+            if cascade:
+                # Remove restrictive dependents first. The surrounding
+                # db_cursor transaction makes the cascade all-or-nothing.
+                cur.execute("DELETE FROM machine_operation_configuration WHERE process_id=%s", (process_uuid,))
+                cur.execute("""DELETE FROM analisis_resultado
+                    WHERE causa_id IN (
+                        SELECT c.id FROM causa c
+                        JOIN contrato ct ON ct.id = c.contrato_id
+                        WHERE ct.proceso_id = (SELECT id FROM proceso WHERE bpm_process_id=%s)
+                           OR ct.bpm_process_id=%s
+                           OR ct.bpm_node_id IN (SELECT node_id FROM pm_process_node WHERE process_id=%s)
+                    )
+                       OR hipotesis_id IN (
+                        SELECT h.id FROM hipotesis h
+                        JOIN causa c ON c.id = h.causa_id
+                        JOIN contrato ct ON ct.id = c.contrato_id
+                        WHERE ct.proceso_id = (SELECT id FROM proceso WHERE bpm_process_id=%s)
+                           OR ct.bpm_process_id=%s
+                           OR ct.bpm_node_id IN (SELECT node_id FROM pm_process_node WHERE process_id=%s)
+                    )""", (process_uuid, process_uuid, process_uuid, process_uuid, process_uuid, process_uuid))
+                cur.execute("""DELETE FROM contrato
+                    WHERE bpm_process_id=%s
+                       OR proceso_id = (SELECT id FROM proceso WHERE bpm_process_id=%s)
+                       OR bpm_node_id IN (
+                           SELECT node_id FROM pm_process_node WHERE process_id=%s
+                       )""", (process_uuid, process_uuid, process_uuid))
+            cur.execute("DELETE FROM bpm_process WHERE process_id=%s RETURNING process_id", (process_uuid,))
+            return bool(cur.fetchone())
+
 
 class NodeRepository:
     def create(self, process_id, data):

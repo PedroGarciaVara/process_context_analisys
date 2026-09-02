@@ -19,7 +19,7 @@ test("req12: muestra los cuatro bloques del contexto de máquina", async ({ page
   }
 
   expect(seededMachine, "Debe existir una máquina sembrada con contexto completo").toBeTruthy();
-  await page.goto("/#/maquinas_v02");
+  await page.goto("/#/maquinas");
   await expect(page.locator("main")).toBeVisible();
   const operation = seededMachine.operations?.[0];
   expect(operation, "La máquina sembrada debe conservar su identidad de operación BPM").toBeTruthy();
@@ -73,7 +73,7 @@ test("req12: PSA1 guarda una etapa y subetapa desde Gestionar máquina", async (
   expect(psa1, "Debe existir PSA1 en el fixture BPM").toBeTruthy();
   expect(psa1.operations?.length, "PSA1 debe tener una operación BPM").toBeGreaterThan(0);
 
-  await page.goto("/#/maquinas_v02");
+  await page.goto("/#/maquinas");
   const operation = psa1.operations[0];
   await expect(page.locator("#machine-v02-process")).toBeVisible();
   const catalogRefresh = page.waitForResponse((item) => item.url().includes("/api/bpm/operational/page/maquinas"));
@@ -131,7 +131,7 @@ test("req12: PSA1 guarda una etapa y subetapa desde Gestionar máquina", async (
 });
 
 test("req12: filtra máquinas por identidad de operación BPM y proceso", async ({ page }) => {
-  await page.goto("/#/maquinas_v02");
+  await page.goto("/#/maquinas");
   const operationFilter = page.locator("#machine-v02-operation");
   await expect(operationFilter).toBeVisible();
   const operationOptions = operationFilter.locator("option");
@@ -154,7 +154,7 @@ test("req12: filtra máquinas por identidad de operación BPM y proceso", async 
 });
 
 test("req12: cascada proceso-operación conserva el proceso canónico", async ({ page }) => {
-  await page.goto("/#/maquinas_v02");
+  await page.goto("/#/maquinas");
   const processFilter = page.locator("#machine-v02-process");
   const operationFilter = page.locator("#machine-v02-operation");
   await expect(processFilter).toBeVisible();

@@ -9,11 +9,8 @@ import { setPageData } from "./core/state.js";
 const OPERATIONAL_ROUTE_MAP = {
   inicio: "inicio",
   procesos: "procesos",
-  procesos_v02: "procesos",
   contratos: "contratos",
-  contratos_v02: "contratos",
   maquinas: "maquinas",
-  maquinas_v02: "maquinas",
 };
 
 const root = document.getElementById("app-root");
@@ -87,9 +84,13 @@ async function boot() {
   applyCatalogDefaults(catalog);
 
   const refreshCurrentPage = async () => {
+    const routeAtStart = AppState.route;
     const token = ++operationalLoadToken;
+    // Swap the shell immediately so a slow API response cannot leave the
+    // previous route visible during navigation.
+    mount();
     await loadOperationalPage(AppState.route);
-    if (token !== operationalLoadToken) {
+    if (token !== operationalLoadToken || AppState.route !== routeAtStart) {
       return;
     }
     mount();

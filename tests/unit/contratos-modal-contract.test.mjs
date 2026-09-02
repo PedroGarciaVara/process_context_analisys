@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const source = readFileSync(new URL("../../uc_bib_solv/webapp/js/views/contratos_v02.js", import.meta.url), "utf8");
+const source = readFileSync(new URL("../../uc_bib_solv/webapp/js/views/bpm/contratos.js", import.meta.url), "utf8");
 const operationalSource = readFileSync(new URL("../../uc_bib_solv/webapp/js/core/operational.js", import.meta.url), "utf8");
 const contractUiSource = readFileSync(new URL("../../uc_bib_solv/webapp/js/components/contract-ui.js", import.meta.url), "utf8");
 
@@ -52,4 +52,17 @@ test("el detalle sustituye la gestión inline y conserva el árbol en las filas"
   assert.doesNotMatch(source, /data-action="contract-toggle"/);
   assert.doesNotMatch(source, /data-action="contract-delete"/);
   assert.doesNotMatch(source, /data-action="contract-save-machines"/);
+});
+
+test("la vista de contratos no expone status, filtros ni columna de status", () => {
+  assert.doesNotMatch(source, /statusBadge|contractStatus|data-contract-filter|<[^>]*>Estado<\//);
+  assert.doesNotMatch(source, /Abierto|En revision|Cerrado/);
+  assert.match(source, /<th[^>]*>Contrato<\/th>/);
+  assert.match(source, /<th[^>]*>Proceso<\/th>/);
+  assert.match(source, /<th[^>]*>Maquinas<\/th>/);
+});
+
+test("el CTA de crear contrato comparte el patrón del CTA principal operativo", () => {
+  assert.match(source, /class="px-lg py-md bg-primary text-on-primary rounded-lg font-label-md shadow-sm hover:opacity-90" data-action="contract-create-open"/);
+  assert.match(source, /material-symbols-outlined align-middle mr-xs">add<\/span>Crear contrato/);
 });

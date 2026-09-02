@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const source = readFileSync(new URL("../../uc_bib_solv/webapp/js/views/maquinas_v02.js", import.meta.url), "utf8");
+const source = readFileSync(new URL("../../uc_bib_solv/webapp/js/views/maquinas/maquinas.js", import.meta.url), "utf8");
 
 test("el modal declara campos de máquina genérica y específica", () => {
   for (const id of [

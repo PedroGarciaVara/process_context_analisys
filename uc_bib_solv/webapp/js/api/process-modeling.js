@@ -10,6 +10,10 @@ export const getProcess = (id, options = {}) => {
   return call(`/processes/${encodeURIComponent(id)}${suffix}`);
 };
 export const updateProcess = (id, data) => call(`/processes/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) });
+export const deleteProcess = (id, options = {}) => {
+  const query = options.cascade ? "?cascade=true" : "";
+  return call(`/processes/${encodeURIComponent(id)}${query}`, { method: "DELETE" });
+};
 export const createProcess = (data) => call("/processes", { method: "POST", body: JSON.stringify(data) });
 export const createNode = (processId, data) => call(`/processes/${encodeURIComponent(processId)}/nodes`, { method: "POST", body: JSON.stringify(data) });
 export const createNodeWithTransition = (processId, data) => call(`/processes/${encodeURIComponent(processId)}/nodes-with-transition`, { method: "POST", body: JSON.stringify(data) });

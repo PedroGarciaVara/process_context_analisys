@@ -15,6 +15,7 @@ class CreateHypothesis:
         cause_id = integer(payload.get("cause_id"))
         if not cause_id:
             raise CausalTreeValidationError("Se requiere una causa para crear una hipotesis.")
+        # TODO Posibilidad de extraer normalizacion comun a hypothesis_factory
         description = (payload.get("descripcion") or "").strip()
         saved = self.hypotheses.create(
             cause_id,

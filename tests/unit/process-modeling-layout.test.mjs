@@ -114,3 +114,29 @@ test("prioriza la salida branch de una decisión frente a una secuencia posterio
   assert.equal(noRoute.points[0].x, layout.positions.decision.centerX);
   assert.equal(noRoute.points.at(-1).x, layout.positions.nok.centerX);
 });
+
+test("mantiene las salidas Sí y No de una decisión en lanes paralelos", () => {
+  const version = {
+    nodes: [
+      { node_id: "start", node_code: "START", node_type: "operation", name: "Inicio" },
+      { node_id: "decision", node_code: "DEC", node_type: "decision", name: "¿Conforme?" },
+      { node_id: "yes", node_code: "YES", node_type: "operation", name: "Continuar" },
+      { node_id: "no", node_code: "NO", node_type: "operation", name: "Revisar" },
+      { node_id: "after", node_code: "AFTER", node_type: "output", name: "Fin" },
+    ],
+    transitions: [
+      { transition_id: "start-decision", source_node_id: "start", target_node_id: "decision", transition_type: "sequence" },
+      { transition_id: "decision-yes", source_node_id: "decision", target_node_id: "yes", transition_type: "branch", label: "Sí" },
+      { transition_id: "decision-no", source_node_id: "decision", target_node_id: "no", transition_type: "branch", label: "No" },
+      { transition_id: "yes-after", source_node_id: "yes", target_node_id: "after", transition_type: "sequence" },
+    ],
+  };
+  const measurement = measureDiagram(version);
+  const layout = computeProcessLayout(version, measurement.dimensions, version.transitions);
+  const { positions } = layout;
+  assert.equal(positions.yes.y, positions.no.y);
+  assert.ok(positions.yes.x + positions.yes.width + 58 <= positions.no.x || positions.no.x + positions.no.width + 58 <= positions.yes.x);
+  assert.ok(positions.yes.x < positions.no.x);
+  assert.equal(positions.after.centerX, positions.yes.centerX);
+  assert.equal(layout.routes.filter((route) => route.edge.transition_type === "branch").length, 2);
+});

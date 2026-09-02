@@ -127,10 +127,9 @@ export function getMachineOptions(state, includeAll = false) {
   return includeAll ? [{ label: "All machines", value: "" }, ...options] : options;
 }
 
-export function filterContracts(state, processId = null, status = "all") {
+export function filterContracts(state, processId = null) {
   return getContracts(state).filter((item) => {
     if (processId && String(item.processId) !== String(processId)) return false;
-    if (status && status !== "all" && item.status !== status) return false;
     return true;
   });
 }
@@ -229,7 +228,6 @@ export function buildOperationalPageParams(state, route) {
   if (route === "contratos") {
     if (state.currentProcess) params.process_id = state.currentProcess;
     if (state.currentContract) params.contract_id = state.currentContract;
-    params.status = state.filters?.contractStatus || "all";
     return params;
   }
 

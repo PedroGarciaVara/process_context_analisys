@@ -20,7 +20,7 @@ test.describe("Requerimiento 16 · Máquina, JSON estructurado y cleanup", () =>
   test.beforeAll(() => fs.mkdirSync(artifactDir, { recursive: true }));
   test.beforeEach(async ({ page }) => {
     test.skip(!baseURL, "E2E-16 omitido: UI_TEST_BASE_URL/E2E_DASH_BACKEND_URL no está configurada");
-    await page.goto(`${baseURL.replace(/\/$/, "")}/#/maquinas_v02`);
+    await page.goto(`${baseURL.replace(/\/$/, "")}/#/maquinas`);
     await expect(page.getByRole("heading", { name: "Maquinas", exact: true })).toBeVisible({ timeout: 15000 });
   });
   test.afterEach(async ({ page }, testInfo) => {
@@ -47,7 +47,7 @@ test.describe("Requerimiento 16 · Máquina, JSON estructurado y cleanup", () =>
     const id = await row.getAttribute("data-machine-row");
     await sidebarRoute(page, "modelado-procesos").click();
     await page.goBack();
-    await expect(page).toHaveURL(/#\/maquinas_v02$/);
+    await expect(page).toHaveURL(/#\/maquinas$/);
     await expect(page.locator(`[data-machine-row="${id}"]`)).toHaveClass(/border-l-primary|bg-secondary/, { timeout: 15000 });
   });
   test("E2E-16-03 editor guiado y dirty", async ({ page }) => {
@@ -84,7 +84,7 @@ test.describe("Requerimiento 16 · Máquina, JSON estructurado y cleanup", () =>
   });
   test("E2E-16-06 salir y volver a Máquina", async ({ page }) => {
     await sidebarRoute(page, "contexto").click();
-    await openRoute(page, "maquinas_v02");
+    await openRoute(page, "maquinas");
   });
   test("E2E-16-07 campos específicos separados", async ({ page }) => {
     await page.locator('[data-action="machine-modal-new"]').click();

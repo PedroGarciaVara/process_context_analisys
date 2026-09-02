@@ -15,6 +15,7 @@ class UpdateHypothesis:
         hypothesis_id = integer(payload.get("hypothesis_id"))
         if not hypothesis_id:
             raise CausalTreeValidationError("Se requiere una hipotesis para actualizarla.")
+        # TODO Posibilidad de extraer normalizacion comun a hypothesis_factory
         description = (payload.get("descripcion") or "").strip()
         saved = self.hypotheses.update(
             hypothesis_id,

@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const detail = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/operaciones_detalle_v02.js", import.meta.url), "utf8");
-const catalog = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/operaciones_v02.js", import.meta.url), "utf8");
-const form = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/operacion_form.js", import.meta.url), "utf8");
-const modeling = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/process-modeling.js", import.meta.url), "utf8");
+const detail = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/bpm/operaciones_detalle.js", import.meta.url), "utf8");
+const catalog = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/bpm/operaciones.js", import.meta.url), "utf8");
+const form = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/bpm/operacion_form.js", import.meta.url), "utf8");
+const modeling = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/nodes/process-modeling.js", import.meta.url), "utf8");
 const bpm = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/core/bpm.js", import.meta.url), "utf8");
 const pageComponents = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/components/bpm-page.js", import.meta.url), "utf8");
 
@@ -30,15 +30,15 @@ test("el catálogo de operaciones ofrece detalle y modal reutilizable", () => {
 });
 
 test("Editar del modelado redirige a las fichas dedicadas", () => {
-  assert.match(modeling, /procesos_detalle_v02\?bpm_process_id/);
-  assert.match(modeling, /operaciones_detalle_v02\?process_id/);
+  assert.match(modeling, /procesos_detalle\?bpm_process_id/);
+  assert.match(modeling, /operaciones_detalle\?process_id/);
   assert.match(modeling, /navigateToSelectedNodeDetail\(node\)/);
   assert.match(modeling, /return navigateToSelectedNodeDetail\(node\)/);
   assert.doesNotMatch(modeling.slice(modeling.indexOf("function editSelectedNode()"), modeling.indexOf("async function deleteSelectedNode()")), /pm-node-modal-title/);
 });
 
 test("operaciones aparece en la navegación y su detalle mantiene la opción activa", () => {
-  const shell = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/shell_v02.js", import.meta.url), "utf8");
-  assert.match(shell, /route: "operaciones_v02", label: "Operaciones"/);
-  assert.match(shell, /operaciones_detalle_v02/);
+  const shell = fs.readFileSync(new URL("../../uc_bib_solv/webapp/js/views/bpm/shell.js", import.meta.url), "utf8");
+  assert.match(shell, /route: "operaciones", label: "Operaciones"/);
+  assert.match(shell, /operaciones_detalle/);
 });

@@ -18,10 +18,10 @@ test.describe.serial("webapp-java UI", () => {
     await page.locator("#recent-analysis-status").selectOption("todos");
     await expect(page.locator("#recent-analysis-list [data-analysis-card]").first()).toBeVisible();
     await page.locator('[data-action="new-investigation"]').click();
-    await expect(page).toHaveURL(/#\/analisis_causas_v02/);
+    await expect(page).toHaveURL(/#\/analisis_causas/);
     await expect(page.locator("#analysis-process-select")).toBeVisible();
     await openRoute(page, "inicio");
-    for (const route of ["procesos_v02", "contratos_v02", "maquinas_v02", "arboles_v02", "analisis_causas_v02"]) {
+    for (const route of ["procesos", "contratos", "maquinas", "arboles", "analisis_causas"]) {
       await page.locator(`[data-route="${route}"]`).first().click();
       await expect(page).toHaveURL(new RegExp(`#/${route}`));
       await expect(page.locator("main")).toBeVisible();
@@ -30,11 +30,11 @@ test.describe.serial("webapp-java UI", () => {
   });
 
   test("procesos: selecciona, navega y delega la gestión en BPM", async ({ page }) => {
-    await openRoute(page, "procesos_v02");
+    await openRoute(page, "procesos");
     await expect(page.locator("[data-process-row]").first()).toBeVisible();
     await expect(page.locator('[data-action="process-detail"]').first()).toBeVisible();
     await page.locator('[data-action="process-detail"]').first().click();
-    await expect(page).toHaveURL(/#\/procesos_detalle_v02/);
+    await expect(page).toHaveURL(/#\/procesos_detalle/);
     const processDetail = page.locator("#process-page-form");
     await expect(processDetail).toBeVisible();
     await expect(processDetail.locator("#process-page-code")).not.toHaveValue("");
@@ -44,7 +44,7 @@ test.describe.serial("webapp-java UI", () => {
     await processSaveResponse;
     await expect(page.locator("#process-page-alert")).toContainText("actualizado");
     await page.getByRole("link", { name: "Volver a procesos", exact: true }).click();
-    await expect(page).toHaveURL(/#\/procesos_v02/);
+    await expect(page).toHaveURL(/#\/procesos/);
     await expect(page.locator("[data-process-row]").first()).toContainText(processName);
     await expect(page.locator("[data-process-filter]")).toHaveCount(0);
     await expect(page.locator("th").filter({ hasText: "Responsable" })).toHaveCount(0);
@@ -59,17 +59,17 @@ test.describe.serial("webapp-java UI", () => {
     await expect(page.locator('[data-action="process-update"]')).toHaveCount(0);
     await expect(page.locator('[data-action="process-delete"]')).toHaveCount(0);
     await row.locator('[data-action="process-contracts"]').click();
-    await expect(page).toHaveURL(/#\/contratos_v02/);
-    await openRoute(page, "procesos_v02");
+    await expect(page).toHaveURL(/#\/contratos/);
+    await openRoute(page, "procesos");
     await expect(page.locator('[data-action="process-tree"]')).toHaveCount(0);
 
-    await openRoute(page, "procesos_v02");
+    await openRoute(page, "procesos");
     await page.locator('[data-action="process-create"]').click();
     await expect(page).toHaveURL(/#\/modelado-procesos/);
   });
 
   test("contratos: filtra, crea, abre detalle, edita y asigna maquinas", async ({ page }) => {
-    await openRoute(page, "contratos_v02");
+    await openRoute(page, "contratos");
     await expect(page.locator("[data-contract-row]").first()).toBeVisible();
     await expect(page.locator('[data-action="contract-machines"], [data-action="right-open-tree"], [data-action="contract-update"], [data-action="contract-toggle"], [data-action="contract-delete"], [data-action="contract-save-machines"]')).toHaveCount(0);
     await expect(page.locator('[data-action="contract-detail"]').first()).toBeVisible();
@@ -96,9 +96,9 @@ test.describe.serial("webapp-java UI", () => {
     await detailModal.locator('[data-action="contract-detail-cancel"]').click();
     await expect(detailModal).toBeHidden();
     await page.locator('[data-action="contract-tree"]').first().click();
-    await expect(page).toHaveURL(/#\/arboles_v02/);
+    await expect(page).toHaveURL(/#\/arboles/);
 
-    await openRoute(page, "contratos_v02");
+    await openRoute(page, "contratos");
     const name = unique("Contrato UI");
     await expect(page.locator('[data-action="contract-create-open"]')).toBeVisible();
     await expect(page.locator('[data-action="contract-create"]')).toHaveCount(0);
@@ -157,7 +157,7 @@ test.describe.serial("webapp-java UI", () => {
     await page.locator('[data-action="contract-detail-save"]').click();
     await page.waitForResponse((response) => response.url().match(/\/api\/operational\/contracts\/\d+$/) && response.request().method() === "PATCH" && response.status() === 200);
     await assignResponse;
-    await openRoute(page, "contratos_v02");
+    await openRoute(page, "contratos");
     const afterAssignRow = page.locator("[data-contract-row]").filter({ hasText: `${name} actualizado` });
     await expect(afterAssignRow).toHaveCount(1);
     await afterAssignRow.locator('[data-action="contract-detail"]').click({ force: true });
@@ -168,7 +168,7 @@ test.describe.serial("webapp-java UI", () => {
     await page.locator('[data-action="contract-detail-save"]').click();
     await page.waitForResponse((response) => response.url().match(/\/api\/operational\/contracts\/\d+$/) && response.request().method() === "PATCH" && response.status() === 200);
     await unassignResponse;
-    await openRoute(page, "contratos_v02");
+    await openRoute(page, "contratos");
     const afterUnassignRow = page.locator("[data-contract-row]").filter({ hasText: `${name} actualizado` });
     await expect(afterUnassignRow).toHaveCount(1);
     await afterUnassignRow.locator('[data-action="contract-detail"]').click({ force: true });
@@ -185,7 +185,7 @@ test.describe.serial("webapp-java UI", () => {
   });
 
   test("maquinas: filtra, selecciona y gestiona desde el modal", async ({ page }) => {
-    await openRoute(page, "maquinas_v02");
+    await openRoute(page, "maquinas");
     await expect(page.locator("[data-machine-row]").first()).toBeVisible();
     await expect(page.locator("[data-status-filter]")).toHaveCount(0);
     await expect(page.locator("th").filter({ hasText: "Estado" })).toHaveCount(0);
@@ -271,7 +271,7 @@ test.describe.serial("webapp-java UI", () => {
   });
 
   test("arbol y analisis: carga nodos, selecciona tarjetas, cambia zoom y abre detalle", async ({ page }) => {
-    await page.goto("/#/arboles_v02?contract_id=1");
+    await page.goto("/#/arboles?contract_id=1");
     const cards = page.locator(".acv2-tree-node-button");
     await expect(cards).toHaveCount(9);
     for (const index of [0, 2, 5, 8]) {
@@ -285,17 +285,17 @@ test.describe.serial("webapp-java UI", () => {
     await expect(zoomLabel).not.toHaveText(initialZoom || "");
     await page.locator(".acv2-zoom-btn").nth(1).click();
     await page.locator('[data-action="tree-add-root-v02"]').click();
-    await expect(page).toHaveURL(/#\/causa_detalle_v02\?contrato_id=1/);
+    await expect(page).toHaveURL(/#\/causa_detalle\?contrato_id=1/);
 
     const analysisTreeResponse = page.waitForResponse((response) => response.url().includes("/api/rca-tree/nodes?view=analisis_causas_v2") && response.status() === 200);
-    await page.goto("/#/analisis_causas_v02?contract_id=1&analysis_id=1");
+    await page.goto("/#/analisis_causas?contract_id=1&analysis_id=1");
     await analysisTreeResponse;
     await expect(page.getByText("Analisis causas").first()).toBeVisible();
     await expect(page.locator(".acv2-tree-node-button")).toHaveCount(9, { timeout: 10_000 });
   });
 
   test("detalle de causa: muestra modos de alta/edicion y formulario de hipotesis", async ({ page }) => {
-    await page.goto("/#/causa_detalle_v02?contrato_id=1");
+    await page.goto("/#/causa_detalle?contrato_id=1");
     await expect(page.locator("[data-action='add-evidence']")).toHaveCount(0);
     await expect(page.locator("[data-action='help']")).toBeVisible();
     await expect(page.locator("[data-action='signout']")).toBeVisible();
@@ -307,7 +307,7 @@ test.describe.serial("webapp-java UI", () => {
     await page.locator("#cd-link-clear").click();
     await page.locator('[data-editor-mode="new_cause"]').click();
     await expect(page.locator("#cd-cause-save")).toBeVisible();
-    await page.goto("/#/causa_detalle_v02?contrato_id=1&causa_id=1");
+    await page.goto("/#/causa_detalle?contrato_id=1&causa_id=1");
     await expect(page.locator("#cd-cause-save")).toBeVisible();
     await expect(page.locator("#cd-hypothesis-save")).toBeVisible();
     await expect(page.locator("#cd-hypothesis-new")).toBeVisible();

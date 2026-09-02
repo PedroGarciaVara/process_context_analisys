@@ -1,5 +1,12 @@
 import { DEFAULT_LAYOUT_METRICS } from "./measurement.js";
 
+function normalizeTransitions(transitions = []) {
+  return transitions.map((edge) => ({
+    ...edge,
+    transition_type: String(edge.transition_type || edge.type || "sequence").toLowerCase(),
+  }));
+}
+
 function sortEdges(edges = []) {
   return [...edges].sort((left, right) => {
     const source = String(left.source_node_id).localeCompare(String(right.source_node_id));
@@ -52,7 +59,26 @@ function computeDepths(graph) {
       .map((edge) => depth[String(edge.source_node_id)] + 1);
     if (branchSources.length) depth[nodeId] = Math.min(depth[nodeId], ...branchSources);
   });
+  // A decision is a visual fork, not a sequential step. Keep both branch
+  // destinations on the same next layer even when a persisted continuation
+  // gives one of them an additional incoming path.
+  graph.nodeIds.forEach((nodeId) => {
+    if (graph.nodeMap[nodeId]?.node_type !== "decision") return;
+    const branchTargets = graph.outgoing[nodeId]
+      .filter((edge) => edge.transition_type === "branch")
+      .map((edge) => String(edge.target_node_id));
+    branchTargets.forEach((targetId) => {
+      depth[targetId] = depth[nodeId] + 1;
+    });
+  });
   return depth;
+}
+
+function branchOrder(edge) {
+  const label = String(edge?.label || edge?.condition || "").trim().toLocaleLowerCase();
+  if (label === "sí" || label === "si" || label === "yes") return 0;
+  if (label === "no") return 1;
+  return 2;
 }
 
 function buildTree(graph, depths) {
@@ -85,6 +111,18 @@ function buildTree(graph, depths) {
     if (leftDepth !== rightDepth) return leftDepth - rightDepth;
     return left.localeCompare(right);
   }));
+  // Give the two exits of a decision a deterministic left/right lane. The
+  // semantic label remains on the transition; this only stabilizes geometry.
+  graph.nodeIds.forEach((nodeId) => {
+    if (graph.nodeMap[nodeId]?.node_type !== "decision") return;
+    const branchEdges = graph.outgoing[nodeId].filter((edge) => edge.transition_type === "branch");
+    const branchRank = new Map(branchEdges.map((edge) => [String(edge.target_node_id), branchOrder(edge)]));
+    children[nodeId].sort((left, right) => {
+      const leftRank = branchRank.get(left) ?? 2;
+      const rightRank = branchRank.get(right) ?? 2;
+      return leftRank - rightRank || left.localeCompare(right);
+    });
+  });
   return { parentOf, children };
 }
 
@@ -286,7 +324,8 @@ export function computeProcessLayout(process, dimensions, transitions) {
   if (!nodes.length) {
     return { positions: {}, routes: [], width: DEFAULT_LAYOUT_METRICS.minCanvasWidth, height: DEFAULT_LAYOUT_METRICS.minCanvasHeight };
   }
-  const graph = buildGraph(nodes, transitions);
+  const diagramTransitions = normalizeTransitions(transitions);
+  const graph = buildGraph(nodes, diagramTransitions);
   const depths = computeDepths(graph);
   const tree = buildTree(graph, depths);
   const { layerTops } = computeLayerTops(depths, dimensions);
@@ -309,8 +348,8 @@ export function computeProcessLayout(process, dimensions, transitions) {
     cursor += subtreeWidths[rootId] + DEFAULT_LAYOUT_METRICS.laneGap;
   });
   shiftIntoCanvas(positions);
-  const mergeLevels = buildMergeLevels(transitions, positions);
-  const routes = transitions.map((edge) => buildRoute(edge, positions, mergeLevels)).filter(Boolean).map((route) => ({
+  const mergeLevels = buildMergeLevels(diagramTransitions, positions);
+  const routes = diagramTransitions.map((edge) => buildRoute(edge, positions, mergeLevels)).filter(Boolean).map((route) => ({
     ...route,
     path: pathFromPoints(route.points),
   }));

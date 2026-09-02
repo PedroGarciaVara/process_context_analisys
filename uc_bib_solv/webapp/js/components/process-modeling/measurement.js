@@ -94,7 +94,7 @@ function measureBaseNode(node) {
 
 function estimateFlowBounds(process, dimensions) {
   const nodes = process?.nodes || [];
-  const transitions = process?.transitions || [];
+  const transitions = process?.diagram_transitions || process?.transitions || [];
   if (!nodes.length) return { width: DEFAULT_LAYOUT_METRICS.minCanvasWidth, height: DEFAULT_LAYOUT_METRICS.minCanvasHeight };
 
   const ids = nodes.map((node) => String(node.node_id));
@@ -144,7 +144,7 @@ function estimateFlowBounds(process, dimensions) {
 
 function estimateTreeWidth(process, dimensions) {
   const nodes = process?.nodes || [];
-  const transitions = process?.transitions || [];
+  const transitions = process?.diagram_transitions || process?.transitions || [];
   if (!nodes.length) return DEFAULT_LAYOUT_METRICS.minCanvasWidth;
   const ids = nodes.map((node) => String(node.node_id));
   const incoming = Object.fromEntries(ids.map((id) => [id, []]));

@@ -4,32 +4,19 @@ import { renderView } from "../views/index.js";
 const ROUTES = new Set([
   "inicio",
   "procesos",
-  "procesos_v02",
-  "procesos_detalle_v02",
-  "operaciones_v02",
-  "operaciones_detalle_v02",
   "contratos",
-  "contratos_v02",
   "maquinas",
-  "maquinas_v02",
   "causa_detalle",
-  "causa_detalle_v02",
-  "arbol",
-  "arboles_v02",
-  "analisis_causas_v2",
-  "analisis_causas_v02",
+  "procesos_detalle",
+  "operaciones",
+  "operaciones_detalle",
+  "arboles",
+  "analisis_causas",
   "modelado-procesos",
   "contexto",
 ]);
 
-export const LEGACY_ROUTE_ALIASES = Object.freeze({
-  procesos: "procesos_v02",
-  contratos: "contratos_v02",
-  maquinas: "maquinas_v02",
-  arbol: "arboles_v02",
-  analisis_causas_v2: "analisis_causas_v02",
-  causa_detalle: "causa_detalle_v02",
-});
+export const LEGACY_ROUTE_ALIASES = Object.freeze({});
 
 export function createRouter(bus) {
   function resolveRoute() {

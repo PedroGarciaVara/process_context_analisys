@@ -30,8 +30,8 @@ console.log(buildCausaDetalleHash({ contrato_id: 16, causa_id: "", parent_id: nu
         )
 
         lines = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
-        self.assertEqual(lines[0], "#/causa_detalle_v02?contrato_id=16&causa_id=65")
-        self.assertEqual(lines[1], "#/causa_detalle_v02?contrato_id=16")
+        self.assertEqual(lines[0], "#/causa_detalle?contrato_id=16&causa_id=65")
+        self.assertEqual(lines[1], "#/causa_detalle?contrato_id=16")
 
     def test_get_editor_mode_options_varies_by_route_context(self):
         script = """
@@ -62,7 +62,7 @@ console.log(JSON.stringify(getEditorModeOptions({ contrato_id: "17", causa_id: "
 
     def test_derive_scope_from_detail_params_resolves_contract_and_process(self):
         script = """
-import { deriveScopeFromDetailParams } from "./uc_bib_solv/webapp/js/views/causa_detalle_v02.js";
+import { deriveScopeFromDetailParams } from "./uc_bib_solv/webapp/js/views/causa_detalle.js";
 
 const scope = deriveScopeFromDetailParams(
   { contrato_id: "17" },
@@ -88,7 +88,7 @@ console.log(JSON.stringify(scope));
 
     def test_derive_tree_scope_from_route_prefers_contract_in_url(self):
         script = """
-import { deriveTreeScopeFromRoute } from "./uc_bib_solv/webapp/js/views/arboles_v02.js";
+import { deriveTreeScopeFromRoute } from "./uc_bib_solv/webapp/js/views/rca/arboles.js";
 
 const scope = deriveTreeScopeFromRoute(
   { contract_id: "17" },

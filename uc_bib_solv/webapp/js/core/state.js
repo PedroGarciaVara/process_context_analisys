@@ -4,9 +4,7 @@ export const AppState = {
   pageData: {},
   user: null,
   route: "inicio",
-  filters: {
-    contractStatus: "all",
-  },
+  filters: {},
   currentProcess: null,
   currentContract: null,
   currentOperation: null,

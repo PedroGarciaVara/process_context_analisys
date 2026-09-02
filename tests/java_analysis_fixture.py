@@ -18,11 +18,11 @@ import uuid
 def _node(cur, node_type: str, code: str, name: str, legacy_table: str, legacy_id: int) -> int:
     cur.execute(
         """
-        INSERT INTO node(node_type, code, name, legacy_table, legacy_id)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO node(node_type, code, name, description, metadata)
+        VALUES (%s, %s, %s, %s, %s::jsonb)
         RETURNING id
         """,
-        (node_type, code, name, legacy_table, legacy_id),
+        (node_type, code, name, name, '{"legacy_table": "%s", "legacy_id": %s}' % (legacy_table, legacy_id)),
     )
     return int(cur.fetchone()["id"])
 
@@ -58,9 +58,9 @@ def build_fixture() -> dict[str, int | str]:
             (machine_id, f"{prefix}_FIX-JAVA-001", f"{prefix}_SERIE-FIX-001"),
         )
         cur.execute(
-            """INSERT INTO contrato(proceso_id, bpm_node_id, nombre, metrica, objetivo)
-               VALUES (%s, %s, %s, %s, %s) RETURNING id""",
-            (process_id, operation_id, f"{prefix}_CONTRACT", "OEE", "Validar trazabilidad"),
+            """INSERT INTO contrato(proceso_id, bpm_node_id, nombre, kpi_description, kpi_args, kpi_function, objetivo)
+               VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+            (process_id, operation_id, f"{prefix}_CONTRACT", "OEE", "", "", "Validar trazabilidad"),
         )
         contract_id = int(cur.fetchone()["id"])
         cur.execute("INSERT INTO contrato_maquina(contrato_id, maquina_id) VALUES (%s, %s)", (contract_id, machine_id))
@@ -98,11 +98,11 @@ def build_fixture() -> dict[str, int | str]:
                     )
                 cur.execute(
                     """
-                    INSERT INTO hipotesis(causa_id, descripcion, criterio_validacion, estado)
-                    VALUES (%s, %s, %s, 'pendiente')
+                    INSERT INTO hipotesis(causa_id, nombre, descripcion, criterio_validacion, estado)
+                    VALUES (%s, %s, %s, %s, 'pendiente')
                     RETURNING id
                     """,
-                    (cause_id, f"Hipotesis para {name}", "Comprobar evidencia fixture"),
+                    (cause_id, f"Hipotesis para {name}", f"Hipotesis para {name}", "Comprobar evidencia fixture"),
                 )
                 hypothesis_id = int(cur.fetchone()["id"])
                 hypothesis_node_id = _node(

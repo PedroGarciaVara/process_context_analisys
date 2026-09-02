@@ -5,7 +5,7 @@
 - Spec File: `./requeriments_spec_driven_development/requerimiento_10/spec.md`
 - Task Plan: `./requeriments_spec_driven_development/requerimiento_10/task_plan.md`
 - Created At: `2026-07-20`
-- Last Updated: `2026-07-27`
+- Last Updated: `2026-08-30`
 
 ---
 
@@ -137,6 +137,28 @@ Estado actual de NCs: `NCs abiertas`
 | 2026-07-27 | `restoreFromHash` admite varias expansiones del mismo proceso raíz; la medición reserva el ancho calculado por subárboles y carriles; el contenedor interno conserva el flujo visible. | `corrección aplicada` |
 | 2026-07-27 | URL exacta verificada: `6/6` subprocesos expandidos, `0` solapamientos entre tarjetas no anidadas, `FAB_MEZCLA` reserva `1835 px` frente a un subflujo de `1771 px`; regresión Playwright `5/5`. | `corrección técnica verificada; Gate 3 humano pendiente` |
 
+### NC-006
+
+| Campo | Valor |
+|-------|-------|
+| **ID** | NC-006 |
+| **Fecha deteccion** | 2026-08-30 |
+| **Detectado por** | `programador_humano` |
+| **Descripcion** | En una captura BPM, el nodo de decisión y sus ramas Sí/No se renderizan en serie/vertical, en lugar de mostrarse como dos ramas visualmente paralelas y claramente separadas. |
+| **Comportamiento esperado** | Según `spec.md`, FR-12/AC-25 y `task_plan.md`, T17/T18/T21: el nodo de decisión debe distribuir sus ramas Sí/No en lanes independientes, visualmente paralelos y claramente separados, sin solapamiento ni representación vertical en serie. |
+| **Comportamiento observado** | La captura BPM muestra el nodo de decisión y las ramas Sí/No apilados en serie/vertical, sin la separación visual paralela exigida. |
+| **Causa raiz** | `implementation` — FR-12/AC-25 y T17/T18/T21 cubren explícitamente lanes independientes, ramas paralelas y separación; la desviación está en el renderizado/layout implementado. |
+| **Punto de re-entrada** | `execute-agent` |
+| **Estado** | `in_correction` |
+| **Validacion de cierre** | `pendiente` |
+
+#### Historial de correcciones
+
+| Fecha | Accion | Resultado |
+|-------|--------|-----------|
+| 2026-08-30 | NC abierta por observación del programador humano; se contrastó la captura con FR-12/AC-25 y T17/T18/T21, sin ambigüedad real. Se clasificó la causa raíz como `implementation` y la reentrada como `execute-agent`. | `corrección debe ser delegada a execute-agent; validación pendiente` |
+| 2026-08-30 | `execute-agent` fijó los destinos de transiciones `branch` de una decisión en la siguiente profundidad común y ordenó sus lanes de forma determinista Sí→No; se añadió una prueba unitaria que verifica misma fila, separación mínima y continuidad de lane. `node --check` y la suite unitaria focalizada pasan. | `corrección técnica aplicada; Gate 3 humano pendiente` |
+
 ## Tabla resumen
 
 | NC | Causa raiz | Estado | Punto re-entrada | Cierre |
@@ -146,3 +168,4 @@ Estado actual de NCs: `NCs abiertas`
 | NC-003 | `implementation` | `in_correction` | `execute-agent` | `pendiente de corrección, nueva validación y Gate 3 humano` |
 | NC-004 | `implementation` | `in_correction` | `execute-agent` | `corrección técnica verificada; pendiente de Gate 3 humano` |
 | NC-005 | `implementation` | `in_correction` | `execute-agent` | `corrección técnica verificada; pendiente de Gate 3 humano` |
+| NC-006 | `implementation` | `in_correction` | `execute-agent` | `pendiente de corrección, nueva validación y Gate 3 humano` |

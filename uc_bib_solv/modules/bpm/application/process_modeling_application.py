@@ -6,6 +6,7 @@ from .use_cases.operations import GetProcessOperation, UpdateProcessOperationSta
 from .use_cases.process_modeling_dependencies import ProcessModelingDependencies
 from .use_cases.processes import (
     CreateProcess,
+    DeleteProcess,
     GetProcess,
     ListProcesses,
     UpdateProcess,
@@ -23,6 +24,7 @@ class ProcessModelingApplication:
         self._get_process = GetProcess(dependencies)
         self._create_process = CreateProcess(dependencies)
         self._update_process = UpdateProcess(dependencies)
+        self._delete_process = DeleteProcess(dependencies)
         self._validate_process = ValidateProcess(dependencies)
         self._create_node = CreateProcessNode(dependencies)
         self._create_node_with_transition = CreateProcessNodeWithTransition(dependencies)
@@ -42,6 +44,7 @@ class ProcessModelingApplication:
     def create_process(self, data): return self._create_process.execute(data)
     def get_process(self, process_id, expand_node_id=None): return self._get_process.execute(process_id, expand_node_id)
     def update_process(self, process_id, data): return self._update_process.execute(process_id, data)
+    def delete_process(self, process_id, cascade=False): return self._delete_process.execute(process_id, cascade)
     def validate_process(self, process_id): return self._validate_process.execute(process_id)
     def create_node(self, process_id, data): return self._create_node.execute(process_id, data)
     def create_node_with_transition(self, process_id, data): return self._create_node_with_transition.execute(process_id, data)

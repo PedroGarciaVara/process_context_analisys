@@ -1,12 +1,5 @@
 import { escapeHtml } from "../core/utils.js";
 
-export function statusBadge(status) {
-  const normalized = String(status || "closed").toLowerCase();
-  if (normalized === "open") return `<span class="inline-flex items-center gap-xs px-sm py-base rounded-full bg-green-100 text-green-800 text-[11px] font-bold uppercase"><span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>Abierto</span>`;
-  if (normalized === "review") return `<span class="inline-flex items-center gap-xs px-sm py-base rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold uppercase"><span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>En revision</span>`;
-  return `<span class="inline-flex items-center gap-xs px-sm py-base rounded-full bg-surface-container text-on-surface-variant text-[11px] font-bold uppercase"><span class="w-1.5 h-1.5 rounded-full bg-outline"></span>Cerrado</span>`;
-}
-
 export function buildMachineMultiOptions(items, selectedIds = []) {
   const selectedSet = new Set((selectedIds || []).map((value) => String(value)));
   return items.map((item) => `<option value="${escapeHtml(item.id)}"${selectedSet.has(String(item.id)) ? " selected" : ""}>${escapeHtml(item.name)}</option>`).join("");

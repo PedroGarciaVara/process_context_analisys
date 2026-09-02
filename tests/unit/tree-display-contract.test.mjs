@@ -5,13 +5,14 @@ import {
   readableTreeContractLabel,
   resolveTreeDisplayContext,
 } from "../../uc_bib_solv/webapp/js/components/tree-data.js";
+import { getRenderableTreeChildren } from "../../uc_bib_solv/webapp/js/components/tree-render.js";
 
 const treeRenderSource = readFileSync(
   new URL("../../uc_bib_solv/webapp/js/components/tree-render.js", import.meta.url),
   "utf8",
 );
 const treeViewSource = readFileSync(
-  new URL("../../uc_bib_solv/webapp/js/views/arboles_v02.js", import.meta.url),
+  new URL("../../uc_bib_solv/webapp/js/views/rca/arboles.js", import.meta.url),
   "utf8",
 );
 
@@ -55,4 +56,22 @@ test("el markup del árbol no concatena IDs en textos visibles y conserva el con
   assert.match(treeRenderSource, /displayContext\.objective/);
   assert.match(treeViewSource, /Objetivo del contrato/);
   assert.match(treeViewSource, /escapeHtml\(objective\)/);
+});
+
+test("la vista arbol renderiza las hipotesis dentro de la causa, no como nodos hijos", () => {
+  const cause = {
+    children: [
+      { id: 11, node_type: "HYPOTHESIS", descripcion: "Hipotesis" },
+      { id: 12, node_type: "CAUSE", nombre: "Causa hija" },
+    ],
+  };
+
+  assert.deepEqual(
+    getRenderableTreeChildren(cause, "arbol").map((node) => node.id),
+    [12],
+  );
+  assert.deepEqual(
+    getRenderableTreeChildren(cause, "analisis_causas_v2").map((node) => node.id),
+    [11, 12],
+  );
 });

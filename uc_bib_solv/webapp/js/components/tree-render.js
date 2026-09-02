@@ -140,18 +140,33 @@ function renderHypothesisSummary(hypotheses, limit = 2) {
   return summary;
 }
 
-function subtreeWidth(node) {
-  const children = node.children || [];
+function isHypothesisNode(node) {
+  return String(node?.node_type || node?.tipo || "").toUpperCase() === "HYPOTHESIS";
+}
+
+export function getRenderableTreeChildren(node, mode) {
+  const children = Array.isArray(node?.children) ? node.children : [];
+  // Hypotheses are rendered as part of their cause card. Keeping them out of
+  // the DAG layout avoids showing the same hypothesis once in the card and
+  // once again as an independent diagram node in analysis mode.
+  if (mode === "arbol" || mode === "analisis_causas_v2") {
+    return children.filter((child) => !isHypothesisNode(child));
+  }
+  return children;
+}
+
+function subtreeWidth(node, mode) {
+  const children = getRenderableTreeChildren(node, mode);
   if (children.length === 0) {
     return TREE_CARD_WIDTH;
   }
-  const childrenWidth = children.map((child) => subtreeWidth(child)).reduce((sum, value) => sum + value, 0);
+  const childrenWidth = children.map((child) => subtreeWidth(child, mode)).reduce((sum, value) => sum + value, 0);
   const gaps = TREE_CHILD_GAP * Math.max(children.length - 1, 0);
   return Math.max(TREE_CARD_WIDTH, childrenWidth + gaps);
 }
 
 function renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload) {
-  const isHypothesis = String(node.node_type || node.tipo || "").toUpperCase() === "HYPOTHESIS";
+  const isHypothesis = isHypothesisNode(node);
   if (isHypothesis) {
     const card = createElement("div", "acv2-tree-hypothesis-node");
     card.dataset.hypothesisId = String(node.id);
@@ -166,7 +181,9 @@ function renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload)
   const childHypotheses = (node.children || []).filter(
     (child) => String(child.node_type || child.tipo || "").toUpperCase() === "HYPOTHESIS",
   );
-  const hypotheses = childHypotheses.length > 0 ? childHypotheses : (hypothesesByCause[String(causeId)] || []);
+  const hypotheses = hypothesesByCause[String(causeId)]?.length
+    ? hypothesesByCause[String(causeId)]
+    : childHypotheses;
   const state = hypotheses.length ? readStatus(hypotheses[0].analysis_result?.evaluacion || hypotheses[0].estado) : "pending";
   const isActive = selectedCauseId !== null && Number(selectedCauseId) === causeId;
   const projectionMetadata = readProjectionMetadata(payload);
@@ -204,8 +221,8 @@ function renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload)
 }
 
 function renderSubtree(node, selectedCauseId, hypothesesByCause, mode, payload) {
-  const children = node.children || [];
-  const width = subtreeWidth(node);
+  const children = getRenderableTreeChildren(node, mode);
+  const width = subtreeWidth(node, mode);
   const shell = createElement("div", `acv2-tree-node-shell ${node.parent_id === null ? "acv2-tree-node-shell-root" : ""}`.trim());
   shell.style.width = `${width}px`;
   shell.style.minWidth = `${width}px`;
@@ -228,7 +245,7 @@ function renderSubtree(node, selectedCauseId, hypothesesByCause, mode, payload) 
     );
     childrenShell.style.width = `${width}px`;
     if (children.length >= 2) {
-      const widths = children.map((child) => subtreeWidth(child));
+      const widths = children.map((child) => subtreeWidth(child, mode));
       const line = createElement("div", "acv2-tree-children-line");
       line.style.left = `${TREE_CARD_WIDTH / 2}px`;
       line.style.right = `${widths[widths.length - 1] - (TREE_CARD_WIDTH / 2)}px`;
@@ -237,7 +254,7 @@ function renderSubtree(node, selectedCauseId, hypothesesByCause, mode, payload) 
     const body = createElement("div", "acv2-tree-children-body");
     body.style.width = `${width}px`;
     children.forEach((child) => {
-      const childWidth = subtreeWidth(child);
+      const childWidth = subtreeWidth(child, mode);
       const cell = createElement("div", "acv2-tree-child-cell");
       const childDrop = createElement("div", "acv2-tree-child-drop");
       cell.style.width = `${childWidth}px`;
@@ -284,20 +301,30 @@ function renderHypothesisCard(hypothesis, handlers = {}) {
     evidence.rows = 3;
     evidence.placeholder = "Evidencia obligatoria para aceptar o rechazar esta hipotesis";
     evidence.value = hypothesis.analysis_result?.evidencia || "";
+    const comment = document.createElement("textarea");
+    comment.className = "acv2-analysis-hypothesis-comment";
+    comment.rows = 2;
+    comment.placeholder = "Comentario / conclusión de la evaluación";
+    comment.value = hypothesis.analysis_result?.conclusion || "";
     const errorNode = createElement("div", "acv2-analysis-hypothesis-error", "La evidencia es obligatoria.");
     errorNode.hidden = true;
     const actions = createElement("div", "acv2-hypothesis-actions");
-    const accept = createElement("button", "acv2-hypothesis-btn acv2-hypothesis-btn-inactive", "Aceptar");
-    const reject = createElement("button", "acv2-hypothesis-btn acv2-hypothesis-btn-danger", "Rechazar");
+    const accept = createElement("button", "acv2-hypothesis-btn acv2-hypothesis-btn-inactive", "OK");
+    const reject = createElement("button", "acv2-hypothesis-btn acv2-hypothesis-btn-danger", "NO OK");
     [accept, reject].forEach((button) => {
       button.type = "button";
       button.dataset.hypothesisAction = "evaluate";
       button.dataset.hypothesisId = String(hypothesis.id);
     });
-    accept.addEventListener("click", () => handlers.onEvaluateHypothesis?.(hypothesis, "confirmada", evidence.value, errorNode));
-    reject.addEventListener("click", () => handlers.onEvaluateHypothesis?.(hypothesis, "descartada", evidence.value, errorNode));
-    actions.append(accept, reject);
-    card.append(evidence, errorNode, actions);
+    const readOnly = Boolean(handlers.readOnly);
+    evidence.disabled = readOnly;
+    comment.disabled = readOnly;
+    if (!readOnly) {
+      accept.addEventListener("click", () => handlers.onEvaluateHypothesis?.(hypothesis, "confirmada", evidence.value, comment.value, errorNode));
+      reject.addEventListener("click", () => handlers.onEvaluateHypothesis?.(hypothesis, "descartada", evidence.value, comment.value, errorNode));
+      actions.append(accept, reject);
+    }
+    card.append(evidence, comment, errorNode, actions);
   }
   return card;
 }
@@ -358,6 +385,7 @@ export function renderDetailPanel(payload, handlers = {}) {
     metadata.appendChild(row);
   });
   const isAnalysisMode = payload.view === "analisis_causas_v2";
+  const analysisReadOnly = isAnalysisMode && payload.analysis?.estado === "cerrado";
   const actionsTitle = createElement("div");
   actionsTitle.className = "acv2-detail-title";
   actionsTitle.style.fontSize = "0.98rem";
@@ -388,6 +416,7 @@ export function renderDetailPanel(payload, handlers = {}) {
   } else {
     hypotheses.forEach((hypothesis) => hypList.appendChild(renderHypothesisCard(hypothesis, {
       analysisMode: isAnalysisMode,
+      readOnly: analysisReadOnly,
       onEvaluateHypothesis: handlers.onEvaluateHypothesis,
     })));
   }

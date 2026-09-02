@@ -15,6 +15,7 @@ class UpdateCause:
         cause_id = integer(payload.get("causa_id"))
         if not cause_id:
             raise CausalTreeValidationError("Se requiere una causa para actualizarla.")
+        # TODO Posibilidad de extraer normalizacion comun a cause_factory
         name = (payload.get("nombre") or "").strip()
         return {
             "cause": self.causes.update(

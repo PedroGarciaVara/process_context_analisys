@@ -6,7 +6,7 @@ test("permite seleccionar cualquier tarjeta del arbol causal", async ({ page }) 
     if (message.type() === "error") consoleErrors.push(message.text());
   });
 
-  await page.goto("/#/arboles_v02");
+  await page.goto("/#/arboles");
   const cards = page.locator(".acv2-tree-node-button");
   await expect(cards).toHaveCount(9);
 

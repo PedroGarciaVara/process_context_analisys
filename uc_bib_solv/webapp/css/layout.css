@@ -403,6 +403,32 @@
 }
 
 @media (max-width: 960px) {
+  .app-page-shell {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .app-page-shell > .flex-1 {
+    display: block;
+    overflow: visible;
+  }
+
+  .app-page-shell > .flex-1 > aside,
+  .app-page-shell > .flex-1 > main {
+    width: 100% !important;
+    max-width: 100%;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .app-page-shell > .flex-1 > main {
+    padding: 20px 16px;
+  }
+
+  .app-page-shell > .flex-1 > aside:first-child {
+    min-height: auto;
+  }
+
   .app-layout {
     grid-template-columns: 1fr;
   }

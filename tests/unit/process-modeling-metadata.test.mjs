@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { additionalFieldMarkup, buildMetadataSections, mergeEditedMetadataData, metadataEditFields, validateAdditionalFieldDraft } from "../../uc_bib_solv/webapp/js/views/process-modeling.js";
+import { additionalFieldMarkup, buildMetadataSections, mergeEditedMetadataData, metadataEditFields, validateAdditionalFieldDraft } from "../../uc_bib_solv/webapp/js/views/nodes/process-modeling.js";
 
 test("renders row-level save and remove actions for additional metadata fields", () => {
   const markup = additionalFieldMarkup({ title: "Criterios", description: "Validar lote" }, 2);

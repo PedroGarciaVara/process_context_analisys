@@ -12,21 +12,21 @@ function buildRoute(route, params) {
 }
 
 export function buildDetailRoute(contractId, causeId) {
-  return buildRoute("causa_detalle_v02", {
+  return buildRoute("causa_detalle", {
     contrato_id: contractId,
     causa_id: causeId,
   });
 }
 
 export function buildChildRoute(contractId, parentId) {
-  return buildRoute("causa_detalle_v02", {
+  return buildRoute("causa_detalle", {
     contrato_id: contractId,
     parent_id: parentId,
   });
 }
 
 export function buildCreateCauseRoute(mode, contractId, selectedNodeId) {
-  return buildRoute("causa_detalle_v02", {
+  return buildRoute("causa_detalle", {
     contrato_id: contractId,
     ...(mode === "analisis_causas_v2" && selectedNodeId ? { causa_id: selectedNodeId } : {}),
   });

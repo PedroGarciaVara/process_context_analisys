@@ -51,7 +51,7 @@ test("el árbol HTTP conserva hipótesis como hijas de su causa tras crear un co
 });
 
 test("permite seleccionar un contrato y crear la primera causa raiz", async ({ page }) => {
-  await page.goto("/#/arboles_v02");
+  await page.goto("/#/arboles");
   const processSelect = page.locator("#arbol-v02-process-select");
   await expect(processSelect).toBeVisible();
   await processSelect.selectOption({ index: 1 });
@@ -65,7 +65,7 @@ test("permite seleccionar un contrato y crear la primera causa raiz", async ({ p
   const rootButton = page.locator('[data-action="tree-add-root-v02"]');
   await expect(rootButton).toBeEnabled();
   await rootButton.click();
-  await expect(page).toHaveURL(/#\/causa_detalle_v02\?contrato_id=\d+/);
+  await expect(page).toHaveURL(/#\/causa_detalle\?contrato_id=\d+/);
 
   const causeName = `Causa raíz E2E ${Date.now()}`;
   await page.locator("#cd-cause-name").fill(causeName);
@@ -80,14 +80,14 @@ test("permite seleccionar un contrato y crear la primera causa raiz", async ({ p
   expect(Number(createdCause?.contrato_id)).toBeGreaterThan(0);
   expect(createdCause?.nombre).toBe(causeName);
   await expect(page.locator("#cd-cause-name")).toHaveValue(causeName);
-  await expect(page).toHaveURL(/#\/causa_detalle_v02\?contrato_id=\d+&causa_id=\d+/);
+  await expect(page).toHaveURL(/#\/causa_detalle\?contrato_id=\d+&causa_id=\d+/);
   await page.request.delete(`/api/rca-tree/causes/${createdCause.id}`);
   await page.locator("#cd-cause-exit").click();
-  await expect(page).toHaveURL(/#\/arboles_v02/);
+  await expect(page).toHaveURL(/#\/arboles/);
 });
 
 test("al cambiar de proceso actualiza los objetivos del contrato relacionado", async ({ page }) => {
-  await page.goto("/#/arboles_v02?contract_id=1");
+  await page.goto("/#/arboles?contract_id=1");
   const processSelect = page.locator("#arbol-v02-process-select");
   const objectiveSelect = page.locator("#arbol-v02-objective-select");
 
@@ -99,7 +99,7 @@ test("al cambiar de proceso actualiza los objetivos del contrato relacionado", a
   await expect(objectiveSelect.locator("option")).toContainText([
     "Obtener una bolsa correctamente formada y cerrada para iniciar la dosificación.",
   ]);
-  await expect(page).toHaveURL(/#\/arboles_v02\?contract_id=2$/);
+  await expect(page).toHaveURL(/#\/arboles\?contract_id=2$/);
 });
 
 test("precarga los datos al editar una causa existente", async ({ page }) => {
@@ -109,7 +109,7 @@ test("precarga los datos al editar una causa existente", async ({ page }) => {
   const cause = detail.cause || detail.data?.cause;
   expect(cause?.id).toBe(45);
 
-  await page.goto("/#/causa_detalle_v02?contrato_id=2&causa_id=45");
+  await page.goto("/#/causa_detalle?contrato_id=2&causa_id=45");
   await expect(page.locator("#cd-hypothesis-status")).toHaveCount(0);
   await expect(page.locator("#cd-cause-name")).toHaveValue(cause.nombre);
   await expect(page.locator("#cd-cause-type")).toHaveValue(cause.tipo);
@@ -118,7 +118,7 @@ test("precarga los datos al editar una causa existente", async ({ page }) => {
 });
 
 test("permite crear una hipotesis para la causa activa", async ({ page }) => {
-  await page.goto("/#/causa_detalle_v02?contrato_id=2&causa_id=45");
+  await page.goto("/#/causa_detalle?contrato_id=2&causa_id=45");
   await expect(page.locator("#cd-cause-name")).toHaveValue("causa_2_01");
 
   const hypothesisDescription = `Hipotesis E2E ${Date.now()}`;

@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const source = readFileSync(new URL("../../uc_bib_solv/webapp/js/views/procesos_v02.js", import.meta.url), "utf8");
-const detailSource = readFileSync(new URL("../../uc_bib_solv/webapp/js/views/procesos_detalle_v02.js", import.meta.url), "utf8");
+const source = readFileSync(new URL("../../uc_bib_solv/webapp/js/views/bpm/procesos.js", import.meta.url), "utf8");
+const detailSource = readFileSync(new URL("../../uc_bib_solv/webapp/js/views/bpm/procesos_detalle.js", import.meta.url), "utf8");
 const apiSource = readFileSync(new URL("../../uc_bib_solv/webapp/js/api/process-modeling.js", import.meta.url), "utf8");
 const pageComponents = readFileSync(new URL("../../uc_bib_solv/webapp/js/components/bpm-page.js", import.meta.url), "utf8");
 

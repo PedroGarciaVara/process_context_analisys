@@ -54,6 +54,32 @@ test("renderGraph aplica el ancho común calculado a una cadena vertical heterog
   assert.equal(styles.operation.width, styles.stock.width);
 });
 
+test("renderGraph coloca las ramas Sí/No de una decisión en lanes paralelos", () => {
+  const decisionVersion = {
+    nodes: [
+      { node_id: "decision", node_code: "DEC", node_type: "decision", name: "¿Conforme?" },
+      { node_id: "yes", node_code: "YES", node_type: "output", name: "Correcto" },
+      { node_id: "no", node_code: "NO", node_type: "output", name: "Incorrecto" },
+    ],
+    diagram_transitions: [
+      { transition_id: "yes-edge", source_node_id: "decision", target_node_id: "yes", transition_type: "BRANCH", label: "Sí" },
+      { transition_id: "no-edge", source_node_id: "decision", target_node_id: "no", type: "branch", label: "No" },
+    ],
+  };
+  const html = renderGraph(decisionVersion);
+  const cards = Object.fromEntries([...html.matchAll(
+    /data-node-id="([^"]+)"[^>]*style="left:([^;]+);top:([^;]+);width:([^p]+)px;height:/g,
+  )].map(([, id, left, top, width]) => [id, {
+    left: parseFloat(left),
+    top: parseFloat(top),
+    width: parseFloat(width),
+  }]));
+  assert.equal(cards.yes.top, cards.no.top);
+  assert.ok(cards.yes.left + cards.yes.width < cards.no.left || cards.no.left + cards.no.width < cards.yes.left);
+  assert.match(html, /data-pm-edge="yes-edge"/);
+  assert.match(html, /data-pm-edge="no-edge"/);
+});
+
 test("el estado del modelador admite la selección de un nodo", () => {
   const state = createProcessModelingState();
   assert.equal(state.process, null);

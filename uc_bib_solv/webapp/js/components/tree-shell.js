@@ -165,7 +165,7 @@ function createTreePage(mode, state) {
         }
       };
 
-      const evaluateAnalysisHypothesis = async (hypothesis, evaluation, evidence, errorNode) => {
+      const evaluateAnalysisHypothesis = async (hypothesis, evaluation, evidence, comment, errorNode) => {
         if (!String(evidence || "").trim()) {
           if (errorNode) errorNode.hidden = false;
           return;
@@ -176,7 +176,7 @@ function createTreePage(mode, state) {
             hypothesis_id: Number(hypothesis.id),
             evaluation,
             evidence: String(evidence).trim(),
-            conclusion: evaluation === "confirmada" ? "Hipotesis aceptada" : "Hipotesis rechazada",
+            conclusion: String(comment || "").trim() || (evaluation === "confirmada" ? "Hipotesis aceptada" : "Hipotesis rechazada"),
           });
           analysisResultsByHypothesis[String(hypothesis.id)] = response.data;
           renderPage();
@@ -346,6 +346,11 @@ function createTreePage(mode, state) {
           currentPayload = payload;
           if (mode === "analisis_causas_v2" && analysisId) {
             const analysisResponse = await fetchAnalysis(analysisId);
+            // The tree endpoint selects the most relevant analysis for a
+            // contract, but this route may explicitly target an older or
+            // already closed analysis. Keep the URL analysis as the source
+            // of truth for status, evidence and read-only rendering.
+            currentPayload.analysis = analysisResponse.data;
             analysisResultsByHypothesis = Object.fromEntries(
               (analysisResponse.data?.results || [])
                 .filter((result) => result.tipo_elemento === "hipotesis")
@@ -376,6 +381,10 @@ function createTreePage(mode, state) {
           treeSlot.replaceChildren(createElement("div", "acv2-empty-state", "No hay datos de arbol disponibles."));
         }
       };
+
+      if (mode === "analisis_causas_v2" && eventBus) {
+        eventBus.on("analysis:refresh", loadPayload);
+      }
 
       loadPayload();
     },

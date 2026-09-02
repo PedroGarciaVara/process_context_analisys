@@ -16,6 +16,7 @@ class CreateCause:
         parent_id = integer(payload.get("parent_id"))
         if not contract_id:
             raise CausalTreeValidationError("Se requiere un contrato para crear una causa.")
+        # TODO Posibilidad de extraer normalizacion comun a cause_factory
         name = (payload.get("nombre") or "").strip()
         return {
             "cause": self.causes.create(

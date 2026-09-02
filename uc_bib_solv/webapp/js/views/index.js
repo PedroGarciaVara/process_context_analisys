@@ -1,33 +1,27 @@
-import { renderInicio } from "./inicio.js";
-import { renderMaquinasV02 } from "./maquinas_v02.js";
-import { renderProcesosV02 } from "./procesos_v02.js";
-import { renderProcesosDetalleV02 } from "./procesos_detalle_v02.js";
-import { renderOperacionesV02 } from "./operaciones_v02.js";
-import { renderOperacionesDetalleV02 } from "./operaciones_detalle_v02.js";
-import { renderContratosV02 } from "./contratos_v02.js";
-import { renderCausaDetalleV02 } from "./causa_detalle_v02.js";
-import { renderArbolesV02 } from "./arboles_v02.js";
-import { renderAnalisisCausasV02Shell } from "./analisis_causas_v02.js";
-import { renderProcessModeling } from "./process-modeling.js";
-import { renderContexto } from "./contexto.js";
+import { renderInicio } from "./inicio/inicio.js";
+import { renderMaquinas } from "./maquinas/maquinas.js";
+import { renderProcesos } from "./bpm/procesos.js";
+import { renderProcesosDetalle } from "./bpm/procesos_detalle.js";
+import { renderOperaciones } from "./bpm/operaciones.js";
+import { renderOperacionesDetalle } from "./bpm/operaciones_detalle.js";
+import { renderContratos } from "./bpm/contratos.js";
+import { renderCausaDetallePage } from "./rca/causa_detalle.js";
+import { renderArboles } from "./rca/arboles.js";
+import { renderAnalisisCausasShell } from "./rca/analisis_causas.js";
+import { renderProcessModeling } from "./nodes/process-modeling.js";
+import { renderContexto } from "./contexto/contexto.js";
 
 const VIEW_RENDERERS = {
   inicio: renderInicio,
-  procesos: renderProcesosV02,
-  contratos: renderContratosV02,
-  maquinas: renderMaquinasV02,
-  maquinas_v02: renderMaquinasV02,
-  procesos_v02: renderProcesosV02,
-  procesos_detalle_v02: renderProcesosDetalleV02,
-  operaciones_v02: renderOperacionesV02,
-  operaciones_detalle_v02: renderOperacionesDetalleV02,
-  contratos_v02: renderContratosV02,
-  causa_detalle: renderCausaDetalleV02,
-  causa_detalle_v02: renderCausaDetalleV02,
-  arbol: renderArbolesV02,
-  analisis_causas_v2: renderAnalisisCausasV02Shell,
-  arboles_v02: renderArbolesV02,
-  analisis_causas_v02: renderAnalisisCausasV02Shell,
+  procesos: renderProcesos,
+  procesos_detalle: renderProcesosDetalle,
+  operaciones: renderOperaciones,
+  operaciones_detalle: renderOperacionesDetalle,
+  contratos: renderContratos,
+  maquinas: renderMaquinas,
+  causa_detalle: renderCausaDetallePage,
+  arboles: renderArboles,
+  analisis_causas: renderAnalisisCausasShell,
   "modelado-procesos": renderProcessModeling,
   contexto: renderContexto,
 };
@@ -45,20 +39,14 @@ export function getRouteLabel(route) {
   const labels = {
     inicio: "Inicio",
     procesos: "Proceso",
-    procesos_v02: "Proceso",
-    procesos_detalle_v02: "Detalle de proceso",
-    operaciones_v02: "Operaciones",
-    operaciones_detalle_v02: "Detalle de operación",
+    procesos_detalle: "Detalle de proceso",
+    operaciones: "Operaciones",
+    operaciones_detalle: "Detalle de operación",
     contratos: "Contrato",
-    contratos_v02: "Contrato",
     maquinas: "Maquina",
-    maquinas_v02: "Maquina",
     causa_detalle: "Detalle de causa",
-    causa_detalle_v02: "Detalle de causa",
-    arbol: "Arbol",
-    arboles_v02: "Arbol",
-    analisis_causas_v2: "Analisis causas",
-    analisis_causas_v02: "Analisis causas",
+    arboles: "Arbol",
+    analisis_causas: "Analisis causas",
     "modelado-procesos": "Modelado de procesos",
     contexto: "Contexto estructurado",
   };
