@@ -215,6 +215,7 @@ export function setDeleteModalContent(modal, preview) {
   const title = modal.querySelector(".modal-card__title");
   const body = modal.querySelector("[data-modal-body]");
   const confirm = modal.querySelector('[data-modal-action="confirm"]');
+  const cancel = modal.querySelector('[data-modal-action="cancel"]');
 
   if (title) title.textContent = preview?.title || "Confirmar eliminacion";
   if (body) {
@@ -223,5 +224,13 @@ export function setDeleteModalContent(modal, preview) {
       <p class="detail-modal-note">${escapeHtml(preview?.detail || "")}</p>
     `;
   }
-  if (confirm) confirm.textContent = preview?.confirm_label || "Eliminar";
+  if (confirm) {
+    const canDelete = preview?.can_delete !== false;
+    confirm.textContent = preview?.confirm_label || "Eliminar";
+    confirm.disabled = !canDelete;
+    confirm.setAttribute("aria-disabled", String(!canDelete));
+    confirm.classList.toggle("opacity-50", !canDelete);
+    confirm.classList.toggle("cursor-not-allowed", !canDelete);
+  }
+  if (cancel) cancel.textContent = preview?.cancel_label || "Cancelar";
 }

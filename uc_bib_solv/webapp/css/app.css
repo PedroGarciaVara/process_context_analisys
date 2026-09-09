@@ -37,6 +37,20 @@ body {
   min-height: 100vh;
 }
 
+.bpm-studio-route {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: #f3f6f4;
+}
+
+.bpm-studio-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -1415,3 +1429,5 @@ body.pm-document-scroll { overflow-x: hidden; overflow-y: auto; }
   border-radius: 10px;
   background: radial-gradient(circle at 1px 1px, #ccfbf1 1px, transparent 0) 0 0 / 18px 18px, #f0fdfa;
 }
+.pm-edge-layer { pointer-events: auto; }
+.pm-edge { pointer-events: stroke; cursor: pointer; }

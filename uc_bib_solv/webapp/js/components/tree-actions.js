@@ -32,13 +32,24 @@ export function buildCreateCauseRoute(mode, contractId, selectedNodeId) {
   });
 }
 
-export function buildDeleteModalCopy(cause) {
+export function buildDeleteModalCopy(cause, { protectedRoot = false } = {}) {
+  if (protectedRoot) {
+    return {
+      title: "No se puede eliminar la causa raíz inicial",
+      message: `'${cause?.nombre || `Causa ${cause?.id}`}’ es el nodo inicial del árbol.`,
+      detail: "La causa raíz inicial es obligatoria para conservar la plantilla del árbol. Puedes eliminar sus causas hijas, pero no este nodo.",
+      confirm_label: "No se puede eliminar",
+      cancel_label: "Cerrar",
+      can_delete: false,
+    };
+  }
   return {
     title: "Confirmar eliminacion de causa",
     message: `Vas a eliminar '${cause?.nombre || `Causa ${cause?.id}`}'.`,
     detail: "Esta accion elimina el nodo del arbol de trabajo en la vista actual.",
     confirm_label: "Eliminar",
     cancel_label: "Cancelar",
+    can_delete: true,
   };
 }
 

@@ -49,6 +49,8 @@ def create_blueprint(operational, process_modeling):
     bp.add_url_rule("/api/bpm/processes/<process_id>/nodes-with-transition", "node_with_transition_create", lambda process_id: created(process_call("create_node_with_transition", process_id, payload())), methods=["POST"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>", "node_update", lambda node_id: process_call("update_node", node_id, payload()), methods=["PATCH"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>", "node_delete", lambda node_id: process_call("delete_node", node_id), methods=["DELETE"])
+    bp.add_url_rule("/api/bpm/processes/<process_id>/transitions/<transition_id>/insert-operation", "operation_insert", lambda process_id, transition_id: created(process_call("insert_operation", process_id, transition_id, payload())), methods=["POST"])
+    bp.add_url_rule("/api/bpm/nodes/<node_id>/operation-delete", "operation_delete", lambda node_id: process_call("delete_operation", node_id, bool(payload().get("reconnect"))), methods=["POST"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>/metadata", "node_metadata_get", lambda node_id: process_call("get_node_metadata", node_id), methods=["GET"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>/metadata", "node_metadata_update", lambda node_id: process_call("update_node_metadata", node_id, payload()), methods=["PATCH"])
     bp.add_url_rule("/api/bpm/operations", "operations_list", lambda: operational_call(operational.list_operations, request.args.get("process_id")), methods=["GET"])
@@ -57,6 +59,7 @@ def create_blueprint(operational, process_modeling):
     bp.add_url_rule("/api/bpm/nodes/<node_id>/context-records", "context_record_create", lambda node_id: created(process_call("create_context_record", node_id, payload())), methods=["POST"])
     bp.add_url_rule("/api/bpm/kpis", "kpi_calculate", lambda: process_call("calculate_context_kpi", payload()), methods=["POST"])
     bp.add_url_rule("/api/bpm/processes/<process_id>/transitions", "transition_create", lambda process_id: created(process_call("create_transition", process_id, payload())), methods=["POST"])
+    bp.add_url_rule("/api/bpm/transitions/<transition_id>", "transition_update", lambda transition_id: process_call("update_transition", transition_id, payload()), methods=["PATCH"])
     bp.add_url_rule("/api/bpm/transitions/<transition_id>", "transition_delete", lambda transition_id: process_call("delete_transition", transition_id), methods=["DELETE"])
     bp.add_url_rule("/api/bpm/processes/<process_id>/validate", "process_validate", lambda process_id: process_call("validate_process", process_id), methods=["POST"])
 

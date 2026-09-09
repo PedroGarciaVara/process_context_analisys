@@ -14,7 +14,7 @@ class UpdateProcess:
         current = self.get_process.execute(process_id)
         values = {
             "process_id": current["process_id"],
-            "process_code": data.get("process_code", current.get("process_code")),
+            "process_code": current.get("process_code"),
             "name": data.get("name", current.get("name")),
             "description": data.get("description", current.get("description")),
             "abstraction_level": data.get("abstraction_level", current.get("abstraction_level", 0)),

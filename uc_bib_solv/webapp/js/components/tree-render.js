@@ -441,8 +441,8 @@ export function renderSidebar(payload) {
   const contractOptions = Array.isArray(payload.contract_options) ? payload.contract_options : [];
   if (contractOptions.length === 0) {
     const option = document.createElement("option");
-    option.value = String(payload.contract?.id || "");
-    option.textContent = displayContext.contractLabel || "Contrato seleccionado";
+    option.value = "";
+    option.textContent = "no hay contratos";
     option.selected = true;
     contractSelect.appendChild(option);
     contractSelect.disabled = true;

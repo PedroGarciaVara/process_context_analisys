@@ -1,7 +1,7 @@
 """Application composition for BPM process-modeling use cases."""
 
 from .use_cases.context.context_records import CalculateContextKpi, CreateContextRecord, GetContext
-from .use_cases.nodes import CreateProcessNode, CreateProcessNodeWithTransition, DeleteProcessNode, GetNodeMetadata, UpdateNodeMetadata, UpdateProcessNode
+from .use_cases.nodes import CreateProcessNode, CreateProcessNodeWithTransition, DeleteOperation, DeleteProcessNode, GetNodeMetadata, InsertOperationOnTransition, UpdateNodeMetadata, UpdateProcessNode
 from .use_cases.operations import GetProcessOperation, UpdateProcessOperationStages
 from .use_cases.process_modeling_dependencies import ProcessModelingDependencies
 from .use_cases.processes import (
@@ -12,7 +12,7 @@ from .use_cases.processes import (
     UpdateProcess,
     ValidateProcess,
 )
-from .use_cases.transitions import CreateTransition, DeleteTransition
+from .use_cases.transitions import CreateTransition, DeleteTransition, UpdateTransition
 
 
 class ProcessModelingApplication:
@@ -30,6 +30,8 @@ class ProcessModelingApplication:
         self._create_node_with_transition = CreateProcessNodeWithTransition(dependencies)
         self._update_node = UpdateProcessNode(dependencies)
         self._delete_node = DeleteProcessNode(dependencies)
+        self._insert_operation = InsertOperationOnTransition(dependencies)
+        self._delete_operation = DeleteOperation(dependencies)
         self._get_node_metadata = GetNodeMetadata(dependencies)
         self._update_node_metadata = UpdateNodeMetadata(dependencies)
         self._get_operation = GetProcessOperation(dependencies)
@@ -38,6 +40,7 @@ class ProcessModelingApplication:
         self._get_context = GetContext(dependencies)
         self._calculate_context_kpi = CalculateContextKpi()
         self._create_transition = CreateTransition(dependencies)
+        self._update_transition = UpdateTransition(dependencies)
         self._delete_transition = DeleteTransition(dependencies)
 
     def list_processes(self): return self._list_processes.execute()
@@ -50,6 +53,8 @@ class ProcessModelingApplication:
     def create_node_with_transition(self, process_id, data): return self._create_node_with_transition.execute(process_id, data)
     def update_node(self, node_id, data): return self._update_node.execute(node_id, data)
     def delete_node(self, node_id): return self._delete_node.execute(node_id)
+    def insert_operation(self, process_id, transition_id, data): return self._insert_operation.execute(process_id, transition_id, data)
+    def delete_operation(self, node_id, reconnect=False): return self._delete_operation.execute(node_id, reconnect)
     def get_node_metadata(self, node_id): return self._get_node_metadata.execute(node_id)
     def update_node_metadata(self, node_id, data): return self._update_node_metadata.execute(node_id, data)
     def update_operation_stages(self, operation_id, data): return self._update_operation_stages.execute(operation_id, data)
@@ -60,6 +65,7 @@ class ProcessModelingApplication:
         # kpi_args y kpi_function de los contratos en una fase posterior.
         return self._calculate_context_kpi.execute(data)
     def create_transition(self, process_id, data): return self._create_transition.execute(process_id, data)
+    def update_transition(self, transition_id, data): return self._update_transition.execute(transition_id, data)
     def delete_transition(self, transition_id): return self._delete_transition.execute(transition_id)
 
 

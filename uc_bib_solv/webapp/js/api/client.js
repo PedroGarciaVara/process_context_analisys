@@ -9,15 +9,14 @@ export async function requestJson(path, options = {}) {
 
   if (!response.ok) {
     let message = `Request failed: ${response.status}`;
+    let payload = null;
     try {
-      const payload = await response.json();
+      payload = await response.json();
       if (payload?.message) message = payload.message;
-      const detail = Object.assign(new Error(message), { status: response.status, code: payload?.code || "request_failed", field: payload?.field || null, data: payload?.data });
-      throw detail;
     } catch (_error) {
       // Ignore body parse failures and keep the generic message.
     }
-    throw Object.assign(new Error(message), { status: response.status, code: "request_failed", field: null });
+    throw Object.assign(new Error(message), { status: response.status, code: payload?.code || "request_failed", field: payload?.field || null, data: payload?.data });
   }
 
   return response.json();
@@ -40,16 +39,6 @@ export function fetchOperationalPage(page, params = {}) {
   });
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return requestJson(`/api/bpm/operational/page/${page}${suffix}`).then(unwrapApiData);
-}
-
-export function fetchCausas(view = "arbol", params = {}) {
-  const query = new URLSearchParams({ view });
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== null && value !== undefined && value !== "") {
-      query.set(key, String(value));
-    }
-  });
-  return requestJson(`/api/rca-tree/nodes?${query.toString()}`);
 }
 
 /**

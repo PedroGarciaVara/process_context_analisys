@@ -5,7 +5,9 @@ const ROUTES = new Set([
   "inicio",
   "procesos",
   "contratos",
+  "contratos_detalle",
   "maquinas",
+  "maquinas_detalle",
   "causa_detalle",
   "procesos_detalle",
   "operaciones",
@@ -13,10 +15,13 @@ const ROUTES = new Set([
   "arboles",
   "analisis_causas",
   "modelado-procesos",
+  "studio-procesos",
   "contexto",
 ]);
 
-export const LEGACY_ROUTE_ALIASES = Object.freeze({});
+export const LEGACY_ROUTE_ALIASES = Object.freeze({
+  "modelado-procesos": "studio-procesos",
+});
 
 export function createRouter(bus) {
   function resolveRoute() {

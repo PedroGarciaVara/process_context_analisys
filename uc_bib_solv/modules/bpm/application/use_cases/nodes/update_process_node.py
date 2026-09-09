@@ -15,6 +15,9 @@ class UpdateProcessNode:
             raise NotFoundError("Nodo no encontrado")
         merged = dict(node)
         merged.update(data)
+        # A node code is an allocated identity, not editable business data.
+        # Preserve it even if an old client sends node_code in a PATCH.
+        merged["node_code"] = node["node_code"]
         if "etapas" in data:
             merged["properties"] = dict(node.get("properties") or {})
             merged["properties"]["etapas"] = canonical_stages(data["etapas"], envelope=True)

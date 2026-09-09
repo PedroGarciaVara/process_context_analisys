@@ -55,7 +55,7 @@ function renderRoute(route) {
   const label = route.label
     ? `<g class="pm-edge-label"><rect x="${route.label.x - 20}" y="${route.label.y - 15}" width="40" height="24" rx="12"></rect><text x="${route.label.x}" y="${route.label.y + 2}" text-anchor="middle">${esc(route.label.text)}</text></g>`
     : "";
-  return `<path class="pm-edge" data-pm-edge="${routeId}" d="${route.path}" />${label}`;
+  return `<path class="pm-edge" data-pm-edge="${routeId}" data-pm-action="select-transition" data-pm-transition-id="${routeId}" tabindex="0" role="button" aria-label="Seleccionar transición" d="${route.path}" />${label}`;
 }
 
 export function renderGraph(process, options = {}) {

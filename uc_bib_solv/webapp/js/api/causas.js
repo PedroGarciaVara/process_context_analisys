@@ -1,4 +1,12 @@
-import { fetchCausas, requestJson } from "./client.js";
+import { requestJson } from "./client.js";
+
+export function fetchCausas(view = "arbol", params = {}) {
+  const query = new URLSearchParams({ view });
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== "") query.set(key, String(value));
+  });
+  return requestJson(`/api/rca-tree/nodes?${query.toString()}`);
+}
 
 function buildQuery(params = {}) {
   const searchParams = new URLSearchParams();

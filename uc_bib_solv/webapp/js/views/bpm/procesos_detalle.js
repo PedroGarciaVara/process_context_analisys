@@ -25,7 +25,7 @@ function buildPage(state, bpm, processes) {
           <div><h2 class="font-headline-sm text-headline-sm text-primary">Identificación BPM</h2><p class="text-[12px] text-on-surface-variant mt-xs">La relación canónica se mantiene vinculada a este identificador.</p></div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
             <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Identificador BPM</span><input class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm" value="${escapeHtml(currentId)}" readonly></label>
-            <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Código BPM</span><input id="process-page-code" name="process_code" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm" value="${escapeHtml(bpm.process_code || "")}" required></label>
+            <div class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Código BPM</span><p id="process-page-code" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm">${escapeHtml(bpm.process_code || "Asignado por el servidor")}</p></div>
           </div>
         </section>
         <section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-sm space-y-lg">
@@ -44,7 +44,7 @@ function buildPage(state, bpm, processes) {
           <div><h2 class="font-headline-sm text-headline-sm text-primary">Estado del proceso</h2></div>
           <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Estado BPM</span><select id="process-page-status" name="status" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm"><option value="draft"${bpm.status === "draft" ? " selected" : ""}>Borrador</option><option value="active"${bpm.status === "active" ? " selected" : ""}>Activo</option></select></label>
         </section>
-        <div class="flex justify-end gap-sm"><a href="#/modelado-procesos" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container">Abrir modelado BPM</a><button type="submit" id="process-page-save" data-action="process-page-save" class="px-lg py-sm bg-primary text-on-primary text-label-md font-label-md rounded hover:opacity-90">Guardar cambios</button></div>
+        <div class="flex justify-end gap-sm"><a href="#/studio-procesos${currentId ? `?processId=${encodeURIComponent(currentId)}` : ""}" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container">Abrir modelado BPM</a><button type="submit" id="process-page-save" data-action="process-page-save" class="px-lg py-sm bg-primary text-on-primary text-label-md font-label-md rounded hover:opacity-90">Guardar cambios</button></div>
       </form>` : '<section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-xl">No se pudo cargar la definición BPM.</section>'}
     </div>`;
 }
@@ -57,7 +57,7 @@ function queryProcess(state) {
 }
 
 export function renderProcesosDetalle(state, bus) {
-  const { root, mainSlot, rightSlot } = createHomeShell(state, { rightWidthClass: "w-[280px]" });
+  const { root, mainSlot, rightSlot } = createHomeShell(state, { rightWidthClass: "w-[560px]" });
   mainSlot.innerHTML = buildPage(state, null, []);
   rightSlot.innerHTML = '<div class="p-lg"><p class="font-label-md text-label-md text-secondary uppercase tracking-widest">Proceso seleccionado</p><p class="text-[12px] text-on-surface-variant mt-sm">Edición de la ficha BPM.</p></div>';
   return { shellMode: "full", main: root, afterMount(mountRoot, currentState, eventBus) {
@@ -79,7 +79,7 @@ export function renderProcesosDetalle(state, bus) {
       form?.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (!form.reportValidity()) return;
-        const payload = { process_code: form.process_code.value.trim(), name: form.name.value.trim(), description: form.description.value.trim() || null, parent_process_id: form.parent_process_id.value || null, abstraction_level: Number(form.abstraction_level.value), status: form.status.value };
+        const payload = { name: form.name.value.trim(), description: form.description.value.trim() || null, parent_process_id: form.parent_process_id.value || null, abstraction_level: Number(form.abstraction_level.value), status: form.status.value };
         try {
           const save = mountRoot.querySelector("#process-page-save");
           save.disabled = true;

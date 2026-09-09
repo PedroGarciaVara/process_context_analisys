@@ -153,7 +153,7 @@ function buildRightPanel(activeMachine, state) {
   const contractLabel = catalogName(contract, activeMachine?.contractName || "—");
   const areaLabel = activeMachine?.area || activeMachine?.processName || selectedOperation?.processName || "—";
   return `
-    <aside class="w-[320px] shrink-0 border-l border-outline-variant bg-surface-container-lowest overflow-y-auto" data-shell-right>
+    <aside class="w-[560px] shrink-0 border-l border-outline-variant bg-surface-container-lowest overflow-y-auto" data-shell-right>
       <div class="p-lg border-b border-outline-variant bg-surface-container-low">
         <div class="flex justify-between items-start mb-md gap-md">
           <div>
@@ -166,18 +166,17 @@ function buildRightPanel(activeMachine, state) {
         <div>
           <h4 class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm">Ficha tecnica</h4>
           <div class="space-y-sm">
-            <div class="flex justify-between font-body-sm text-body-sm py-base border-b border-outline-variant border-dashed">
-            <div class="flex justify-between font-body-sm text-body-sm py-base border-b border-outline-variant border-dashed">
-              <span class="text-on-surface-variant">Area</span>
-            <span class="machine-v02-readable text-primary">${escapeHtml(catalogName(areaLabel, "—"))}</span>
+            <div class="flex items-start justify-between gap-md font-body-sm text-body-sm py-base border-b border-outline-variant border-dashed">
+              <span class="text-on-surface-variant shrink-0">Area</span>
+            <span class="machine-v02-readable text-primary text-right break-words">${escapeHtml(catalogName(areaLabel, "—"))}</span>
             </div>
-            <div class="flex justify-between font-body-sm text-body-sm py-base border-b border-outline-variant border-dashed">
-              <span class="text-on-surface-variant">Proceso</span>
-              <span class="machine-v02-readable text-primary">${escapeHtml(processLabel)}</span>
+            <div class="flex items-start justify-between gap-md font-body-sm text-body-sm py-base border-b border-outline-variant border-dashed">
+              <span class="text-on-surface-variant shrink-0">Proceso</span>
+              <span class="machine-v02-readable text-primary text-right break-words">${escapeHtml(processLabel)}</span>
             </div>
-            <div class="flex justify-between font-body-sm text-body-sm py-base border-b border-outline-variant border-dashed">
-              <span class="text-on-surface-variant">Contrato</span>
-              <span class="machine-v02-readable text-primary">${escapeHtml(contractLabel)}</span>
+            <div class="flex items-start justify-between gap-md font-body-sm text-body-sm py-base border-b border-outline-variant border-dashed">
+              <span class="text-on-surface-variant shrink-0">Contrato</span>
+              <span class="machine-v02-readable text-primary text-right break-words">${escapeHtml(contractLabel)}</span>
             </div>
           </div>
         </div>
@@ -196,7 +195,6 @@ function buildRightPanel(activeMachine, state) {
         </div>
         <div class="border-t border-outline-variant pt-lg"><h4 class="font-label-md text-on-surface-variant uppercase mb-sm">Etapas de la operación</h4><div id="machine-v02-stage-detail" class="space-y-xs">${stagePathsMarkup(activeMachine)}</div></div>
       </div>
-      ${buildMachineManagementModal(activeMachine, state)}
     </aside>
   `;
 }
@@ -319,7 +317,6 @@ function buildMainContent(state) {
                     <td class="px-lg py-md">
                       <div class="grid gap-1">
                         <strong class="machine-v02-readable font-title-lg text-title-lg text-primary">${escapeHtml(displayName(item, "Máquina sin nombre"))}</strong>
-                        <span class="machine-v02-readable font-body-sm text-body-sm text-on-surface-variant">${escapeHtml(displayName({ name: item.contractName, label: item.contract_name, title: item.contractTitle }, "Sin contrato"))}</span>
                       </div>
                     </td>
                     <td class="machine-v02-readable px-lg py-md font-body-sm text-body-sm">${escapeHtml(item.area || item.processName || item.operations?.[0]?.process_name || "—")}</td>
@@ -346,6 +343,7 @@ function buildMainContent(state) {
             </div>
           </section>
         </div>
+        ${buildMachineManagementModal(null, state)}
       </main>
       ${buildRightPanel(activeMachine, state)}
     </div>
@@ -426,7 +424,7 @@ export function renderMaquinas(state, bus) {
           event.preventDefault();
           const machineId = node.getAttribute("data-machine-id");
           setCurrentMachine(machineId || null);
-          openManagementModal(machineId);
+          window.location.hash = `#/maquinas_detalle?machine_id=${encodeURIComponent(machineId)}`;
         });
       });
 

@@ -10,7 +10,12 @@ class CreateProcess:
         self.dependencies = dependencies
 
     def execute(self, data):
-        entity = Process(**ProcessCommand.from_payload(data).to_dict())
+        values = ProcessCommand.from_payload(data).to_dict()
+        # The persistence boundary allocates the final identity under its
+        # transaction lock.  Keep a non-client placeholder solely so the
+        # domain entity can be validated before the adapter is called.
+        values["process_code"] = "PENDING"
+        entity = Process(**values)
         if entity.parent_process_id:
             parent = self.dependencies.processes.get(entity.parent_process_id)
             if not parent:

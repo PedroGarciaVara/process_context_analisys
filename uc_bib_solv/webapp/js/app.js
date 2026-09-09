@@ -68,6 +68,7 @@ function mount() {
   // process-modeling view is standalone, so let the document grow vertically
   // while it is mounted instead of clipping its content at the viewport.
   document.body.classList.toggle("pm-document-scroll", AppState.route === "modelado-procesos");
+  document.body.classList.toggle("bpm-studio-document", AppState.route === "studio-procesos");
   root.innerHTML = "";
   root.appendChild(page.main);
   if (typeof page.afterMount === "function") {

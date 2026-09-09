@@ -133,13 +133,6 @@ function buildCenter(state) {
         </table>
       </section>
 
-      ${buildDetailModal(
-        activeContract,
-        getMachines(state),
-        activeContract ? filterMachines(state, activeContract.processId, activeContract.id, "all").map((item) => item.id) : [],
-        Boolean(state.contractDetailOpen && activeContract && String(state.contractDetailOpen) === String(activeContract.id)),
-      )}
-
       <div id="contract-create-v02-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="contract-create-v02-title" aria-describedby="contract-create-v02-description" aria-hidden="true" data-modal-state="closed">
         <form class="modal-card contract-create-modal" data-contract-create-form novalidate>
           <div class="modal-card__accent"></div>
@@ -158,10 +151,6 @@ function buildCenter(state) {
                 <option value="operation">Operación BPM</option>
               </select>
             </label>
-            <label class="block space-y-xs" for="contract-create-v02-process-search">
-              <span class="font-label-md text-label-md text-secondary">Buscar proceso BPM</span>
-              <input id="contract-create-v02-process-search" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="search" placeholder="Filtrar procesos..." autocomplete="off">
-            </label>
             <label class="block space-y-xs" for="contract-create-v02-process-scope">
               <span class="font-label-md text-label-md text-secondary">Proceso BPM</span>
               <select id="contract-create-v02-process-scope" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" required>
@@ -169,10 +158,6 @@ function buildCenter(state) {
               </select>
             </label>
             <div class="space-y-xs hidden" data-contract-scope-field="operation">
-              <label class="block space-y-xs" for="contract-create-v02-operation-search">
-                <span class="font-label-md text-label-md text-secondary">Buscar operación BPM</span>
-                <input id="contract-create-v02-operation-search" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="search" placeholder="Filtrar operaciones..." autocomplete="off">
-              </label>
               <label class="block space-y-xs" for="contract-create-v02-operation-scope">
               <span class="font-label-md text-label-md text-secondary">Operación BPM</span>
               <select id="contract-create-v02-operation-scope" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
@@ -272,7 +257,7 @@ function buildRight(state) {
 }
 
 export function renderContratos(state, bus) {
-  const { root, mainSlot, rightSlot } = createHomeShell(state);
+  const { root, mainSlot, rightSlot } = createHomeShell(state, { rightWidthClass: "w-[560px]" });
   mainSlot.innerHTML = buildCenter(state);
   rightSlot.innerHTML = buildRight(state);
 
@@ -322,8 +307,7 @@ export function renderContratos(state, bus) {
             setCurrentProcess(contract.processId);
           }
           setCurrentContract(contractId);
-          AppState.contractDetailOpen = contractId;
-          if (eventBus) eventBus.emit("state:change");
+          window.location.hash = `#/contratos_detalle?contract_id=${encodeURIComponent(contractId)}`;
         });
       });
 
@@ -357,9 +341,7 @@ export function renderContratos(state, bus) {
       const createModal = mountRoot.querySelector("#contract-create-v02-modal");
       const createForm = mountRoot.querySelector("[data-contract-create-form]");
       const createScopeTypeInput = mountRoot.querySelector("#contract-create-v02-scope-type");
-      const createProcessSearchInput = mountRoot.querySelector("#contract-create-v02-process-search");
       const createProcessScopeInput = mountRoot.querySelector("#contract-create-v02-process-scope");
-      const createOperationSearchInput = mountRoot.querySelector("#contract-create-v02-operation-search");
       const createOperationScopeInput = mountRoot.querySelector("#contract-create-v02-operation-scope");
       const createOperationHelp = mountRoot.querySelector("#contract-create-v02-operation-help");
       const createNameInput = mountRoot.querySelector("#contract-create-v02-name");
@@ -463,9 +445,8 @@ export function renderContratos(state, bus) {
       const renderProcessScopeOptions = () => {
         if (!createProcessScopeInput) return;
         const scopes = getScopeCatalog();
-        const search = String(createProcessSearchInput?.value || "").trim().toLocaleLowerCase();
         const selectedValue = createProcessScopeInput.value;
-        const filtered = scopes.processes.filter((item) => String(item.name || "").toLocaleLowerCase().includes(search));
+        const filtered = scopes.processes;
         createProcessScopeInput.innerHTML = buildContractScopeOptions(filtered, selectedValue);
         if (selectedValue && filtered.some((item) => String(item.id) === String(selectedValue))) {
           createProcessScopeInput.value = selectedValue;
@@ -475,11 +456,10 @@ export function renderContratos(state, bus) {
         if (!createOperationScopeInput) return;
         const scopes = getScopeCatalog();
         const processId = selectedProcessScope()?.id;
-        const search = String(createOperationSearchInput?.value || "").trim().toLocaleLowerCase();
         const operations = processId
           ? scopes.operations.filter((item) => String(item.bpmProcessId) === String(processId))
           : [];
-        const filtered = operations.filter((item) => String(item.name || "").toLocaleLowerCase().includes(search));
+        const filtered = operations;
         createOperationScopeInput.disabled = !processId || !filtered.length;
         createOperationScopeInput.required = createScopeTypeInput?.value === "operation";
         createOperationScopeInput.innerHTML = filtered.length
@@ -508,12 +488,7 @@ export function renderContratos(state, bus) {
         if (selected && createNameInput && !createNameInput.dataset.userEdited) createNameInput.value = selected.name || "";
       };
       createScopeTypeInput?.addEventListener("change", () => updateScopeControls({ clearOperation: true }));
-      createProcessSearchInput?.addEventListener("input", () => {
-        renderProcessScopeOptions();
-        updateScopeControls({ clearOperation: true });
-      });
       createProcessScopeInput?.addEventListener("change", () => updateScopeControls({ clearOperation: true }));
-      createOperationSearchInput?.addEventListener("input", () => updateScopeControls());
       createOperationScopeInput?.addEventListener("change", updateSuggestedContractName);
       createNameInput?.addEventListener("input", () => { createNameInput.dataset.userEdited = "true"; });
       const refreshCatalog = async () => {

@@ -3,8 +3,9 @@
 from .create_process_node import CreateProcessNode
 from .create_process_node_with_transition import CreateProcessNodeWithTransition
 from .delete_process_node import DeleteProcessNode
+from .edit_process_structure import DeleteOperation, InsertOperationOnTransition
 from .get_node_metadata import GetNodeMetadata
 from .update_node_metadata import UpdateNodeMetadata
 from .update_process_node import UpdateProcessNode
 
-__all__ = ["CreateProcessNode", "CreateProcessNodeWithTransition", "DeleteProcessNode", "GetNodeMetadata", "UpdateNodeMetadata", "UpdateProcessNode"]
+__all__ = ["CreateProcessNode", "CreateProcessNodeWithTransition", "DeleteOperation", "DeleteProcessNode", "GetNodeMetadata", "InsertOperationOnTransition", "UpdateNodeMetadata", "UpdateProcessNode"]

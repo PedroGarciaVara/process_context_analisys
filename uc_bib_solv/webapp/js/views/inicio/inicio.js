@@ -1,25 +1,9 @@
-import { getCatalog, getContracts, getMachines, getProcesses, getSummary } from "../../core/operational.js";
+import { getContracts, getMachines, getProcesses } from "../../core/operational.js";
 import { listAnalyses } from "../../api/analysis.js";
+import { analysisOperationOptions, analysisContractOptions, filterAnalyses } from "../../core/inicio-analysis.js";
+import { countDeepContracts } from "../../services/inicio-analysis.js";
 import { setCurrentContract, setCurrentMachine, setCurrentProcess } from "../../core/state.js";
 import { createElement, escapeHtml, toHashRoute } from "../../core/utils.js";
-
-const FALLBACK_PROCESS_OPTIONS = [
-  "Chemical Refining A-12",
-  "Heat Treatment X-4",
-  "Quality Assurance Loop",
-];
-
-const FALLBACK_CONTRACT_OPTIONS = [
-  "MAINT-2024-GLOBAL",
-  "OPS-SOUTH-WEST",
-  "LOGI-TRANS-BLUE",
-];
-
-const FALLBACK_MACHINE_OPTIONS = [
-  "Centrifuge C-404",
-  "Boiler Unit B-2",
-  "Turbine T-900",
-];
 
 const MAIN_MENU = [
   { route: "inicio", label: "Inicio", icon: "home" },
@@ -28,7 +12,7 @@ const MAIN_MENU = [
   { route: "contratos", label: "Contrato", icon: "group" },
   { route: "arboles", label: "Arbol", icon: "account_tree" },
   { route: "analisis_causas", label: "Analisis causas", icon: "monitoring" },
-  { route: "modelado-procesos", label: "Modelado procesos", icon: "account_tree" },
+  { route: "studio-procesos", label: "Modelado procesos", icon: "conversion_path" },
   { route: "contexto", label: "Contexto estructurado", icon: "hub" },
 ];
 
@@ -68,18 +52,15 @@ const RECENT_INVESTIGATIONS = [
   },
 ];
 
-function buildOptions(items, fallback, selectedValue) {
-  const source = Array.isArray(items) && items.length ? items : fallback;
 
-  return source
-    .map((item) => {
-      const label = typeof item === "string" ? item : item?.name || item?.label || item?.id || String(item);
-      const value = typeof item === "string" ? item : item?.id || item?.value || label;
-      const selected = selectedValue !== null && selectedValue !== undefined && String(selectedValue) === String(value) ? " selected" : "";
-      return `<option value="${escapeHtml(value)}"${selected}>${escapeHtml(label)}</option>`;
-    })
-    .join("");
+function buildAnalysisSelect(id, label, items) {
+  return `<select id="${escapeHtml(id)}" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">${buildFilterOptions(items, label)}</select>`;
 }
+
+function buildFilterOptions(items, label) {
+  return [`<option value="">${escapeHtml(label)}</option>`, ...(items || []).map((item) => `<option value="${escapeHtml(item.value ?? item.id)}">${escapeHtml(item.label ?? item.name ?? item.id)}</option>`)].join("");
+}
+
 
 function buildRecentCard(card) {
   return `
@@ -150,24 +131,6 @@ function buildPageHtml(state) {
   const processes = getProcesses(state);
   const contracts = getContracts(state);
   const machines = getMachines(state);
-  const summary = getSummary(state);
-  const catalog = getCatalog(state);
-
-  const processOptions = buildOptions(
-    processes,
-    FALLBACK_PROCESS_OPTIONS,
-    state.currentProcess || catalog?.defaults?.processId,
-  );
-  const contractOptions = buildOptions(
-    contracts,
-    FALLBACK_CONTRACT_OPTIONS,
-    state.currentContract || catalog?.defaults?.contractId,
-  );
-  const machineOptions = buildOptions(
-    machines,
-    FALLBACK_MACHINE_OPTIONS,
-    state.currentMachine || catalog?.defaults?.machineId,
-  );
 
   return `
     <header class="flex justify-between items-center px-lg h-16 w-full sticky top-0 z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline">
@@ -208,7 +171,7 @@ function buildPageHtml(state) {
         </div>
       </aside>
       <main class="flex-1 overflow-y-auto bg-surface p-xl">
-        <div class="max-w-6xl mx-auto space-y-xl">
+        <div class="w-full max-w-[1600px] mx-auto space-y-xl">
           <section class="space-y-sm">
             <span class="font-label-md text-label-md text-primary tracking-widest uppercase">Entrada operativa</span>
             <h1 class="font-display-lg text-display-lg text-on-background">Bienvenido de nuevo</h1>
@@ -220,56 +183,53 @@ function buildPageHtml(state) {
             <div class="lg:col-span-8 bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div class="flex items-center gap-sm mb-lg">
                 <span class="material-symbols-outlined text-primary">filter_list</span>
-                <h2 class="font-headline-sm text-headline-sm text-primary">Selectores de contexto</h2>
+                <h2 class="font-headline-sm text-headline-sm text-primary">Filtros de análisis de causas</h2>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-md mb-xl">
-                <div class="space-y-xs">
-                  <label class="font-label-md text-label-md text-secondary" for="rca-process-select">Process</label>
-                  <select id="rca-process-select" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
-                    ${processOptions}
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-md mb-xl">
+                <div class="space-y-xs md:col-span-2">
+                  <label class="font-label-md text-label-md text-secondary" for="analysis-filter-status">Estado</label>
+                  <select id="analysis-filter-status" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
+                    <option value="">Todos los estados</option><option value="abierto">Abiertos</option><option value="cerrado">Cerrados</option>
                   </select>
                 </div>
                 <div class="space-y-xs">
-                  <label class="font-label-md text-label-md text-secondary" for="rca-contract-select">Contract</label>
-                  <select id="rca-contract-select" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
-                    ${contractOptions}
-                  </select>
+                  <label class="font-label-md text-label-md text-secondary" for="analysis-filter-process">Proceso</label>
+                  ${buildAnalysisSelect("analysis-filter-process", "Todos los procesos", processes.map((item) => ({ value: item.id, label: item.name })))}
                 </div>
                 <div class="space-y-xs">
-                  <label class="font-label-md text-label-md text-secondary" for="rca-machine-select">Machine</label>
-                  <select id="rca-machine-select" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
-                    ${machineOptions}
-                  </select>
+                  <label class="font-label-md text-label-md text-secondary" for="analysis-filter-operation">Operación</label>
+                  ${buildAnalysisSelect("analysis-filter-operation", "Todas las operaciones", analysisOperationOptions(machines))}
+                </div>
+                <div class="space-y-xs md:col-span-2">
+                  <label class="font-label-md text-label-md text-secondary" for="analysis-filter-contract">Contrato</label>
+                  ${buildAnalysisSelect("analysis-filter-contract", "Todos los contratos", contracts.map((item) => ({ value: item.id, label: item.name || item.nombre || `Contrato ${item.id}` })))}
+                </div>
+                <div class="space-y-xs md:col-span-2">
+                  <label class="font-label-md text-label-md text-secondary" for="analysis-filter-machine">Máquina específica</label>
+                  ${buildAnalysisSelect("analysis-filter-machine", "Todas las máquinas", machines.map((item) => ({ value: item.id, label: item.name || item.nombre || `Máquina ${item.id}` })))}
                 </div>
               </div>
-              <div class="flex gap-md">
-                <button type="button" class="bg-primary text-on-primary px-lg py-sm rounded font-label-md text-label-md hover:opacity-90 transition-opacity" data-action="open-tree">
-                  Abrir arbol de investigacion
-                </button>
-                <button type="button" class="border border-outline text-primary px-lg py-sm rounded font-label-md text-label-md hover:bg-surface-container transition-colors" data-route="procesos" data-action="view-processes">
-                  Ver todos los procesos
-                </button>
-              </div>
+              <p class="text-[12px] text-on-surface-variant">Selecciona uno o varios criterios para actualizar las tarjetas de análisis existentes.</p>
             </div>
             <div class="lg:col-span-4 flex flex-col gap-md">
               <div class="flex-1 bg-surface-container-lowest border border-outline-variant p-md rounded-xl flex items-center justify-between group hover:border-primary transition-colors cursor-default">
                 <div>
                   <p class="font-label-md text-label-md text-secondary">Investigaciones activas</p>
-                  <p class="font-display-lg text-display-lg text-primary">12</p>
+                  <p id="active-investigations-count" class="font-display-lg text-display-lg text-primary">0</p>
                 </div>
                 <span class="material-symbols-outlined text-primary opacity-20 group-hover:opacity-100 transition-opacity" style="font-size: 48px;">monitoring</span>
               </div>
               <div class="flex-1 bg-surface-container-lowest border border-outline-variant p-md rounded-xl flex items-center justify-between group hover:border-primary transition-colors cursor-default">
                 <div>
-                  <p class="font-label-md text-label-md text-secondary">Hipotesis validadas</p>
-                  <p class="font-display-lg text-display-lg text-primary">84</p>
+                  <p class="font-label-md text-label-md text-secondary">Contratos con árbol profundo</p>
+                  <p id="deep-contracts-count" class="font-display-lg text-display-lg text-primary">0</p>
                 </div>
                 <span class="material-symbols-outlined text-primary opacity-20 group-hover:opacity-100 transition-opacity" style="font-size: 48px;">check_circle</span>
               </div>
               <div class="flex-1 bg-surface-container-lowest border border-outline-variant p-md rounded-xl flex items-center justify-between group hover:border-primary transition-colors cursor-default">
                 <div>
-                  <p class="font-label-md text-label-md text-secondary">Tareas pendientes</p>
-                  <p class="font-display-lg text-display-lg text-error">07</p>
+                  <p class="font-label-md text-label-md text-secondary">Hipótesis automáticas</p>
+                  <p class="font-body-sm text-body-sm text-secondary">pendiente implementar calculo automatico</p>
                 </div>
                 <span class="material-symbols-outlined text-error opacity-20 group-hover:opacity-100 transition-opacity" style="font-size: 48px;">assignment_late</span>
               </div>
@@ -280,7 +240,6 @@ function buildPageHtml(state) {
               <h2 class="font-headline-sm text-headline-sm text-primary">Investigaciones recientes</h2>
               <div class="flex gap-sm items-center flex-wrap">
                 <input id="recent-analysis-search" type="search" placeholder="Buscar analisis" class="border border-outline rounded-lg px-sm py-xs text-[12px]">
-                <select id="recent-analysis-status" class="border border-outline rounded-lg px-sm py-xs text-[12px]"><option value="abierto">Abiertos</option><option value="todos">Todos</option><option value="cerrado">Cerrados</option></select>
               </div>
             </div>
             <div id="recent-analysis-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-md"><div class="text-sm text-secondary">Cargando analisis...</div></div>
@@ -452,21 +411,59 @@ export function renderInicio(state, bus) {
 
       const recentList = mountRoot.querySelector("#recent-analysis-list");
       const recentSearch = mountRoot.querySelector("#recent-analysis-search");
-      const recentStatus = mountRoot.querySelector("#recent-analysis-status");
+      const activeInvestigationsCount = mountRoot.querySelector("#active-investigations-count");
+      const analysisFilterStatus = mountRoot.querySelector("#analysis-filter-status");
+      const analysisFilterProcess = mountRoot.querySelector("#analysis-filter-process");
+      const analysisFilterOperation = mountRoot.querySelector("#analysis-filter-operation");
+      const analysisFilterContract = mountRoot.querySelector("#analysis-filter-contract");
+      const analysisFilterMachine = mountRoot.querySelector("#analysis-filter-machine");
+      const analysisMachines = getMachines(currentState);
+      const analysisContracts = getContracts(currentState);
+      const deepContractsCount = mountRoot.querySelector("#deep-contracts-count");
+      const refreshOperationFilter = () => {
+        if (!analysisFilterOperation) return;
+        analysisFilterOperation.innerHTML = buildFilterOptions(analysisOperationOptions(analysisMachines, analysisFilterProcess?.value || ""), "Todas las operaciones");
+        analysisFilterOperation.value = "";
+      };
+      const refreshContractFilter = () => {
+        if (!analysisFilterContract) return;
+        analysisFilterContract.innerHTML = buildFilterOptions(
+          analysisContractOptions(analysisContracts, analysisMachines, analysisFilterProcess?.value || "", analysisFilterOperation?.value || ""),
+          "Todos los contratos",
+        );
+        analysisFilterContract.value = "";
+      };
       let recentAnalyses = [];
       const renderRecentAnalyses = () => {
         const query = (recentSearch?.value || "").trim().toLowerCase();
-        const status = recentStatus?.value || "abierto";
-        const filtered = recentAnalyses.filter((item) => {
-          const matchesStatus = status === "todos" || item.estado === status;
-          const haystack = `${item.id} ${item.proceso_nombre || ""} ${item.contrato_nombre || ""} ${item.indicio_apertura || ""}`.toLowerCase();
-          return matchesStatus && haystack.includes(query);
-        });
+        const status = analysisFilterStatus?.value || "";
+        const processId = analysisFilterProcess?.value || "";
+        const operationKey = analysisFilterOperation?.value || "";
+        const contractId = analysisFilterContract?.value || "";
+        const machineId = analysisFilterMachine?.value || "";
+        const filters = { status, processId, operationKey, contractId, machineId, query };
+        const filtered = filterAnalyses(recentAnalyses, filters, analysisMachines);
+        const activeCount = filterAnalyses(recentAnalyses.filter((item) => item.estado === "abierto"), { ...filters, status: "", query: "" }, analysisMachines).length;
+        if (activeInvestigationsCount) activeInvestigationsCount.textContent = String(activeCount);
         recentList.innerHTML = filtered.length ? filtered.map(buildAnalysisCard).join("") : `<div class="text-sm text-secondary">No hay analisis que coincidan.</div>`;
         recentList.querySelectorAll("[data-action='recent-analysis']").forEach((button) => button.addEventListener("click", () => { window.location.hash = button.dataset.analysisUrl; }));
       };
       recentSearch?.addEventListener("input", renderRecentAnalyses);
-      recentStatus?.addEventListener("change", renderRecentAnalyses);
+      analysisFilterStatus?.addEventListener("change", renderRecentAnalyses);
+      analysisFilterProcess?.addEventListener("change", () => {
+        refreshOperationFilter();
+        refreshContractFilter();
+        renderRecentAnalyses();
+      });
+      analysisFilterOperation?.addEventListener("change", () => {
+        refreshContractFilter();
+        renderRecentAnalyses();
+      });
+      analysisFilterContract?.addEventListener("change", renderRecentAnalyses);
+      analysisFilterMachine?.addEventListener("change", renderRecentAnalyses);
+      countDeepContracts(analysisContracts).then((count) => {
+        if (deepContractsCount) deepContractsCount.textContent = String(count);
+      });
       listAnalyses(100).then((response) => { recentAnalyses = response.data || []; renderRecentAnalyses(); }).catch(() => { recentList.innerHTML = `<div class="text-sm text-secondary">No se pudieron cargar los analisis.</div>`; });
     },
   };

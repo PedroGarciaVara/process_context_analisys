@@ -4,6 +4,7 @@ import json
 
 from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
 from uc_bib_solv.modules.bpm.domain.machines.validators import canonical_stages
+from uc_bib_solv.modules.bpm.domain.processes.rules import next_process_code
 from uc_bib_solv.modules.bpm.domain.shared.value_objects import require_uuid as _require_uuid
 
 
@@ -41,6 +42,7 @@ def _node_values(data):
 
 
 class ProcessRepository:
+    allocates_process_codes = True
     def list(self):
         with db_cursor() as cur:
             cur.execute("SELECT * FROM bpm_process ORDER BY process_code, process_id")
@@ -70,9 +72,15 @@ class ProcessRepository:
 
     def create(self, data):
         with db_cursor() as cur:
+            # Serialize allocation across concurrent requests.  The
+            # application layer also derives the code for non-PostgreSQL
+            # adapters, while this transaction is the final source of truth.
+            cur.execute("SELECT pg_advisory_xact_lock(hashtext('bpm_process_code_generation'))")
+            cur.execute("SELECT process_code FROM bpm_process")
+            process_code = next_process_code(cur.fetchall())
             cur.execute("""INSERT INTO bpm_process(process_id,process_code,name,description,abstraction_level,parent_process_id,status)
                 VALUES(%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
-                (data.get("process_id"), data["process_code"], data["name"], data.get("description"), data.get("abstraction_level", 0), data.get("parent_process_id"), data.get("status", "draft")))
+                (data.get("process_id"), process_code, data["name"], data.get("description"), data.get("abstraction_level", 0), data.get("parent_process_id"), data.get("status", "draft")))
             process = dict(cur.fetchone())
             cur.execute("INSERT INTO proceso(nombre,bpm_process_id) VALUES(%s,%s)", (process["name"], process["process_id"]))
             return process
@@ -123,6 +131,20 @@ class ProcessRepository:
 
 
 class NodeRepository:
+    def insert_operation_on_transition(self, process_id, node, original, first, second):
+        with db_cursor() as cur:
+            cur.execute("""INSERT INTO pm_process_node(node_id,process_id,node_code,node_type,name,description,child_process_id,output_role,stock_capacity,stock_initial_quantity,stock_unit,properties)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb) RETURNING *""",
+                (node.get("node_id"), _uuid(process_id), node["node_code"], node["node_type"], node["name"], node.get("description"), node.get("child_process_id"), *_node_values(node)))
+            created_node = _node_record(cur.fetchone())
+            cur.execute("DELETE FROM pm_process_transition WHERE transition_id=%s", (_uuid(original["transition_id"]),))
+            created_transitions = []
+            for edge in (first, second):
+                cur.execute("""INSERT INTO pm_process_transition(transition_id,process_id,source_node_id,target_node_id,transition_type,label,condition,properties)
+                    VALUES(%s,%s,%s,%s,%s,%s,%s,%s::jsonb) RETURNING *""", (edge.get("transition_id"), _uuid(process_id), _uuid(edge["source_node_id"]), _uuid(edge["target_node_id"]), edge["transition_type"], edge.get("label"), edge.get("condition"), json.dumps(edge.get("properties") or {})))
+                created_transitions.append(dict(cur.fetchone()))
+            return {"node": created_node, "transitions": created_transitions}
+
     def create(self, process_id, data):
         with db_cursor() as cur:
             cur.execute("""INSERT INTO pm_process_node(node_id,process_id,node_code,node_type,name,description,child_process_id,output_role,stock_capacity,stock_initial_quantity,stock_unit,properties)
@@ -174,6 +196,19 @@ class NodeRepository:
             cur.execute("DELETE FROM pm_process_node WHERE node_id=%s RETURNING node_id", (_uuid(node_id),))
             return bool(cur.fetchone())
 
+    def delete_with_reconnect(self, node_id, reconnect_edges):
+        with db_cursor() as cur:
+            cur.execute("DELETE FROM pm_process_node WHERE node_id=%s RETURNING node_id", (_uuid(node_id),))
+            deleted = cur.fetchone()
+            if not deleted:
+                return {"deleted": False, "node_id": str(node_id), "reconnected": []}
+            for edge in reconnect_edges:
+                cur.execute("""INSERT INTO pm_process_transition(transition_id,process_id,source_node_id,target_node_id,transition_type,label,condition,properties)
+                    SELECT %s, process_id, %s, %s, %s, %s, %s, %s::jsonb
+                    FROM pm_process_node WHERE node_id=%s
+                    RETURNING *""", (edge.get("transition_id"), _uuid(edge["source_node_id"]), _uuid(edge["target_node_id"]), edge["transition_type"], edge.get("label"), edge.get("condition"), json.dumps(edge.get("properties") or {}), _uuid(edge["source_node_id"])))
+            return {"deleted": True, "node_id": str(node_id), "reconnected": reconnect_edges}
+
     def get_metadata(self, node_id):
         with db_cursor() as cur:
             cur.execute("SELECT metadata FROM pm_process_node_metadata WHERE node_id=%s", (_uuid(node_id),))
@@ -214,6 +249,29 @@ class TransitionRepository:
     def get(self, transition_id):
         with db_cursor() as cur:
             cur.execute("SELECT * FROM pm_process_transition WHERE transition_id=%s", (_uuid(transition_id),))
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+    def update(self, transition_id, data):
+        fields = {key: data[key] for key in (
+            "source_node_id", "target_node_id", "transition_type", "label", "condition", "properties"
+        ) if key in data}
+        if not fields:
+            return self.get(transition_id)
+        assignments = ",".join(f"{key}=%s{'::jsonb' if key == 'properties' else ''}" for key in fields)
+        values = []
+        for key, value in fields.items():
+            if key in {"source_node_id", "target_node_id"}:
+                values.append(_uuid(value))
+            elif key == "properties":
+                values.append(json.dumps(value or {}))
+            else:
+                values.append(value)
+        with db_cursor() as cur:
+            cur.execute(
+                f"UPDATE pm_process_transition SET {assignments} WHERE transition_id=%s RETURNING *",
+                [*values, _uuid(transition_id)],
+            )
             row = cur.fetchone()
             return dict(row) if row else None
 

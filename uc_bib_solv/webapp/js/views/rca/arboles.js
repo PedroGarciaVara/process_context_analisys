@@ -21,10 +21,14 @@ export function deriveTreeScopeFromRoute(params, catalog, fallbackState = {}) {
   const routeContract = Number.isFinite(routeContractId)
     ? contracts.find((item) => String(item.id) === String(routeContractId))
     : null;
+  const fallbackContract = contracts.find(
+    (item) => String(item.id) === String(fallbackState.currentContract || "")
+      && (!fallbackState.currentProcess || String(item.processId) === String(fallbackState.currentProcess)),
+  );
 
   return {
-    contractId: routeContract?.id ?? fallbackState.currentContract ?? null,
-    processId: routeContract?.processId ?? fallbackState.currentProcess ?? null,
+    contractId: routeContract?.id ?? fallbackContract?.id ?? null,
+    processId: routeContract?.processId ?? fallbackState.currentProcess ?? fallbackContract?.processId ?? null,
   };
 }
 

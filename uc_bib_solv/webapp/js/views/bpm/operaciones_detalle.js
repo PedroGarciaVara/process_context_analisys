@@ -19,13 +19,13 @@ export async function loadOperationDetail(processId, nodeId) {
 
 async function saveOperation(operation, form) {
   const data = readOperationForm(form);
-  await updateNode(operation.node_id, { node_code: data.node_code, name: data.name, description: data.description });
+  await updateNode(operation.node_id, { name: data.name, description: data.description });
   await updateNodeMetadata(operation.node_id, data.metadata);
   await updateOperationStages(operation.node_id, operation.process_id, data.stages);
 }
 
 export function renderOperacionesDetalle(state, bus) {
-  const { root, mainSlot, rightSlot } = createHomeShell(state, { rightWidthClass: "w-[280px]" });
+  const { root, mainSlot, rightSlot } = createHomeShell(state, { rightWidthClass: "w-[560px]" });
   mainSlot.innerHTML = `<div class="max-w-5xl mx-auto"><p class="text-secondary">Cargando operación BPM…</p></div>`;
   rightSlot.innerHTML = "";
   return { shellMode: "full", main: root, afterMount(mountRoot, currentState, eventBus) {

@@ -1,4 +1,4 @@
-import { findProcess, getProcesses, getSummary } from "../../core/operational.js";
+import { findProcess, getContracts, getMachines, getOperations, getProcesses, getSummary } from "../../core/operational.js";
 import { setCurrentProcess } from "../../core/state.js";
 import { createElement, escapeHtml, toHashRoute } from "../../core/utils.js";
 import { bindHomeShell, createHomeShell } from "./shell.js";
@@ -18,6 +18,32 @@ function getActiveProcess(state, rows) {
   return rows[0] || null;
 }
 
+function processReferences(state, process) {
+  const bpmProcessId = String(process?.bpmProcessId || process?.bpm_process_id || "");
+  const processId = String(process?.id || "");
+  const matchesProcess = (item) => String(item?.processId ?? item?.process_id ?? "") === processId
+    || (bpmProcessId && String(item?.bpmProcessId ?? item?.bpm_process_id ?? "") === bpmProcessId);
+  return {
+    contratos: getContracts(state).filter(matchesProcess),
+    maquinas: getMachines(state).filter(matchesProcess),
+    operaciones: getOperations(state).filter((item) => String(item?.bpmProcessId || "") === bpmProcessId || String(item?.processId || "") === processId),
+  };
+}
+
+function formatProcessReferences(state, process) {
+  const references = processReferences(state, process);
+  const groups = [
+    ["Contratos", references.contratos],
+    ["Máquinas", references.maquinas],
+    ["Operaciones BPM", references.operaciones],
+  ];
+  const lines = groups
+    .filter(([, items]) => items.length)
+    .map(([label, items]) => `<div><strong>${label} (${items.length}):</strong> ${items.map((item) => escapeHtml(item.name || item.nombre || item.label || `#${item.id || item.operationId}`)).join(", ")}</div>`)
+    .join("");
+  return lines || "No se han encontrado referencias operativas en el catálogo cargado.";
+}
+
 function buildCenter(state) {
   const rows = getRows(state);
   const activeProcess = getActiveProcess(state, rows);
@@ -34,7 +60,7 @@ function buildCenter(state) {
               Revisa el catalogo de procesos, centra el alcance industrial actual y accede directamente a contratos o arboles desde el espacio central.
             </p>
           </div>
-          <a href="#/modelado-procesos" class="px-lg py-md bg-primary text-on-primary font-label-md text-label-md rounded-lg flex items-center gap-sm hover:opacity-90" data-action="process-create">
+          <a href="#/studio-procesos?new=1" class="px-lg py-md bg-primary text-on-primary font-label-md text-label-md rounded-lg flex items-center gap-sm hover:opacity-90" data-action="process-create">
             <span class="material-symbols-outlined">add</span>
             Crear nuevo proceso
           </a>
@@ -99,6 +125,7 @@ function buildCenter(state) {
 function buildRight(state) {
   const rows = getRows(state);
   const activeProcess = getActiveProcess(state, rows);
+  const bpmProcessId = activeProcess?.bpmProcessId || activeProcess?.bpm_process_id || "";
 
   return `
     <div class="p-lg border-b border-outline-variant bg-surface-container-low">
@@ -112,14 +139,14 @@ function buildRight(state) {
           <h4 class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm">Gestión del proceso</h4>
           <p class="text-[12px] text-on-surface-variant">El nombre, la relación y el ciclo de vida se gestionan desde el modelado BPM.</p>
         </div>
-        <a href="#/modelado-procesos" class="mt-md inline-flex w-full items-center justify-center px-md py-sm bg-primary text-on-primary text-label-md font-label-md rounded hover:opacity-90">Abrir modelado BPM</a>
+        <a href="#/studio-procesos${bpmProcessId ? `?processId=${encodeURIComponent(bpmProcessId)}` : ""}" class="mt-md inline-flex w-full items-center justify-center px-md py-sm bg-primary text-on-primary text-label-md font-label-md rounded hover:opacity-90">Abrir modelado BPM</a>
       </div>
     </div>
   `;
 }
 
 export function renderProcesos(state, bus) {
-  const { root, mainSlot, rightSlot } = createHomeShell(state);
+  const { root, mainSlot, rightSlot } = createHomeShell(state, { rightWidthClass: "w-[560px]" });
   mainSlot.innerHTML = buildCenter(state);
   rightSlot.innerHTML = buildRight(state);
 
@@ -144,7 +171,6 @@ export function renderProcesos(state, bus) {
         node.addEventListener("click", (event) => {
           event.preventDefault();
           setCurrentProcess(node.getAttribute("data-process-id") || null);
-          if (eventBus) eventBus.emit("state:change");
           window.location.hash = toHashRoute("contratos");
         });
       });
@@ -154,7 +180,6 @@ export function renderProcesos(state, bus) {
           event.preventDefault();
           const processId = node.getAttribute("data-process-id") || null;
           setCurrentProcess(processId);
-          if (eventBus) eventBus.emit("state:change");
           window.location.hash = toHashRoute("procesos_detalle");
         });
       });
@@ -163,7 +188,6 @@ export function renderProcesos(state, bus) {
         node.addEventListener("click", (event) => {
           event.preventDefault();
           setCurrentProcess(node.getAttribute("data-process-id") || null);
-          if (eventBus) eventBus.emit("state:change");
           window.location.hash = toHashRoute("operaciones");
         });
       });
@@ -189,9 +213,10 @@ export function renderProcesos(state, bus) {
           if (deleteName) deleteName.textContent = process.name;
           if (deleteWarning) {
             const references = (Number(process.contractCount) || 0) + (Number(process.machineCount) || 0);
-            deleteWarning.textContent = references
-              ? `Este proceso tiene ${references} referencia${references === 1 ? "" : "s"} operativa${references === 1 ? "" : "s"}. La eliminación puede borrar el modelo BPM y sus dependientes; si alguna referencia activa lo impide, el servidor bloqueará la operación y no se eliminará nada.`
-              : "La eliminación puede borrar el modelo BPM y sus dependientes. Si existen referencias activas, el servidor bloqueará la operación y no se eliminará nada.";
+            const detail = formatProcessReferences(currentState, process);
+            deleteWarning.innerHTML = references || detail.includes("No se han encontrado")
+              ? `<p>Este proceso tiene referencias activas (operativas) que pueden impedir la eliminación. La eliminación puede borrar el modelo BPM y sus dependientes; el servidor bloqueará la operación si alguna dependencia sigue activa.</p><div class="mt-sm space-y-xs">${detail}</div>`
+              : "No se han encontrado referencias operativas en el catálogo cargado. La eliminación también puede estar bloqueada por dependencias del modelado BPM.";
           }
           if (deleteAcknowledge) deleteAcknowledge.checked = false;
           if (deleteConfirm) deleteConfirm.disabled = true;

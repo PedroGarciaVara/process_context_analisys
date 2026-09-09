@@ -1,5 +1,5 @@
 import { createAnalysis, fetchAnalysis, listAnalysisTemplates, updateAnalysis } from "../../api/analysis.js";
-import { findContract, findMachine, findProcess } from "../../core/operational.js";
+import { getContractScopes, getMachines } from "../../core/operational.js";
 import { createElement, escapeHtml } from "../../core/utils.js";
 import { createTreePageShell } from "../../components/tree-shell.js";
 import { bindHomeShell, createHomeShell } from "../bpm/shell.js";
@@ -17,10 +17,7 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function buildHero(state, analysis = null) {
-  const process = findProcess(state, analysis?.proceso_id || state.currentProcess);
-  const contract = findContract(state, analysis?.contrato_id || state.currentContract);
-  const machine = findMachine(state, analysis?.maquina_id || state.currentMachine);
+function buildHero() {
   return `
     <section class="space-y-sm mb-xl">
       <span class="font-label-md text-label-md text-primary tracking-widest uppercase">Espacio de trabajo de investigacion</span>
@@ -29,7 +26,6 @@ function buildHero(state, analysis = null) {
           <h1 class="font-display-lg text-display-lg text-on-background">Analisis causas</h1>
           <p class="font-body-md text-body-md text-secondary max-w-3xl">Abre una investigacion desde una plantilla causal, registra el indicio y deja trazabilidad de cada evaluacion hasta la conclusion final.</p>
         </div>
-        <span class="px-sm py-xs bg-primary-container text-on-primary text-[11px] font-bold rounded uppercase">${escapeHtml(contract?.name || machine?.name || process?.name || "Nuevo analisis")}</span>
       </div>
     </section>
   `;
@@ -38,6 +34,10 @@ function buildHero(state, analysis = null) {
 function buildOpenPanel(state) {
   const processes = state.catalog?.data?.procesos || [];
   const initialProcess = processes[0]?.id || "";
+  const scopes = getContractScopes(state);
+  const operations = scopes.operations.filter((item) => String(item.processId) === String(initialProcess));
+  const machines = getMachines(state);
+  const renderOptions = (items, emptyLabel) => `<option value="">${escapeHtml(emptyLabel)}</option>${items.map((item) => `<option value="${escapeHtml(item.value ?? item.id)}">${escapeHtml(item.label ?? item.name)}</option>`).join("")}`;
   return `
     <section class="max-w-4xl mx-auto space-y-lg">
       <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-xl shadow-sm">
@@ -46,11 +46,13 @@ function buildOpenPanel(state) {
         <p class="font-body-md text-body-md text-secondary mt-sm">Selecciona el proceso y carga una plantilla de causas existente para iniciar la investigacion.</p>
         <div class="grid md:grid-cols-2 gap-lg mt-xl">
           <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Proceso del analisis</span><select id="analysis-process-select" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low"><option value="">Selecciona proceso</option>${processes.map((item) => `<option value="${escapeHtml(item.id)}"${String(item.id) === String(initialProcess) ? " selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</select></label>
-          <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Plantilla de causas</span><select id="analysis-template-select" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low"><option value="">Cargando plantillas...</option></select></label>
+          <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Operacion</span><select id="analysis-operation-select" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low">${renderOptions(operations, "Nivel proceso")}</select></label>
+          <label class="block space-y-xs md:col-span-2"><span class="font-label-md text-label-md text-secondary">Contrato / plantilla de causas</span><select id="analysis-template-select" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low"><option value="">Cargando contratos...</option></select></label>
           <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Dia de apertura</span><input id="analysis-opening-date" type="date" value="${today()}" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low"></label>
           <label class="block space-y-xs"><span class="font-label-md text-label-md text-secondary">Participante inicial</span><input id="analysis-participant" type="text" value="Usuario" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low"></label>
         </div>
         <label class="block space-y-xs mt-lg"><span class="font-label-md text-label-md text-secondary">Indicio que origina la apertura</span><textarea id="analysis-opening-indication" rows="4" placeholder="Describe el evento, desviacion o evidencia que inicia el analisis" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low"></textarea></label>
+        <label class="block space-y-xs mt-lg"><span class="font-label-md text-label-md text-secondary">Maquinas involucradas</span><select id="analysis-machine-select" multiple size="4" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low">${renderOptions(machines.filter((item) => String(item.processId) === String(initialProcess)), "Selecciona una o varias maquinas")}</select><span class="text-[12px] text-on-surface-variant">Puedes seleccionar varias máquinas del alcance elegido.</span></label>
         <div id="analysis-open-alert" class="hidden rounded-lg border px-md py-sm text-[12px] mt-lg"></div>
         <button id="analysis-open-button" type="button" class="mt-lg px-lg py-md bg-primary text-on-primary rounded-lg font-label-md">Importar plantilla y abrir analisis</button>
       </div>
@@ -77,6 +79,7 @@ function buildWorkspacePanel() {
         <h3 class="font-label-md text-label-md text-primary uppercase">Cierre</h3>
         <textarea id="analysis-final-conclusion" rows="4" placeholder="Conclusion final del analisis" class="w-full border border-outline rounded-lg p-sm"></textarea>
         <button id="analysis-close-button" type="button" class="px-md py-sm border border-primary text-primary rounded-lg">Guardar conclusion y cerrar</button>
+        <button id="analysis-reopen-button" type="button" class="hidden px-md py-sm border border-primary text-primary rounded-lg">Reabrir analisis</button>
       </div>
       <div id="analysis-workspace-alert" class="hidden rounded-lg border px-md py-sm text-[12px]"></div>
     </div>
@@ -88,12 +91,29 @@ function setAlert(node, message, tone = "success") {
   node.className = `rounded-lg border px-md py-sm text-[12px] ${tone === "success" ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"}`;
 }
 
-async function loadTemplates(select, processId) {
+async function loadTemplates(select, processId, allowedContractIds = null) {
   const response = await listAnalysisTemplates(processId);
-  const templates = response.data || [];
+  const templates = (response.data || []).filter((item) => !allowedContractIds || allowedContractIds.has(String(item.id)));
   select.innerHTML = templates.length
     ? templates.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nombre)} (${item.causa_count} causas, ${item.hypothesis_count} hipotesis)</option>`).join("")
     : `<option value="">No hay plantillas para este proceso</option>`;
+}
+
+function scopedContracts(state, processId, operationId = "") {
+  const contracts = state.catalog?.data?.contratos || [];
+  return contracts.filter((item) => {
+    if (String(item.processId) !== String(processId)) return false;
+    if (!operationId) return item.scopeType === "process" || !item.bpmNodeId;
+    return item.scopeType === "operation" && String(item.bpmNodeId || "") === String(operationId);
+  });
+}
+
+function scopedMachines(state, processId, operationId = "") {
+  return getMachines(state).filter((item) => {
+    if (String(item.processId) !== String(processId)) return false;
+    if (!operationId) return true;
+    return (item.operations || []).some((operation) => String(operation.operation_id) === String(operationId));
+  });
 }
 
 export function renderAnalisisCausasShell(state) {
@@ -109,15 +129,36 @@ export function renderAnalisisCausasShell(state) {
         document.title = "Industrial RCA - Nuevo analisis";
         bindHomeShell(mountRoot);
         const processSelect = mountRoot.querySelector("#analysis-process-select");
+        const operationSelect = mountRoot.querySelector("#analysis-operation-select");
+        const machineSelect = mountRoot.querySelector("#analysis-machine-select");
         const templateSelect = mountRoot.querySelector("#analysis-template-select");
         const alertNode = mountRoot.querySelector("#analysis-open-alert");
-        loadTemplates(templateSelect, processSelect.value).catch((error) => setAlert(alertNode, error.message, "error"));
-        processSelect.addEventListener("change", () => loadTemplates(templateSelect, processSelect.value).catch((error) => setAlert(alertNode, error.message, "error")));
+        const renderScopedOptions = (select, items, emptyLabel) => {
+          select.innerHTML = `<option value="">${escapeHtml(emptyLabel)}</option>${items.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name || item.label || `Maquina ${item.id}`)}</option>`).join("")}`;
+        };
+        const refreshScope = () => {
+          const processId = processSelect.value;
+          const operationId = operationSelect.value;
+          const contracts = scopedContracts(currentState, processId, operationId);
+          renderScopedOptions(machineSelect, scopedMachines(currentState, processId, operationId), "Selecciona una o varias maquinas");
+          loadTemplates(templateSelect, processId, new Set(contracts.map((item) => String(item.id)))).catch((error) => setAlert(alertNode, error.message, "error"));
+        };
+        const refreshOperations = () => {
+          const operations = getContractScopes(currentState).operations.filter((item) => String(item.processId) === String(processSelect.value));
+          operationSelect.innerHTML = `<option value="">Nivel proceso</option>${operations.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("")}`;
+          refreshScope();
+        };
+        refreshOperations();
+        processSelect.addEventListener("change", refreshOperations);
+        operationSelect.addEventListener("change", refreshScope);
         mountRoot.querySelector("#analysis-open-button").addEventListener("click", async () => {
           try {
+            const machineIds = [...machineSelect.selectedOptions].map((item) => item.value).filter(Boolean);
             const response = await createAnalysis({
               process_id: processSelect.value,
               template_contract_id: templateSelect.value,
+              machine_id: machineIds[0] || null,
+              machine_ids: machineIds,
               opening_date: mountRoot.querySelector("#analysis-opening-date").value,
               indication: mountRoot.querySelector("#analysis-opening-indication").value,
               participant: mountRoot.querySelector("#analysis-participant").value,
@@ -138,7 +179,7 @@ export function renderAnalisisCausasShell(state) {
   const treePage = createTreePageShell("analisis_causas_v2", state);
   const { root, mainSlot, rightSlot } = createHomeShell(state, { rightWidthClass: "w-[460px]" });
   const mainWrap = createElement("div", { className: "max-w-none mx-auto space-y-xl min-w-0" });
-  mainWrap.innerHTML = buildHero(state);
+  mainWrap.innerHTML = buildHero();
   mainWrap.appendChild(treePage.main);
   mainSlot.appendChild(mainWrap);
   const workspace = createElement("aside", { className: "analysis-workspace-panel" });
@@ -174,6 +215,10 @@ export function renderAnalisisCausasShell(state) {
           const node = mountRoot.querySelector(selector);
           if (node) node.disabled = readOnly;
         });
+        const closeButton = mountRoot.querySelector("#analysis-close-button");
+        const reopenButton = mountRoot.querySelector("#analysis-reopen-button");
+        if (closeButton) closeButton.disabled = readOnly;
+        if (reopenButton) reopenButton.classList.toggle("hidden", !readOnly);
       };
       loadAnalysis().catch((error) => setAlert(alertNode, error.message, "error"));
       mountRoot.querySelector("#analysis-save-opening").addEventListener("click", async () => {
@@ -188,6 +233,14 @@ export function renderAnalisisCausasShell(state) {
           await loadAnalysis();
           if (eventBus) await eventBus.emit("analysis:refresh");
           setAlert(alertNode, "Analisis cerrado y conclusion guardada.");
+        } catch (error) { setAlert(alertNode, error.message, "error"); }
+      });
+      mountRoot.querySelector("#analysis-reopen-button").addEventListener("click", async () => {
+        try {
+          await updateAnalysis(route.analysisId, { status: "abierto" });
+          await loadAnalysis();
+          if (eventBus) await eventBus.emit("analysis:refresh");
+          setAlert(alertNode, "Analisis reabierto.");
         } catch (error) { setAlert(alertNode, error.message, "error"); }
       });
     },

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>Industrial Flow Studio · UC BIB Solve</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:FILL@0..1" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/bpm-studio.css" />
+</head>
+<body>
+  <div class="studio-shell">
+    <header class="topbar">
+      <a class="brand" href="./index.html#/studio-procesos" aria-label="Industrial Flow Studio">
+        <span class="brand-mark">UC</span>
+        <span><strong>Industrial Flow</strong><small>UC BIB Solve</small></span>
+      </a>
+      <div class="process-heading">
+        <button class="icon-button mobile-only" data-action="toggle-library" aria-label="Abrir biblioteca"><span class="material-symbols-rounded">category</span></button>
+        <div>
+          <div class="breadcrumb"><button class="breadcrumb-back" id="process-back" data-action="navigate-parent" hidden title="Volver al proceso anterior"><span class="material-symbols-rounded">arrow_back</span></button><span id="process-path">Procesos</span><span>/</span><span id="process-code">PROC-001</span></div>
+          <input id="process-title" class="process-title" value="Preparación y envasado de producto" aria-label="Nombre del proceso" />
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="save-state"><i></i><span id="save-label">Borrador local</span></span>
+        <button class="button button-quiet" data-action="undo" title="Deshacer (Ctrl+Z)"><span class="material-symbols-rounded">undo</span><span class="action-label">Deshacer</span></button>
+        <button class="button button-quiet" data-action="redo" title="Rehacer (Ctrl+Shift+Z)"><span class="material-symbols-rounded">redo</span></button>
+        <button class="button button-secondary" data-action="export"><span class="material-symbols-rounded">download</span><span class="action-label">Exportar grafo</span></button>
+        <button class="button button-primary" data-action="save"><span class="material-symbols-rounded">cloud_done</span><span class="action-label">Guardar versión</span></button>
+      </div>
+    </header>
+
+    <section class="contextbar" aria-label="Resumen y herramientas del proceso">
+      <div class="context-meta">
+        <span class="status-pill" id="database-status"><i></i> Conectando</span>
+        <label class="database-process-picker" for="db-process-selector"><span>Proceso</span><select id="db-process-selector" aria-label="Proceso BPM almacenado"><option value="">Cargando procesos…</option></select></label>
+        <span id="process-summary">9 elementos · 9 relaciones</span>
+        <span class="separator"></span>
+        <span>Última edición ahora</span>
+      </div>
+      <div class="view-tabs" role="tablist">
+        <button class="view-tab is-active" data-view="design" role="tab"><span class="material-symbols-rounded">account_tree</span>Diseño</button>
+        <button class="view-tab" data-view="data" role="tab"><span class="material-symbols-rounded">hub</span>Grafo</button>
+        <button class="view-tab" data-view="analysis" role="tab"><span class="material-symbols-rounded">query_stats</span>Análisis</button>
+      </div>
+      <div class="context-actions">
+        <label class="search-box"><span class="material-symbols-rounded">search</span><input id="node-search" placeholder="Buscar en el flujo…" /></label>
+        <button class="icon-button" data-action="create-process-dialog" title="Crear proceso"><span class="material-symbols-rounded">add_box</span></button>
+        <button class="icon-button" data-action="open-process-detail" title="Abrir ficha completa del proceso"><span class="material-symbols-rounded">description</span></button>
+        <button class="icon-button" data-action="validate" title="Validar proceso"><span class="material-symbols-rounded">fact_check</span></button>
+        <button class="icon-button" data-action="shortcuts" title="Atajos de teclado"><span class="material-symbols-rounded">keyboard</span></button>
+      </div>
+    </section>
+
+    <main class="workspace">
+      <aside class="library-panel" id="library-panel">
+        <div class="panel-heading">
+          <div><span class="eyebrow">Biblioteca</span><h2>Elementos</h2></div>
+          <button class="icon-button mobile-only" data-action="toggle-library" aria-label="Cerrar biblioteca"><span class="material-symbols-rounded">close</span></button>
+        </div>
+        <p class="panel-help">Arrastra al lienzo o haz clic para añadir al final del flujo.</p>
+        <div class="library-groups">
+          <section>
+            <h3>Flujo</h3>
+            <div class="library-grid">
+              <button class="library-item" draggable="true" data-add-type="start"><span class="node-glyph glyph-event"><i></i></span><span>Inicio</span></button>
+              <button class="library-item" draggable="true" data-add-type="end"><span class="node-glyph glyph-event glyph-end"><i></i></span><span>Fin</span></button>
+              <button class="library-item" draggable="true" data-add-type="decision"><span class="node-glyph glyph-decision"><i>?</i></span><span>Decisión</span></button>
+              <button class="library-item" draggable="true" data-add-type="subprocess"><span class="node-glyph glyph-task"><i>+</i></span><span>Subproceso</span></button>
+            </div>
+          </section>
+          <section>
+            <h3>Trabajo industrial</h3>
+            <div class="library-list">
+              <button class="library-item library-item-wide" draggable="true" data-add-type="machine"><span class="type-icon type-machine material-symbols-rounded">precision_manufacturing</span><span><strong>Operación de máquina</strong><small>Equipo, receta y parámetros</small></span></button>
+              <button class="library-item library-item-wide" draggable="true" data-add-type="manual"><span class="type-icon type-manual material-symbols-rounded">front_hand</span><span><strong>Operación manual</strong><small>Responsable e instrucciones</small></span></button>
+              <button class="library-item library-item-wide" draggable="true" data-add-type="inspection"><span class="type-icon type-inspection material-symbols-rounded">manage_search</span><span><strong>Inspección</strong><small>Muestreo y criterio</small></span></button>
+              <button class="library-item library-item-wide" draggable="true" data-add-type="verification"><span class="type-icon type-verification material-symbols-rounded">task_alt</span><span><strong>Verificación</strong><small>Evidencia y conformidad</small></span></button>
+              <button class="library-item library-item-wide" draggable="true" data-add-type="stock"><span class="type-icon type-stock material-symbols-rounded">inventory_2</span><span><strong>Stock / buffer</strong><small>Capacidad y unidad</small></span></button>
+            </div>
+          </section>
+        </div>
+        <div class="library-tip"><span class="material-symbols-rounded">tips_and_updates</span><p><strong>Consejo</strong><br />Selecciona una relación para insertar una operación entre dos pasos.</p></div>
+      </aside>
+
+      <section class="canvas-panel" aria-label="Editor visual de proceso">
+        <div class="canvas-toolbar">
+          <div class="tool-group">
+            <button class="tool-button is-active" data-tool="select" title="Seleccionar (V)"><span class="material-symbols-rounded">near_me</span></button>
+            <button class="tool-button" data-tool="pan" title="Mover lienzo (H)"><span class="material-symbols-rounded">pan_tool</span></button>
+            <button class="tool-button" data-tool="connect" title="Conectar dos elementos (C)"><span class="material-symbols-rounded">conversion_path</span></button>
+            <span class="tool-divider"></span>
+            <button class="tool-button" data-action="auto-layout" title="Ordenar automáticamente"><span class="material-symbols-rounded">auto_awesome_motion</span></button>
+          </div>
+          <div class="canvas-guide"><span class="material-symbols-rounded">arrow_forward</span> Flujo principal de izquierda a derecha</div>
+          <div class="tool-group">
+            <button class="tool-button" data-action="zoom-out" aria-label="Alejar"><span class="material-symbols-rounded">remove</span></button>
+            <button class="zoom-value" data-action="zoom-reset">100%</button>
+            <button class="tool-button" data-action="zoom-in" aria-label="Acercar"><span class="material-symbols-rounded">add</span></button>
+            <button class="tool-button" data-action="fit" title="Encajar diagrama"><span class="material-symbols-rounded">fit_screen</span></button>
+            <button class="tool-button" data-action="toggle-fullscreen" title="Pantalla completa" aria-label="Alternar pantalla completa"><span class="material-symbols-rounded">fullscreen</span></button>
+          </div>
+        </div>
+
+        <div class="selection-toolbar" id="selection-toolbar" hidden aria-label="Herramientas de alineación">
+          <div class="selection-toolbar-label"><span class="material-symbols-rounded">select_all</span><strong id="selection-count">0 seleccionados</strong><small>El primero es la referencia</small></div>
+          <span class="tool-divider"></span>
+          <div class="selection-toolbar-group" aria-label="Alinear verticalmente">
+            <button class="tool-button" data-align="top" title="Alinear arriba"><span class="material-symbols-rounded">vertical_align_top</span></button>
+            <button class="tool-button" data-align="middle" title="Alinear al centro vertical"><span class="material-symbols-rounded">vertical_align_center</span></button>
+            <button class="tool-button" data-align="bottom" title="Alinear abajo"><span class="material-symbols-rounded">vertical_align_bottom</span></button>
+          </div>
+          <span class="tool-divider"></span>
+          <div class="selection-toolbar-group" aria-label="Alinear horizontalmente">
+            <button class="tool-button" data-align="left" title="Alinear a la izquierda"><span class="material-symbols-rounded">align_horizontal_left</span></button>
+            <button class="tool-button" data-align="center" title="Alinear al centro horizontal"><span class="material-symbols-rounded">align_horizontal_center</span></button>
+            <button class="tool-button" data-align="right" title="Alinear a la derecha"><span class="material-symbols-rounded">align_horizontal_right</span></button>
+          </div>
+          <span class="tool-divider"></span>
+          <div class="selection-toolbar-group" aria-label="Distribuir selección">
+            <button class="tool-button" data-align="distribute-x" title="Distribuir horizontalmente"><span class="material-symbols-rounded">horizontal_distribute</span></button>
+            <button class="tool-button" data-align="distribute-y" title="Distribuir verticalmente"><span class="material-symbols-rounded">vertical_distribute</span></button>
+          </div>
+          <button class="tool-button selection-clear" data-action="clear-selection" title="Cancelar selección múltiple"><span class="material-symbols-rounded">close</span></button>
+        </div>
+
+        <div class="canvas-viewport" id="canvas-viewport" tabindex="0">
+          <div class="canvas-surface" id="canvas-surface">
+            <svg class="edge-layer" id="edge-layer" aria-hidden="true">
+              <defs>
+                <marker id="studio-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" /></marker>
+              </defs>
+            </svg>
+            <div class="nodes-layer" id="nodes-layer"></div>
+            <div class="drop-hint" id="drop-hint"><span class="material-symbols-rounded">add_circle</span>Suelta aquí para añadir al flujo</div>
+          </div>
+        </div>
+
+        <div class="minimap" aria-label="Minimapa del proceso">
+          <div id="minimap-content"></div><div class="minimap-window"></div>
+        </div>
+        <div class="canvas-status"><span><kbd>Espacio</kbd> mover</span><span><kbd>⌘/Ctrl</kbd> + clic para selección múltiple</span><span id="selection-status">Sin selección</span></div>
+      </section>
+
+      <aside class="inspector-panel" id="inspector-panel">
+        <div class="empty-inspector" id="empty-inspector">
+          <div class="empty-icon"><span class="material-symbols-rounded">ads_click</span></div>
+          <h2>Selecciona un elemento</h2>
+          <p>Edita sus datos, conexiones y contexto industrial sin abandonar el diagrama.</p>
+        </div>
+        <div id="inspector-content" hidden></div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <dialog class="studio-dialog process-create-dialog" id="process-create-dialog">
+    <form id="process-create-form">
+      <div class="dialog-head"><span class="dialog-icon material-symbols-rounded">add_box</span><div><span class="eyebrow">Nuevo modelo BPM</span><h2>Crear proceso</h2></div><button type="button" class="icon-button" data-action="close-dialog"><span class="material-symbols-rounded">close</span></button></div>
+      <div class="process-create-fields"><div class="form-field"><label for="new-process-name">Nombre</label><input id="new-process-name" name="name" required autocomplete="off" placeholder="Proceso de fabricación" /></div><div class="form-field"><label for="new-process-description">Descripción</label><textarea id="new-process-description" name="description" placeholder="Objetivo y alcance del proceso"></textarea></div></div>
+      <div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-dialog">Cancelar</button><button type="submit" class="button button-primary"><span class="material-symbols-rounded">add</span>Crear y abrir</button></div>
+    </form>
+  </dialog>
+  <dialog class="studio-dialog" id="validation-dialog">
+    <div class="dialog-head"><span class="dialog-icon material-symbols-rounded">fact_check</span><div><span class="eyebrow">Calidad del modelo</span><h2>Validación del proceso</h2></div><button class="icon-button" data-action="close-dialog"><span class="material-symbols-rounded">close</span></button></div>
+    <div id="validation-content"></div>
+    <div class="dialog-actions"><button class="button button-secondary" data-action="close-dialog">Cerrar</button><button class="button button-primary" data-action="fix-issues">Resolver automáticamente</button></div>
+  </dialog>
+  <dialog class="studio-dialog shortcuts-dialog" id="shortcuts-dialog">
+    <div class="dialog-head"><span class="dialog-icon material-symbols-rounded">keyboard</span><div><span class="eyebrow">Productividad</span><h2>Atajos de teclado</h2></div><button class="icon-button" data-action="close-dialog"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="shortcut-grid"><span>Deshacer</span><kbd>Ctrl Z</kbd><span>Rehacer</span><kbd>Ctrl ⇧ Z</kbd><span>Eliminar selección</span><kbd>Supr</kbd><span>Duplicar nodo</span><kbd>Ctrl D</kbd><span>Encajar diagrama</span><kbd>F</kbd><span>Deseleccionar</span><kbd>Esc</kbd></div>
+  </dialog>
+  <script defer src="./js/bpm-studio.js"></script>
+</body>
+</html>

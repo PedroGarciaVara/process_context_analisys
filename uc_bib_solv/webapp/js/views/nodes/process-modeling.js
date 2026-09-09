@@ -1,4 +1,4 @@
-import { createProcess, createNode, createNodeWithTransition, updateNode, deleteNode, updateNodeMetadata, getStructuredContext, createTransition, getProcess, listProcesses, validateProcess } from "../../api/process-modeling.js";
+import { createProcess, createNode, createNodeWithTransition, updateNode, updateNodeMetadata, getStructuredContext, createTransition, getProcess, listProcesses, validateProcess, insertOperation, deleteOperation } from "../../api/process-modeling.js";
 import { renderGraph } from "../../components/process-modeling/graph.js";
 import { createProcessModelingState } from "../../core/process-modeling-state.js";
 import { parseAdvancedJson } from "../../components/json-editor.js";
@@ -11,10 +11,10 @@ const flowScrollPosition = { left: 0, top: 0 };
 const esc = (value) => String(value ?? "").replace(/[&<>\"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 const viewport = createProcessModelingViewport({ state, editor: () => editor() });
 const expansion = createProcessModelingExpansion({ state, modelProcessId, getProcess, writeModelingHash, editor: () => editor(), message, focusFullscreenControl: viewport.focusFullscreenControl });
-const nodeActions = createProcessModelingNodeActions({ state, modelProcessId, getProcess, createNode, createNodeWithTransition, updateNode, deleteNode, createTransition, editor: () => editor(), message, closePaletteModal, navigateToSelectedNodeDetail });
+const nodeActions = createProcessModelingNodeActions({ state, modelProcessId, getProcess, createNode, createNodeWithTransition, updateNode, deleteNode: null, insertOperation, deleteOperation, createTransition, editor: () => editor(), message, closePaletteModal, navigateToSelectedNodeDetail });
 
 function shell() {
-  return `<main class="pm-page"><div class="pm-header"><div class="pm-header-title"><a class="pm-home-link" href="#/inicio">← Menú inicial</a><p class="pm-eyebrow">Diseño industrial</p><h1>Modelado de procesos</h1><p class="pm-subtitle">Define nodos y transiciones con trazabilidad.</p></div><div class="pm-header-actions"><div class="pm-process-selector"><label for="pm-process-selector">Proceso seleccionado</label><select id="pm-process-selector" aria-describedby="pm-process-selector-help"><option value="">Selecciona un proceso</option></select><span id="pm-process-selector-help" class="pm-help-text">La selección conserva el proceso y el contexto del editor.</span></div><button class="pm-primary" type="button" data-pm-action="focus-process-form">Nuevo proceso</button></div></div><form id="pm-process-form" class="pm-form pm-process-form"><div><label for="pm-process-code">Código</label><input id="pm-process-code" name="process_code" required autocomplete="off" placeholder="PROC-001"></div><div><label for="pm-process-name">Nombre</label><input id="pm-process-name" name="name" required autocomplete="off" placeholder="Proceso de fabricación"></div><button class="pm-primary" type="submit" data-pm-action="create-process">Crear proceso</button></form><div id="pm-message" class="pm-message" role="status" aria-live="polite"></div><div class="pm-layout"><aside class="pm-node-palette" aria-label="Opciones del flujo"><p class="pm-eyebrow">Opciones del flujo</p><p id="pm-palette-help" class="pm-palette-help">Selecciona un elemento del diagrama.</p><div class="pm-palette-items"><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="subprocess"><span class="pm-palette-symbol pm-palette-symbol-process">▱</span><span>Proceso</span></button><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="operation"><span class="pm-palette-symbol pm-palette-symbol-operation">□</span><span>Operación</span></button><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="output"><span class="pm-palette-symbol pm-palette-symbol-output">○</span><span>Salida</span></button><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="stock"><span class="pm-palette-symbol pm-palette-symbol-stock">▤</span><span>Stock</span></button><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="decision"><span class="pm-palette-symbol pm-palette-symbol-decision">◇</span><span>Decisión</span></button></div><div class="pm-palette-actions" aria-label="Editar o eliminar elemento seleccionado"><button type="button" class="pm-palette-action" data-pm-action="edit-selected-node" disabled>Editar</button><button type="button" class="pm-palette-action pm-palette-action-danger" data-pm-action="delete-selected-node" disabled>Eliminar</button></div></aside><section class="pm-panel pm-editor"><div id="pm-fullscreen-root" class="pm-fullscreen-root"><div id="pm-editor"><div class="pm-loading">Cargando modelado…</div></div></div></section></div><div id="pm-node-modal" class="pm-modal-overlay" hidden><div class="pm-node-modal" role="dialog" aria-modal="true" aria-labelledby="pm-node-modal-title"><div class="pm-node-modal-head"><div><p class="pm-eyebrow">Elemento del flujo</p><h2 id="pm-node-modal-title">Añadir al flujo</h2><p id="pm-node-modal-context" class="pm-help-text"></p></div><button type="button" class="pm-modal-close" data-pm-action="close-palette-modal" aria-label="Cerrar">×</button></div><form id="pm-palette-node-form" class="pm-palette-form"><input type="hidden" name="node_type"><div><label for="pm-palette-code">Código</label><input id="pm-palette-code" name="node_code" required readonly aria-describedby="pm-palette-code-help"><span id="pm-palette-code-help" class="pm-help-text">Se asigna automáticamente y no se repite.</span></div><div><label for="pm-palette-name">Nombre</label><input id="pm-palette-name" name="name" required autocomplete="off" placeholder="Nombre del elemento"></div><div><label for="pm-palette-description">Descripción</label><textarea id="pm-palette-description" name="description" rows="2" placeholder="Información opcional"></textarea></div><div class="pm-palette-stock-fields" hidden><label for="pm-palette-stock-capacity">Capacidad</label><input id="pm-palette-stock-capacity" name="stock_capacity" type="number" min="1" value="24"><label for="pm-palette-stock-quantity">Cantidad inicial</label><input id="pm-palette-stock-quantity" name="stock_initial_quantity" type="number" min="0" value="0"><label for="pm-palette-stock-unit">Unidad</label><input id="pm-palette-stock-unit" name="stock_unit" value="unidades"></div><div class="pm-palette-child-fields" hidden><label for="pm-palette-child-process">Proceso hijo</label><select id="pm-palette-child-process" name="child_process_id"><option value="">Selecciona un proceso hijo</option>${processOptions()}</select></div><div class="pm-palette-branch-fields" hidden><label for="pm-palette-branch-label">Salida desde la decisión</label><select id="pm-palette-branch-label" name="label" required><option value="">Selecciona Sí o No</option><option value="Sí">Sí</option><option value="No">No</option></select><span class="pm-help-text">Indica qué rama de la decisión representa esta salida.</span></div><div class="pm-node-modal-actions"><button type="button" class="pm-secondary" data-pm-action="close-palette-modal">Cancelar</button><button type="submit" class="pm-primary" data-pm-action="create-palette-node">Guardar elemento</button></div></form></div></div><div id="pm-metadata-modal" class="pm-modal-overlay" hidden><div class="pm-node-modal pm-metadata-modal" role="dialog" aria-modal="true" aria-labelledby="pm-metadata-modal-title"><div class="pm-node-modal-head"><div><p class="pm-eyebrow">Metadatos JSON</p><h2 id="pm-metadata-modal-title">Editar metadatos</h2><p id="pm-metadata-modal-context" class="pm-help-text"></p></div><button type="button" class="pm-modal-close" data-pm-action="close-metadata-modal" aria-label="Cerrar">×</button></div><form id="pm-metadata-form" class="pm-metadata-form"><div id="pm-metadata-fields" class="pm-metadata-fields"></div><p class="pm-help-text">Cada propiedad conserva su tipo. Los objetos y listas se editan como JSON dentro de su propio campo.</p><div class="pm-node-modal-actions"><button type="button" class="pm-secondary" data-pm-action="cancel-metadata-edit">Cancelar</button><button type="submit" class="pm-primary" data-pm-action="save-metadata">Guardar metadatos</button></div></form></div></div></main>`;
+  return `<main class="pm-page"><div class="pm-header"><div class="pm-header-title"><a class="pm-home-link" href="#/inicio">← Menú inicial</a><p class="pm-eyebrow">Diseño industrial</p><h1>Modelado de procesos</h1><p class="pm-subtitle">Define nodos y transiciones con trazabilidad.</p></div><div class="pm-header-actions"><div class="pm-process-selector"><label for="pm-process-selector">Proceso seleccionado</label><select id="pm-process-selector" aria-describedby="pm-process-selector-help"><option value="">Selecciona un proceso</option></select><span id="pm-process-selector-help" class="pm-help-text">La selección conserva el proceso y el contexto del editor.</span></div><button class="pm-primary" type="button" data-pm-action="focus-process-form">Nuevo proceso</button></div></div><form id="pm-process-form" class="pm-form pm-process-form"><div><label for="pm-process-name">Nombre</label><input id="pm-process-name" name="name" required autocomplete="off" placeholder="Proceso de fabricación"></div><button class="pm-primary" type="submit" data-pm-action="create-process">Crear proceso</button></form><div id="pm-message" class="pm-message" role="status" aria-live="polite"></div><div class="pm-layout"><aside class="pm-node-palette" aria-label="Opciones del flujo"><p class="pm-eyebrow">Opciones del flujo</p><p id="pm-palette-help" class="pm-palette-help">Selecciona un elemento del diagrama.</p><div class="pm-palette-items"><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="subprocess"><span class="pm-palette-symbol pm-palette-symbol-process">▱</span><span>Proceso</span></button><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="operation"><span class="pm-palette-symbol pm-palette-symbol-operation">□</span><span>Operación</span></button><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="output"><span class="pm-palette-symbol pm-palette-symbol-output">○</span><span>Salida</span></button><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="stock"><span class="pm-palette-symbol pm-palette-symbol-stock">▤</span><span>Stock</span></button><button type="button" class="pm-palette-item" data-pm-action="select-palette-node" data-pm-palette-type="decision"><span class="pm-palette-symbol pm-palette-symbol-decision">◇</span><span>Decisión</span></button></div><div class="pm-palette-actions" aria-label="Editar o eliminar elemento seleccionado"><button type="button" class="pm-palette-action" data-pm-action="edit-selected-node" disabled>Editar</button><button type="button" class="pm-palette-action pm-palette-action-danger" data-pm-action="delete-selected-node" disabled>Eliminar</button><button type="button" class="pm-palette-action" data-pm-action="insert-selected-operation" disabled>Insertar operación</button></div></aside><section class="pm-panel pm-editor"><div id="pm-fullscreen-root" class="pm-fullscreen-root"><div id="pm-editor"><div class="pm-loading">Cargando modelado…</div></div></div></section></div><div id="pm-node-modal" class="pm-modal-overlay" hidden><div class="pm-node-modal" role="dialog" aria-modal="true" aria-labelledby="pm-node-modal-title"><div class="pm-node-modal-head"><div><p class="pm-eyebrow">Elemento del flujo</p><h2 id="pm-node-modal-title">Añadir al flujo</h2><p id="pm-node-modal-context" class="pm-help-text"></p></div><button type="button" class="pm-modal-close" data-pm-action="close-palette-modal" aria-label="Cerrar">×</button></div><form id="pm-palette-node-form" class="pm-palette-form"><input type="hidden" name="node_type" value="operation"><div><label for="pm-palette-name">Nombre</label><input id="pm-palette-name" name="name" required autocomplete="off" placeholder="Nombre del elemento"></div><div><label for="pm-palette-description">Descripción</label><textarea id="pm-palette-description" name="description" rows="2" placeholder="Información opcional"></textarea></div><div class="pm-palette-stock-fields" hidden><label for="pm-palette-stock-capacity">Capacidad</label><input id="pm-palette-stock-capacity" name="stock_capacity" type="number" min="1" value="24"><label for="pm-palette-stock-quantity">Cantidad inicial</label><input id="pm-palette-stock-quantity" name="stock_initial_quantity" type="number" min="0" value="0"><label for="pm-palette-stock-unit" name="stock_unit">Unidad</label><input id="pm-palette-stock-unit" name="stock_unit" value="unidades"></div><div class="pm-palette-child-fields" hidden><label for="pm-palette-child-process">Proceso hijo</label><select id="pm-palette-child-process" name="child_process_id"><option value="">Selecciona un proceso hijo</option>${processOptions()}</select></div><div class="pm-palette-branch-fields" hidden><label for="pm-palette-branch-label">Salida desde la decisión</label><select id="pm-palette-branch-label" name="label" required><option value="">Selecciona Sí o No</option><option value="Sí">Sí</option><option value="No">No</option></select><span class="pm-help-text">Indica qué rama de la decisión representa esta salida.</span></div><div class="pm-node-modal-actions"><button type="button" class="pm-secondary" data-pm-action="close-palette-modal">Cancelar</button><button type="submit" class="pm-primary" data-pm-action="create-palette-node">Guardar elemento</button></div></form></div></div><div id="pm-metadata-modal" class="pm-modal-overlay" hidden><div class="pm-node-modal pm-metadata-modal" role="dialog" aria-modal="true" aria-labelledby="pm-metadata-modal-title"><div class="pm-node-modal-head"><div><p class="pm-eyebrow">Metadatos JSON</p><h2 id="pm-metadata-modal-title">Editar metadatos</h2><p id="pm-metadata-modal-context" class="pm-help-text"></p></div><button type="button" class="pm-modal-close" data-pm-action="close-metadata-modal" aria-label="Cerrar">×</button></div><form id="pm-metadata-form" class="pm-metadata-form"><div id="pm-metadata-fields" class="pm-metadata-fields"></div><p class="pm-help-text">Cada propiedad conserva su tipo. Los objetos y listas se editan como JSON dentro de su propio campo.</p><div class="pm-node-modal-actions"><button type="button" class="pm-secondary" data-pm-action="cancel-metadata-edit">Cancelar</button><button type="submit" class="pm-primary" data-pm-action="save-metadata">Guardar metadatos</button></div></form></div></div></main>`;
 }
 
 function metadataPanelShell() {
@@ -44,7 +44,7 @@ function writeModelingHash(modelProcessIdValue, nodeIdValue = "") {
     params.set("node_id", path[path.length - 1]);
     params.set("expansion_path", path.join(","));
   }
-  window.history.replaceState({}, "", `#/modelado-procesos?${params.toString()}`);
+  window.history.replaceState({}, "", `#/studio-procesos?${params.toString()}`);
 }
 
 function hashContext() {
@@ -61,6 +61,15 @@ function syncProcessSelector() {
   if (!selector) return;
   selector.innerHTML = `<option value="">Selecciona un proceso</option>${processOptions()}`;
   selector.value = processId() || "";
+}
+
+function syncTransitionForm() {
+  const form = document.getElementById("pm-transition-form");
+  if (!form || !state.process) return;
+  const operations = (state.process.nodes || []).filter((node) => node.node_type === "operation");
+  const options = `<option value="">Selecciona una operación</option>${nodeOptions(operations)}`;
+  form.elements.source_node_id.innerHTML = options;
+  form.elements.target_node_id.innerHTML = options;
 }
 
 function parentNavigationControl() {
@@ -95,6 +104,7 @@ function renderEditorHtml(target, html) {
   }
   viewport.updateFullscreenDom();
   updateNodeSelection();
+  syncTransitionForm();
 }
 
 function updateNodeSelection() {
@@ -109,6 +119,8 @@ function updateNodeSelection() {
     const control = document.querySelector(`[data-pm-action="${actionName}"]`);
     if (control) control.disabled = !state.selectedNodeId;
   });
+  const insert = document.querySelector('[data-pm-action="insert-selected-operation"]');
+  if (insert) insert.disabled = !state.selectedTransitionId;
 }
 
 function selectNode(nodeId) {
@@ -355,8 +367,6 @@ function openPaletteModal(type) {
   if (!modal || !form) return;
   form.reset();
   form.elements.node_type.value = type;
-  document.getElementById("pm-palette-code").value = "Asignado por el servidor";
-  document.getElementById("pm-palette-code").readOnly = true;
   document.querySelector('[data-pm-action="create-palette-node"]').textContent = "Guardar elemento";
   document.getElementById("pm-node-modal-title").textContent = `Añadir ${paletteTypeLabel(type)}`;
   const selected = (state.process.nodes || []).find((node) => String(node.node_id) === String(state.selectedNodeId));
@@ -377,7 +387,27 @@ function openPaletteModal(type) {
   }
   modal.hidden = false;
   modal.classList.add("is-open");
-  document.getElementById("pm-palette-code")?.focus();
+  document.getElementById("pm-palette-name")?.focus();
+}
+
+function openInsertOperationModal() {
+  if (!modelProcessId()) return message("Selecciona un proceso antes de insertar operaciones.", true);
+  if (!state.selectedTransitionId) return message("Selecciona una transición antes de insertar una operación.", true);
+  state.paletteModalType = "operation";
+  state.paletteModalMode = "insert";
+  state.editingNodeId = "";
+  const modal = document.getElementById("pm-node-modal");
+  const form = document.getElementById("pm-palette-node-form");
+  if (!modal || !form) return;
+  form.reset();
+  form.elements.node_type.value = "operation";
+  document.getElementById("pm-node-modal-title").textContent = "Insertar operación";
+  document.getElementById("pm-node-modal-context").textContent = "La relación seleccionada se dividirá en dos relaciones sequence.";
+  document.querySelector(".pm-palette-stock-fields")?.toggleAttribute("hidden", true);
+  document.querySelector(".pm-palette-child-fields")?.toggleAttribute("hidden", true);
+  modal.hidden = false;
+  modal.classList.add("is-open");
+  document.getElementById("pm-palette-name")?.focus();
 }
 
 function closePaletteModal() {
@@ -478,7 +508,7 @@ async function restoreFromHash() {
 
 async function createProcessFromForm(form) {
   const formData = new FormData(form);
-  const created = (await createProcess({ process_code: formData.get("process_code"), name: formData.get("name") })).data;
+  const created = (await createProcess({ name: formData.get("name") })).data;
   state.selectedProcess = created;
   state.process = created;
   form.reset();
@@ -496,6 +526,7 @@ async function action(actionName, eventTarget) {
     if (actionName === "zoom-fit") return viewport.fitFlow();
     if (actionName === "open-subprocess") return expansion.openSubprocessOnly(eventTarget.dataset.pmOpenNode, Number(eventTarget.dataset.pmOpenDepth || 0));
     if (actionName === "select-palette-node") return openPaletteModal(eventTarget.dataset.pmPaletteType);
+    if (actionName === "insert-selected-operation") return openInsertOperationModal();
     if (actionName === "edit-selected-node") return nodeActions.editSelectedNode();
     if (actionName === "delete-selected-node") return nodeActions.deleteSelectedNode();
     if (actionName === "edit-metadata") return renderMetadataPanel(true);
@@ -506,7 +537,7 @@ async function action(actionName, eventTarget) {
     if (actionName === "save-metadata") return saveMetadataFromForm(eventTarget.closest("form"));
     if (actionName === "close-palette-modal") return closePaletteModal();
     if (actionName === "focus-process-form") {
-      document.getElementById("pm-process-code")?.focus();
+      document.getElementById("pm-process-name")?.focus();
       return;
     }
     if (actionName === "validate" && modelProcessId()) {
@@ -534,6 +565,7 @@ async function action(actionName, eventTarget) {
 export function renderProcessModeling() {
   const main = document.createElement("div");
   main.innerHTML = shell();
+  main.querySelector(".pm-process-form")?.insertAdjacentHTML("afterend", '<form id="pm-transition-form" class="pm-form pm-transition-form"><label for="pm-transition-source">Origen</label><select id="pm-transition-source" name="source_node_id" required><option value="">Selecciona una operación</option></select><label for="pm-transition-target">Destino</label><select id="pm-transition-target" name="target_node_id" required><option value="">Selecciona una operación</option></select><input type="hidden" name="transition_type" value="sequence"><button class="pm-secondary" type="submit" data-pm-action="create-transition">Conectar operaciones</button></form>');
   main.querySelector(".pm-layout")?.insertAdjacentHTML("beforeend", metadataPanelShell());
   return {
     main,
@@ -542,23 +574,6 @@ export function renderProcessModeling() {
       // The graph can become visible before the asynchronous catalog/process
       // loading finishes. Bind metadata actions up front so the right panel
       // cannot expose a form before its save/cancel handlers exist.
-      main.addEventListener("submit", (event) => {
-        if (event.target.id !== "pm-metadata-form") return;
-        event.preventDefault();
-        void saveMetadataFromForm(event.target).catch((error) => message(error.message, true));
-      });
-      main.addEventListener("click", (event) => {
-        const actionable = event.target.closest("[data-pm-action]");
-        if (!actionable) return;
-        if (actionable.dataset.pmAction === "edit-metadata") return renderMetadataPanel(true);
-        if (actionable.dataset.pmAction === "add-metadata-field") return addMetadataField(actionable.closest("form"));
-        if (actionable.dataset.pmAction === "save-metadata-field") return saveMetadataField(actionable);
-        if (actionable.dataset.pmAction === "remove-metadata-field") return removeMetadataField(actionable);
-        if (actionable.dataset.pmAction === "cancel-metadata-edit" || actionable.dataset.pmAction === "close-metadata-modal") {
-          closeMetadataModal();
-          return renderMetadataPanel(false);
-        }
-      });
       main.addEventListener("input", (event) => {
         if (!event.target.matches("[data-metadata-additional-title], [data-metadata-additional-description]")) return;
         const saveButton = event.target.closest("[data-metadata-additional-field]")?.querySelector("[data-pm-action=save-metadata-field]");
@@ -580,8 +595,11 @@ export function renderProcessModeling() {
       editor();
       renderMetadataPanel();
       main.addEventListener("submit", (event) => {
-        if (event.target.id === "pm-metadata-form") return;
         event.preventDefault();
+        if (event.target.id === "pm-metadata-form") {
+          void saveMetadataFromForm(event.target).catch((error) => message(error.message, true));
+          return;
+        }
         void action(event.submitter?.dataset.pmAction, event.submitter || event.target);
       });
       main.addEventListener("change", (event) => {
@@ -597,6 +615,24 @@ export function renderProcessModeling() {
         }
       });
       main.addEventListener("click", (event) => {
+        const metadataAction = event.target.closest("[data-pm-action]");
+        if (metadataAction) {
+          const metadataName = metadataAction.dataset.pmAction;
+          if (metadataName === "edit-metadata") return renderMetadataPanel(true);
+          if (metadataName === "add-metadata-field") return addMetadataField(metadataAction.closest("form"));
+          if (metadataName === "save-metadata-field") return saveMetadataField(metadataAction);
+          if (metadataName === "remove-metadata-field") return removeMetadataField(metadataAction);
+          if (metadataName === "cancel-metadata-edit" || metadataName === "close-metadata-modal") {
+            closeMetadataModal();
+            return renderMetadataPanel(false);
+          }
+        }
+        const transition = event.target.closest("[data-pm-action='select-transition']");
+        if (transition) {
+          state.selectedTransitionId = transition.dataset.pmTransitionId || "";
+          updateNodeSelection();
+          return;
+        }
         const card = event.target.closest(".pm-bpm-card[data-node-id]");
         if (card) {
           selectNode(card.dataset.nodeId);
@@ -621,7 +657,7 @@ export function renderProcessModeling() {
           return;
         }
         const actionable = event.target.closest("[data-pm-action]");
-        if (actionable && actionable.dataset.pmAction !== "create-process" && actionable.dataset.pmAction !== "create-node" && actionable.dataset.pmAction !== "create-transition" && actionable.dataset.pmAction !== "edit-metadata" && actionable.dataset.pmAction !== "cancel-metadata-edit" && actionable.dataset.pmAction !== "close-metadata-modal" && actionable.dataset.pmAction !== "save-metadata" && actionable.dataset.pmAction !== "add-metadata-field" && actionable.dataset.pmAction !== "save-metadata-field" && actionable.dataset.pmAction !== "remove-metadata-field") {
+        if (actionable && !["create-process", "create-node", "create-transition", "edit-metadata", "cancel-metadata-edit", "close-metadata-modal", "save-metadata", "add-metadata-field", "save-metadata-field", "remove-metadata-field"].includes(actionable.dataset.pmAction)) {
           void action(actionable.dataset.pmAction, actionable);
         }
       });

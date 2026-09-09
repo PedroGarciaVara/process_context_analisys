@@ -19,6 +19,20 @@ def next_node_code(nodes, node_type):
     return f"{prefix}-{number:03d}"
 
 
+def next_process_code(processes):
+    """Generate the next globally unique-looking process code.
+
+    Persistence is responsible for serializing the final allocation.  This
+    domain helper mirrors the established node-code policy and keeps the
+    naming convention independent from Flask or PostgreSQL.
+    """
+    used = {str(_value(process, "process_code") or "").upper() for process in processes}
+    number = 1
+    while f"PROC-{number:03d}" in used:
+        number += 1
+    return f"PROC-{number:03d}"
+
+
 def _value(item, field):
     return getattr(item, field) if isinstance(item, (ProcessNode, ProcessTransition)) else item.get(field)
 
@@ -110,8 +124,15 @@ def validate_decision_branches(nodes, transitions, require_complete=False) -> li
             target = node_map.get(str(_value(item, "target_node_id")))
             if not target:
                 continue
+            target_type = _value(target, "node_type")
             target_role = _value(target, "output_role")
-            if _value(target, "node_type") != "output" or (label == "Sí" and target_role not in {None, "normal"}) or (label == "No" and target_role != "waste"):
+            # A gateway may route to additional work, not only terminate at an
+            # output. Output roles remain strict when the branch does end the
+            # process, and routing back into an input remains invalid.
+            if target_type == "input" or (
+                target_type == "output"
+                and ((label == "Sí" and target_role not in {None, "normal"}) or (label == "No" and target_role != "waste"))
+            ):
                 errors.append({"code": "decision_output_role_mismatch", "field": "transition.target_node_id", "message": f"La rama {label or 'sin etiqueta'} no alcanza la salida esperada"})
     return errors
 

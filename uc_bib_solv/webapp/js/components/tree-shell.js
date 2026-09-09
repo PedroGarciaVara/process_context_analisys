@@ -139,7 +139,8 @@ function createTreePage(mode, state) {
           return;
         }
         deleteTargetId = Number(cause.id);
-        setDeleteModalContent(modalNode, buildDeleteModalCopy(cause));
+        const isRootCause = (currentPayload?.tree || []).some((root) => String(root.id) === String(cause.id));
+        setDeleteModalContent(modalNode, buildDeleteModalCopy(cause, { protectedRoot: isRootCause }));
         modalNode.classList.add("is-open");
         modalNode.setAttribute("aria-hidden", "false");
       };
@@ -195,13 +196,16 @@ function createTreePage(mode, state) {
 
         const payload = derivePayload();
         payload.display_context = resolveTreeDisplayContext(payload, AppState.catalog);
-        payload.contract_options = (AppState.catalog?.data?.contratos || []).map((item) => ({
-          id: item.id,
-          name: item.name,
-          processId: item.processId,
-          processName: item.processName,
-          objetivo: item.objetivo,
-        }));
+        const processId = runtimeState?.currentProcess || state?.currentProcess || "";
+        payload.contract_options = (AppState.catalog?.data?.contratos || [])
+          .filter((item) => !processId || String(item.processId) === String(processId))
+          .map((item) => ({
+            id: item.id,
+            name: item.name,
+            processId: item.processId,
+            processName: item.processName,
+            objetivo: item.objetivo,
+          }));
         const activeCause = payload.detail?.cause || null;
         const sidebarNode = renderSidebar(payload);
         const mainNode = renderMain(payload);
@@ -335,6 +339,25 @@ function createTreePage(mode, state) {
         const token = ++loadToken;
         try {
           const activeContractId = routeContractId || resolveActiveTreeContractId(state, runtimeState);
+          if (!activeContractId) {
+            currentPayload = {
+              view: mode,
+              contract: null,
+              analysis: null,
+              top_context: { title: "No hay contratos", subtitle: "Selecciona un contrato para visualizar el árbol." },
+              sidebar: { nav: [], action_label: "Add Root Cause" },
+              zoom,
+              selected_cause_id: null,
+              tree: [],
+              hypotheses_by_cause: {},
+              detail: { cause: null, hypotheses: [], mode, context_message: "Selecciona un contrato para visualizar el árbol." },
+              legend: [],
+            };
+            selectedCauseId = null;
+            syncTreeState();
+            renderPage();
+            return;
+          }
           const payload = await listCausas(mode, {
             contract_id: activeContractId,
             selected_cause_id: selectedCauseId,

@@ -6,6 +6,8 @@ export function createProcessModelingNodeActions({
   createNodeWithTransition,
   updateNode,
   deleteNode,
+  insertOperation,
+  deleteOperation,
   createTransition,
   editor,
   message,
@@ -26,11 +28,26 @@ export function createProcessModelingNodeActions({
   async function deleteSelectedNode() {
     const node = (state.process?.nodes || []).find((item) => String(item.node_id) === String(state.selectedNodeId));
     if (!node) return message("Selecciona un elemento del diagrama para eliminarlo.", true);
-    if (!window.confirm(`¿Eliminar ${node.node_code} — ${node.name}? También se eliminarán sus relaciones.`)) return;
-    await deleteNode(node.node_id);
+    if (node.node_type !== "operation") return message("Esta acción estructural solo está disponible para operaciones.", true);
+    const reconnect = window.confirm(`¿Eliminar ${node.node_code} — ${node.name} y reconectar sus extremos? Si eliges Cancelar, se eliminará sin reconectar.`);
+    if (!reconnect && !window.confirm("¿Confirmas eliminar la operación sin reconectar los nodos posteriores?")) return;
+    await deleteOperation(node.node_id, reconnect);
     state.selectedNodeId = "";
     await refreshProcess();
     message("Elemento eliminado del flujo.");
+  }
+
+  async function insertSelectedOperation(form) {
+    if (!state.selectedTransitionId) return message("Selecciona una transición antes de insertar una operación.", true);
+    const formData = new FormData(form);
+    await insertOperation(modelProcessId(), state.selectedTransitionId, {
+      name: formData.get("name"),
+      description: formData.get("description") || null,
+    });
+    state.selectedTransitionId = "";
+    await refreshProcess();
+    closePaletteModal();
+    message("Operación insertada y conectada al flujo.");
   }
 
   function buildNodeData(formData) {
@@ -48,6 +65,7 @@ export function createProcessModelingNodeActions({
     const branch = parent?.node_type === "decision";
     const branchLabel = formData.get("label") || "";
     if (state.paletteModalMode === "create" && branch && !branchLabel) return message("Selecciona si el elemento pertenece a la rama Sí o a la rama No.", true);
+    if (state.paletteModalMode === "insert") return insertSelectedOperation(form);
     if (state.paletteModalMode === "edit") {
       await updateNode(state.editingNodeId, data);
       await refreshProcess();
@@ -85,5 +103,5 @@ export function createProcessModelingNodeActions({
     message("Transición guardada.");
   }
 
-  return { editSelectedNode, deleteSelectedNode, createPaletteNodeFromForm, createNodeFromForm, createTransitionFromForm };
+  return { editSelectedNode, deleteSelectedNode, insertSelectedOperation, createPaletteNodeFromForm, createNodeFromForm, createTransitionFromForm };
 }

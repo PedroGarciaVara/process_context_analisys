@@ -183,9 +183,9 @@ def update(
 
 def delete(causa_id: int) -> bool:
     with db_cursor() as cur:
-        cur.execute("SELECT is_initial_template FROM causa WHERE id=%s", (causa_id,))
+        cur.execute("SELECT is_initial_template, parent_id FROM causa WHERE id=%s", (causa_id,))
         row = cur.fetchone()
-    if row and row.get("is_initial_template"):
+    if row and (row.get("is_initial_template") or row.get("parent_id") is None):
         raise ValueError("La causa raíz inicial del contrato está protegida contra borrado.")
     graph_sync.sync_causa_graph(int(causa_id))
     node = node_repo.get_for_cause(int(causa_id))

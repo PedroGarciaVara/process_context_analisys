@@ -8,7 +8,7 @@ export const MENU_ITEMS = [
   { route: "contratos", label: "Contrato", icon: "group" },
   { route: "arboles", label: "Arbol", icon: "account_tree" },
   { route: "analisis_causas", label: "Analisis causas", icon: "monitoring" },
-  { route: "modelado-procesos", label: "Modelado procesos", icon: "account_tree" },
+  { route: "studio-procesos", label: "Modelado procesos", icon: "conversion_path" },
   { route: "contexto", label: "Contexto", icon: "data_object" },
 ];
 
