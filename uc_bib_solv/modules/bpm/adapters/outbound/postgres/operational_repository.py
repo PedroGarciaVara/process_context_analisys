@@ -9,6 +9,16 @@ from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
 from uc_bib_solv.modules.bpm.domain.machines.validators import canonical_stages, validate_stages
 
 
+def _uuid(value):
+    try:
+        # Keep the validated canonical representation as text.  This works
+        # with psycopg2 connections that do not register a UUID adapter while
+        # PostgreSQL still casts it to the UUID columns declared by the schema.
+        return str(UUID(str(value)))
+    except (TypeError, ValueError, AttributeError) as exc:
+        raise ValueError("Identificador UUID no válido.") from exc
+
+
 PAGE_METADATA = {
     "inicio": {
         "title": "Inicio",
@@ -654,6 +664,83 @@ def save_contract_machines(contract_id: str, payload: dict) -> dict:
             )
 
     return get_contract_machines(contract_id)
+
+
+def _operation_machine_rows(cur, operation_id, process_id=None):
+    sql = """
+        SELECT m.id, m.nombre AS name, moc.contract_id, moc.operation_id, moc.process_id
+          FROM machine_operation_configuration moc
+          JOIN maquina m ON m.id = moc.machine_id
+         WHERE moc.operation_id=%s
+    """
+    args = [_uuid(operation_id)]
+    if process_id:
+        sql += " AND moc.process_id=%s"
+        args.append(_uuid(process_id))
+    sql += " ORDER BY m.id"
+    cur.execute(sql, tuple(args))
+    return [dict(row) for row in cur.fetchall()]
+
+
+def get_operation_machines(operation_id: str, process_id: str | None = None) -> dict:
+    with db_cursor() as cur:
+        rows = _operation_machine_rows(cur, operation_id, process_id)
+        cur.execute("SELECT id, nombre AS name FROM maquina ORDER BY nombre, id")
+        catalog = [{"id": int(row["id"]), "name": row["name"]} for row in cur.fetchall()]
+        return {
+            "operationId": str(operation_id),
+            "processId": str(process_id) if process_id else (str(rows[0]["process_id"]) if rows else None),
+            "machineIds": [int(row["id"]) for row in rows],
+            "machines": [{"id": int(row["id"]), "name": row["name"]} for row in rows],
+            "catalog": catalog,
+        }
+
+
+def replace_operation_machines(operation_id: str, payload: dict) -> dict:
+    process_id = payload.get("process_id")
+    machine_ids = payload.get("machine_ids", [])
+    contract_id = payload.get("contract_id")
+    if not isinstance(process_id, str) or not process_id.strip():
+        raise ValueError("process_id es obligatorio.")
+    with db_cursor() as cur:
+        cur.execute("SELECT node_id, process_id, node_type FROM pm_process_node WHERE node_id=%s FOR UPDATE", (_uuid(operation_id),))
+        node = cur.fetchone()
+        if not node:
+            raise ValueError("Operación BPM no encontrada.")
+        if node["node_type"] != "operation":
+            raise ValueError("El nodo seleccionado no es una operación BPM.")
+        if str(node["process_id"]) != str(_uuid(process_id)):
+            raise ValueError("La operación no pertenece al proceso indicado.")
+        if machine_ids:
+            cur.execute("SELECT id FROM maquina WHERE id = ANY(%s)", (machine_ids,))
+            found = {int(row["id"]) for row in cur.fetchall()}
+            missing = sorted(set(machine_ids) - found)
+            if missing:
+                raise ValueError(f"Máquina(s) no encontrada(s): {', '.join(map(str, missing))}.")
+            if contract_id is not None:
+                cur.execute("SELECT 1 FROM contrato WHERE id=%s AND proceso_id=(SELECT id FROM proceso WHERE bpm_process_id=%s)", (contract_id, _uuid(process_id)))
+                if not cur.fetchone():
+                    raise ValueError("El contrato no es compatible con el proceso BPM.")
+                cur.execute("SELECT maquina_id FROM contrato_maquina WHERE contrato_id=%s AND maquina_id = ANY(%s)", (contract_id, machine_ids))
+                linked = {int(row["maquina_id"]) for row in cur.fetchall()}
+                if linked != set(machine_ids):
+                    raise ValueError("Todas las máquinas deben estar asociadas al contrato indicado.")
+        # Validation is complete before the replacement starts; one cursor
+        # context owns the transaction and rolls back on every exception.
+        if machine_ids:
+            cur.execute(
+                "DELETE FROM machine_operation_configuration WHERE operation_id=%s AND process_id=%s AND NOT (machine_id = ANY(%s))",
+                (_uuid(operation_id), _uuid(process_id), machine_ids),
+            )
+        else:
+            cur.execute("DELETE FROM machine_operation_configuration WHERE operation_id=%s AND process_id=%s", (_uuid(operation_id), _uuid(process_id)))
+        if machine_ids:
+            cur.executemany(
+                "INSERT INTO machine_operation_configuration(machine_id, operation_id, process_id, contract_id) VALUES (%s,%s,%s,%s) ON CONFLICT (machine_id, process_id, operation_id) DO NOTHING",
+                [(machine_id, _uuid(operation_id), _uuid(process_id), contract_id) for machine_id in machine_ids],
+            )
+        rows = _operation_machine_rows(cur, operation_id, process_id)
+        return {"operationId": str(operation_id), "processId": str(process_id), "machineIds": [int(row["id"]) for row in rows], "machines": [{"id": int(row["id"]), "name": row["name"]} for row in rows]}
 
 
 def create_machine(payload: dict) -> dict:

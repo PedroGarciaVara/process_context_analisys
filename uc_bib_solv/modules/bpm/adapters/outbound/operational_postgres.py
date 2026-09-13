@@ -60,7 +60,9 @@ class BpmOperationalPostgresAdapter:
     def toggle_contract(self, contract_id): return self.backend.toggle_contract(contract_id)
     def delete_contract(self, contract_id): return self.backend.delete_contract(contract_id)
     def get_contract_machines(self, contract_id): return BpmOperationalMapper.row(self.backend.get_contract_machines(contract_id))
+    def get_operation_machines(self, operation_id, process_id=None): return BpmOperationalMapper.row(self.backend.get_operation_machines(operation_id, process_id))
     def save_contract_machines(self, contract_id, payload): return self.backend.save_contract_machines(contract_id, payload)
+    def replace_operation_machines(self, operation_id, payload): return self.backend.replace_operation_machines(operation_id, payload)
     def list_machines(self, process_id=None, contract_id=None, operation_id=None, bpm_process_id=None):
         return BpmOperationalMapper.machines(self.backend.list_machines(process_id, contract_id, operation_id, bpm_process_id))
     def get_machine(self, machine_id): return BpmOperationalMapper.machine(self.machines.get_by_id(int(machine_id)))

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 from typing import Any, ClassVar
+from uuid import UUID
 
 
 class PayloadCommand:
@@ -102,6 +103,52 @@ class MachineAssociationCommand:
 
 
 @dataclass
+class OperationMachineAssociationCommand:
+    """Canonical machine ids for one BPM operation.
+
+    Membership identifiers are deliberately strict: JSON booleans, strings,
+    duplicate values and implicit coercions are not accepted at the boundary.
+    """
+    machine_ids: list[int]
+    process_id: str
+    contract_id: int | None = None
+
+    @classmethod
+    def from_payload(cls, payload: dict[str, Any]):
+        if not isinstance(payload, dict):
+            raise ValueError("El payload debe ser un objeto JSON.")
+        def reject_legacy(container):
+            if not isinstance(container, dict):
+                return False
+            if any(key in container for key in ("equipment", "operation_machine_assignments")):
+                return True
+            canonical = container.get("canonical_ids")
+            return isinstance(canonical, dict) and "maquina_ids" in canonical
+        if reject_legacy(payload) or reject_legacy(payload.get("data")):
+            raise ValueError("La pertenencia máquina-operación debe enviarse como machine_ids canónicos.")
+        raw = payload.get("machine_ids", payload.get("machineIds", []))
+        if raw is None:
+            raw = []
+        if not isinstance(raw, list):
+            raise ValueError("machine_ids debe ser una lista de identificadores canónicos.")
+        if any(isinstance(value, bool) or not isinstance(value, int) for value in raw):
+            raise ValueError("machine_ids solo admite identificadores enteros canónicos.")
+        if len(raw) != len(set(raw)):
+            raise ValueError("machine_ids no puede contener duplicados.")
+        process_id = payload.get("process_id", payload.get("processId"))
+        if not isinstance(process_id, str) or not process_id.strip():
+            raise ValueError("process_id es obligatorio.")
+        try:
+            UUID(process_id.strip())
+        except ValueError as exc:
+            raise ValueError("process_id debe ser un UUID válido.") from exc
+        contract_id = payload.get("contract_id", payload.get("contractId"))
+        if contract_id is not None and (isinstance(contract_id, bool) or not isinstance(contract_id, int)):
+            raise ValueError("contract_id debe ser un identificador entero.")
+        return cls(machine_ids=list(raw), process_id=process_id.strip(), contract_id=contract_id)
+
+
+@dataclass
 class OperationStagesCommand:
     etapas: Any = None
     process_id: str | None = None
@@ -111,4 +158,4 @@ class OperationStagesCommand:
         return cls(etapas=payload.get("etapas"), process_id=payload.get("process_id"))
 
 
-__all__ = ["ConfigurationCommand", "ContractCommand", "MachineAssociationCommand", "MachineCommand", "NodeCommand", "OperationStagesCommand", "ProcessCommand", "TransitionCommand"]
+__all__ = ["ConfigurationCommand", "ContractCommand", "MachineAssociationCommand", "OperationMachineAssociationCommand", "MachineCommand", "NodeCommand", "OperationStagesCommand", "ProcessCommand", "TransitionCommand"]

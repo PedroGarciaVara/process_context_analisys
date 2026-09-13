@@ -1,4 +1,4 @@
-import { getNodeMetadata, getProcess, updateNode, updateNodeMetadata, updateOperationStages } from "../../api/process-modeling.js";
+import { getNodeMetadata, getProcess, updateNode, updateNodeMetadata, updateOperationStages, getOperationMachines, replaceOperationMachines } from "../../api/process-modeling.js";
 import { getContracts, getMachines } from "../../core/operational.js";
 import { escapeHtml } from "../../core/utils.js";
 import { readHashParams, normalizeProcessPayload } from "../../core/bpm.js";
@@ -22,6 +22,15 @@ async function saveOperation(operation, form) {
   await updateNode(operation.node_id, { name: data.name, description: data.description });
   await updateNodeMetadata(operation.node_id, data.metadata);
   await updateOperationStages(operation.node_id, operation.process_id, data.stages);
+  await replaceOperationMachines(operation.node_id, operation.process_id, [...form.querySelectorAll("input[data-operation-machine]:checked")].map((input) => Number(input.value)));
+}
+
+async function mountOperationMachines(form, operation) {
+  const target = form.querySelector("[data-operation-machines]");
+  const result = await getOperationMachines(operation.node_id, operation.process_id);
+  const selected = new Set((result?.data?.machineIds || result?.machineIds || []).map(Number));
+  const machines = result?.data?.catalog || result?.catalog || [];
+  target.innerHTML = machines.length ? machines.map((machine) => `<label class="flex items-center gap-sm"><input type="checkbox" data-operation-machine value="${Number(machine.id)}"${selected.has(Number(machine.id)) ? " checked" : ""}><span>${escapeHtml(machine.name || `Máquina ${machine.id}`)}</span></label>`).join("") : '<p class="text-secondary">No hay máquinas en el catálogo.</p>';
 }
 
 export function renderOperacionesDetalle(state, bus) {
@@ -47,6 +56,7 @@ export function renderOperacionesDetalle(state, bus) {
       const form = mountRoot.querySelector("#operation-detail-form");
       const alert = mountRoot.querySelector("#operation-detail-alert");
       mountOperationForm(form, operation);
+      mountOperationMachines(form, operation).catch((error) => { const target = form.querySelector("[data-operation-machines]"); if (target) target.innerHTML = `<p class="text-red-700">${escapeHtml(error.message)}</p>`; });
       form?.addEventListener("submit", async (event) => { event.preventDefault(); if (!form.reportValidity()) return; const save = mountRoot.querySelector("#operation-detail-save"); try { save.disabled = true; save.textContent = "Guardando…"; await saveOperation(operation, form); alert.textContent = "Operación actualizada."; alert.className = "rounded-lg border px-md py-sm text-[12px] border-green-200 bg-green-50 text-green-700"; save.disabled = false; save.textContent = "Guardar cambios"; } catch (error) { alert.textContent = error.message; alert.className = "rounded-lg border px-md py-sm text-[12px] border-red-200 bg-red-50 text-red-700"; save.disabled = false; save.textContent = "Guardar cambios"; } });
     }).catch((error) => { if (main) main.innerHTML = `<div class="max-w-5xl mx-auto"><p class="text-red-700">${escapeHtml(error.message)}</p></div>`; });
   } };

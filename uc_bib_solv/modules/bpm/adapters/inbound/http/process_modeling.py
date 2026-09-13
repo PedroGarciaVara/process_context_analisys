@@ -57,6 +57,8 @@ def create_blueprint(operational, process_modeling):
     bp.add_url_rule("/api/bpm/nodes/<node_id>/metadata", "node_metadata_update", lambda node_id: process_call("update_node_metadata", node_id, payload()), methods=["PATCH"])
     bp.add_url_rule("/api/bpm/operations", "operations_list", lambda: operational_call(operational.list_operations, request.args.get("process_id")), methods=["GET"])
     bp.add_url_rule("/api/bpm/operations/<operation_id>/stages", "operation_stages", lambda operation_id: process_call("update_operation_stages", operation_id, payload()), methods=["PATCH"])
+    bp.add_url_rule("/api/bpm/operations/<operation_id>/machines", "operation_machines_replace", lambda operation_id: operational_call(operational.replace_operation_machines, operation_id, payload()), methods=["PUT"])
+    bp.add_url_rule("/api/bpm/operations/<operation_id>/machines", "operation_machines_get", lambda operation_id: operational_call(operational.get_operation_machines, operation_id, request.args.get("process_id") or request.args.get("processId")), methods=["GET"])
     bp.add_url_rule("/api/bpm/processes/<process_id>/context", "process_context", lambda process_id: process_call("get_context", process_id, request.args.get("node_id"), request.args.get("family"), request.args.get("record_type")), methods=["GET"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>/context-records", "context_record_create", lambda node_id: created(process_call("create_context_record", node_id, payload())), methods=["POST"])
     bp.add_url_rule("/api/bpm/kpis", "kpi_calculate", lambda: process_call("calculate_context_kpi", payload()), methods=["POST"])

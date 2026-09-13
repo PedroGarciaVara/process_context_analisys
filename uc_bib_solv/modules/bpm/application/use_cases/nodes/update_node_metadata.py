@@ -14,6 +14,15 @@ class UpdateNodeMetadata:
         metadata = data.get("metadata", data)
         if not isinstance(metadata, dict):
             raise ProcessModelingError("Los metadatos deben ser un objeto JSON", "metadata_object_required")
+        legacy_keys = {"equipment", "canonical_ids", "operation_machine_assignments"}
+        containers = [metadata]
+        if isinstance(metadata.get("data"), dict):
+            containers.append(metadata["data"])
+        if any(key in container for container in containers for key in legacy_keys):
+            raise ProcessModelingError(
+                "La pertenencia máquina-operación se gestiona mediante el catálogo canónico; no incluyas equipment, canonical_ids ni operation_machine_assignments.",
+                "legacy_machine_membership_rejected",
+            )
         if any(key in metadata for key in ("context_type", "family", "schema_version", "data", "source", "provenance")):
             from uc_bib_solv.modules.bpm.domain.processes.context import ContextDetail
             metadata = ContextDetail.from_payload(metadata, str(node_id)).to_dict()

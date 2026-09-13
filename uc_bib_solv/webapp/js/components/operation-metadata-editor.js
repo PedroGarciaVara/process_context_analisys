@@ -6,7 +6,6 @@ export const OPERATION_LIST_FIELDS = Object.freeze([
   ["inputs", "Entradas", "Materiales, información o condiciones necesarias"],
   ["outputs", "Salidas", "Resultados materiales o informativos"],
   ["materials", "Materiales", "Materias primas o consumibles"],
-  ["equipment", "Equipos", "Máquinas y recursos implicados"],
   ["parameters", "Parámetros", "Consignas y variables de ejecución"],
   ["quality_controls", "Controles de calidad", "Comprobaciones y criterios"],
   ["indicators", "Indicadores", "Medidas de desempeño"],
@@ -15,6 +14,14 @@ export const OPERATION_LIST_FIELDS = Object.freeze([
 
 function metadataData(metadata) {
   return metadata && typeof metadata.data === "object" && !Array.isArray(metadata.data) ? metadata.data : metadata || {};
+}
+
+export function stripLegacyMembershipMetadata(metadata = {}) {
+  const result = cloneJson(metadata || {});
+  const target = result && typeof result.data === "object" && !Array.isArray(result.data) ? result.data : result;
+  ["equipment", "canonical_ids", "operation_machine_assignments"].forEach((key) => delete target[key]);
+  if (target !== result) ["equipment", "canonical_ids", "operation_machine_assignments"].forEach((key) => delete result[key]);
+  return result;
 }
 
 export function operationMetadataMarkup(metadata = {}) {
@@ -30,9 +37,11 @@ export function mountOperationMetadataEditor(form, metadata = {}) {
 }
 
 export function readOperationMetadata(form) {
-  const metadata = cloneJson(formMetadata.get(form) || {});
+  const metadata = stripLegacyMembershipMetadata(formMetadata.get(form) || {});
   const enveloped = metadata && typeof metadata.data === "object" && !Array.isArray(metadata.data);
   const target = enveloped ? { ...metadata.data } : { ...metadata };
+  // Membership is persisted only by the canonical operation-machines command.
+  // Historical duplicate keys are never sent back by the generic editor.
   const errors = [];
   OPERATION_LIST_FIELDS.forEach(([key]) => {
     const editor = form.querySelector(`[data-json-editor="operation.${key}"]`);

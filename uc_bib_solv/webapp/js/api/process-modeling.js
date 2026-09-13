@@ -26,6 +26,8 @@ export const deleteOperation = (nodeId, reconnect) => call(`/nodes/${encodeURICo
 export const getNodeMetadata = (nodeId) => call(`/nodes/${encodeURIComponent(nodeId)}/metadata`);
 export const updateNodeMetadata = (nodeId, metadata) => call(`/nodes/${encodeURIComponent(nodeId)}/metadata`, { method: "PATCH", body: JSON.stringify({ metadata }) });
 export const updateOperationStages = (operationId, processId, etapas) => call(`/operations/${encodeURIComponent(operationId)}/stages`, { method: "PATCH", body: JSON.stringify({ operation_id: operationId, process_id: processId, etapas }) });
+export const getOperationMachines = (operationId, processId) => call(`/operations/${encodeURIComponent(operationId)}/machines?process_id=${encodeURIComponent(processId)}`);
+export const replaceOperationMachines = (operationId, processId, machineIds) => call(`/operations/${encodeURIComponent(operationId)}/machines`, { method: "PUT", body: JSON.stringify({ process_id: processId, machine_ids: machineIds }) });
 export const getStructuredContext = (processId, params = {}) => {
   const query = new URLSearchParams(params);
   const suffix = query.toString() ? `?${query}` : "";
