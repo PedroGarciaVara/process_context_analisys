@@ -60,10 +60,14 @@ let panStart = null;
 let saveTimer = null;
 let positions = {};
 let manualPositions = {};
+let layoutDirty = false;
+let pendingLegacyLayout = null;
 let connectionSource = null;
 let processCatalog = [];
 let databaseMode = false;
 let liveProcessId = null;
+let layoutPersistenceAvailable = false;
+let layoutLoadError = null;
 let navigationStack = [];
 let inspectorTab = "details";
 const nodeContextCache = new Map();
@@ -82,8 +86,36 @@ async function api(path, options = {}) {
   });
   let payload = null;
   try { payload = await response.json(); } catch { /* Keep the HTTP fallback below. */ }
-  if (!response.ok) throw new Error(payload?.message || `Error HTTP ${response.status}`);
+  if (!response.ok) {
+    const error = new Error(payload?.message || `Error HTTP ${response.status}`);
+    error.status = response.status;
+    error.code = payload?.code || null;
+    throw error;
+  }
   return payload?.status === "ok" && Object.prototype.hasOwnProperty.call(payload, "data") ? payload.data : payload;
+}
+
+async function loadOptionalProcessLayout(processId) {
+  try {
+    const layout = await api(`/api/bpm/processes/${encodeURIComponent(processId)}/layout`);
+    if (!layout || !Array.isArray(layout.positions)) throw new Error("La respuesta del layout no contiene posiciones válidas");
+    return { available: true, positions: layout.positions, error: null };
+  } catch (error) {
+    return { available: false, positions: [], error };
+  }
+}
+
+function renderDatabaseStatus() {
+  const status = $("#database-status");
+  status.classList.remove("is-offline", "is-degraded");
+  if (layoutPersistenceAvailable) {
+    status.innerHTML = "<i></i> Base de datos";
+    status.title = "Grafo y disposición visual compartida cargados desde PostgreSQL";
+    return;
+  }
+  status.classList.add("is-degraded");
+  status.innerHTML = "<i></i> BD · diseño automático";
+  status.title = `El proceso está cargado desde la base de datos. El layout compartido no está disponible: ${layoutLoadError?.message || "error desconocido"}`;
 }
 
 function inferIndustrialType(node) {
@@ -103,7 +135,12 @@ function inferIndustrialType(node) {
 }
 
 function firstUseful(value, fallback = "") {
-  if (Array.isArray(value)) return value.filter(Boolean).join(", ");
+  if (Array.isArray(value)) return value.filter(Boolean).map((item) => {
+    if (!item || typeof item !== "object") return item;
+    const title = item.name || item.nombre || item.title || item.titulo || item.label || item.machine_ref;
+    const description = item.description || item.descripcion || item.detail || item.detalle;
+    return [title, description].filter(Boolean).join(" — ") || Object.keys(item).join(", ");
+  }).join(", ");
   if (value && typeof value === "object") return JSON.stringify(value);
   return value ?? fallback;
 }
@@ -200,8 +237,82 @@ function positionStorageKey(processId = liveProcessId || model.process.id) {
   return `${STORAGE_KEY}:positions:${processId}`;
 }
 
+function canonicalLayoutPositions(source = manualPositions) {
+  const knownNodeIds = new Set(model.nodes.map((node) => String(node.id)));
+  return Object.entries(source || {}).flatMap(([nodeId, position]) => {
+    const x = Number(position?.x);
+    const y = Number(position?.y);
+    if (!knownNodeIds.has(String(nodeId)) || !Number.isFinite(x) || !Number.isFinite(y)) return [];
+    if (x < -1000000 || x > 1000000 || y < -1000000 || y > 1000000) return [];
+    return [{ node_id: String(nodeId), x: Math.round(x * 1000) / 1000, y: Math.round(y * 1000) / 1000 }];
+  });
+}
+
+function applyLayoutPositions(items = []) {
+  manualPositions = Object.fromEntries(items.map((item) => [String(item.node_id), { x: Number(item.x), y: Number(item.y) }]));
+}
+
+function archiveLegacyLayout(raw) {
+  const key = positionStorageKey();
+  try {
+    localStorage.setItem(`${key}:backup`, JSON.stringify({ archived_at: new Date().toISOString(), value: raw }));
+    localStorage.removeItem(key);
+  } catch { /* The server remains authoritative even if local cleanup is unavailable. */ }
+}
+
+function offerLegacyLayoutMigration() {
+  pendingLegacyLayout = null;
+  if (!databaseMode || !layoutPersistenceAvailable || canonicalLayoutPositions().length) return;
+  let raw;
+  let parsed;
+  try {
+    raw = localStorage.getItem(positionStorageKey());
+    if (!raw) return;
+    parsed = JSON.parse(raw);
+  } catch {
+    toast("La disposición local anterior no es válida y no se importará", "warning");
+    return;
+  }
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") return;
+  const total = Object.keys(parsed).length;
+  const positions = canonicalLayoutPositions(parsed);
+  if (!positions.length) return;
+  pendingLegacyLayout = { raw, positions, discarded: total - positions.length };
+  $("#layout-migration-summary").textContent = `${positions.length} posiciones válidas${pendingLegacyLayout.discarded ? ` · ${pendingLegacyLayout.discarded} referencias antiguas se descartarán` : ""}.`;
+  $("#layout-migration-dialog").showModal();
+}
+
+async function importLegacyLayout() {
+  if (!pendingLegacyLayout || !databaseMode || !layoutPersistenceAvailable) return;
+  const migration = pendingLegacyLayout;
+  try {
+    const result = await api(`/api/bpm/processes/${encodeURIComponent(liveProcessId)}/layout`, {
+      method: "PUT", body: JSON.stringify({ positions: migration.positions }),
+    });
+    applyLayoutPositions(result.positions || []);
+    layoutDirty = false;
+    archiveLegacyLayout(migration.raw);
+    pendingLegacyLayout = null;
+    $("#layout-migration-dialog").close();
+    render();
+    toast("Disposición importada y compartida desde PostgreSQL", "cloud_done");
+  } catch (error) {
+    toast(`No se pudo importar la disposición: ${error.message}`, "error");
+  }
+}
+
+function ignoreLegacyLayout() {
+  if (pendingLegacyLayout) archiveLegacyLayout(pendingLegacyLayout.raw);
+  pendingLegacyLayout = null;
+  $("#layout-migration-dialog").close();
+  toast("Se usará el diseño automático compartido", "auto_awesome_motion");
+}
+
 async function loadDatabaseProcess(processId, { announce = true } = {}) {
-  const payload = await api(`/api/bpm/processes/${encodeURIComponent(processId)}`);
+  const [payload, layout] = await Promise.all([
+    api(`/api/bpm/processes/${encodeURIComponent(processId)}`),
+    loadOptionalProcessLayout(processId),
+  ]);
   model = mapDatabaseProcess(payload);
   liveProcessId = String(processId);
   databaseMode = true;
@@ -214,12 +325,18 @@ async function loadDatabaseProcess(processId, { announce = true } = {}) {
   future = [];
   dirtyNodeIds.clear();
   dirtyEdgeIds.clear();
-  try { manualPositions = JSON.parse(localStorage.getItem(positionStorageKey()) || "{}"); } catch { manualPositions = {}; }
-  $("#database-status").classList.remove("is-offline");
-  $("#database-status").innerHTML = "<i></i> Base de datos";
+  layoutPersistenceAvailable = layout.available;
+  layoutLoadError = layout.error;
+  applyLayoutPositions(layout.positions);
+  layoutDirty = false;
+  renderDatabaseStatus();
   $("#db-process-selector").value = liveProcessId;
   render();
   setTimeout(fit, 30);
+  setTimeout(() => {
+    if (String(liveProcessId) === String(processId)) offerLegacyLayoutMigration();
+  }, 0);
+  if (layoutLoadError) toast(`Proceso cargado. Se usa diseño automático porque el layout compartido falló: ${layoutLoadError.message}`, "warning");
   if (announce) toast(`Proceso cargado: ${payload.name}`, "database");
 }
 
@@ -254,8 +371,12 @@ async function initializeDatabase() {
     else throw new Error("No hay procesos BPM almacenados");
   } catch (error) {
     databaseMode = false;
+    layoutPersistenceAvailable = false;
+    layoutLoadError = null;
     $("#database-status").classList.add("is-offline");
+    $("#database-status").classList.remove("is-degraded");
     $("#database-status").innerHTML = "<i></i> Modo local";
+    $("#database-status").title = `No se pudo cargar el catálogo o el proceso BPM: ${error.message}`;
     $("#db-process-selector").innerHTML = '<option value="">Ejemplo local</option>';
     toast(`No se pudo leer la base de datos: ${error.message}`, "cloud_off");
   }
@@ -271,6 +392,16 @@ function markChanged() {
   $("#save-label").textContent = "Cambios sin guardar";
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => save(false), 1800);
+}
+
+function markLayoutChanged() {
+  layoutDirty = true;
+  markChanged();
+}
+
+async function flushPendingChanges() {
+  if (!databaseMode || (!saveTimer && !layoutDirty && !dirtyNodeIds.size && !dirtyEdgeIds.size)) return true;
+  return save(false);
 }
 
 function toast(message, icon = "check_circle") {
@@ -477,7 +608,7 @@ function contextCompleteness(node, bundle = null) {
     asList(detail.inputs || raw.inputs).length,
     asList(detail.outputs || raw.outputs).length,
     asList(bundle?.machines).length || asList(raw.equipment).length,
-    bundle?.contract || raw.canonical_ids?.contract_id,
+    bundle?.contract || raw.canonical_ids?.contract_id || raw.canonical_ids?.contrato_id,
   ];
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
@@ -486,12 +617,13 @@ async function loadNodeContext(node) {
   if (!databaseMode || !liveProcessId || nodeContextCache.get(node.id)?.status === "loading") return;
   const raw = contextSource(node);
   const canonical = raw.canonical_ids || node._properties?.canonical_ids || {};
+  const contractId = canonical.contract_id ?? canonical.contrato_id;
   nodeContextCache.set(node.id, { status: "loading" });
   if (selected?.id === node.id && inspectorTab === "context") renderInspector();
   const requests = [
     api(`/api/bpm/processes/${encodeURIComponent(liveProcessId)}/context?node_id=${encodeURIComponent(node.id)}`),
     api(`/api/bpm/machines?operationId=${encodeURIComponent(node.id)}`),
-    canonical.contract_id ? api(`/api/bpm/contracts/${encodeURIComponent(canonical.contract_id)}`) : Promise.resolve(null),
+    contractId ? api(`/api/bpm/contracts/${encodeURIComponent(contractId)}`) : Promise.resolve(null),
   ];
   const [contextResult, machinesResult, contractResult] = await Promise.allSettled(requests);
   const contextPayload = contextResult.status === "fulfilled" ? contextResult.value : null;
@@ -574,7 +706,7 @@ function renderInspector() {
   const decisionTools = node.type === "decision" ? `<section class="decision-branch-builder"><div class="decision-branch-heading"><span class="field-label">Salidas de la decisión</span><small>Crea la operación y la relación en un paso.</small></div><div class="decision-branch-buttons"><button class="branch-button branch-yes" data-add-decision-branch="Sí" ${branchLabels.has("sí") || branchLabels.has("si") ? "disabled" : ""}><span>SÍ</span><strong>+ Operación conforme</strong></button><button class="branch-button branch-no" data-add-decision-branch="No" ${branchLabels.has("no") ? "disabled" : ""}><span>NO</span><strong>+ Operación alternativa</strong></button></div></section>` : "";
   const operationRecordLink = ["machine", "manual", "inspection", "verification"].includes(node.type) ? `<button class="context-detail-link context-detail-link-wide" data-open-operation-detail="${esc(node.id)}"><span class="material-symbols-rounded">open_in_new</span>Abrir ficha operativa completa y metadatos</button>` : "";
   const detailsMarkup = `${decisionTools}<div class="field-row"><div class="form-field"><label>Código</label><input data-node-field="code" value="${esc(node.code)}" ${databaseMode ? "readonly" : ""} /></div><div class="form-field"><label>Tipo</label><select data-node-field="type">${Object.entries(TYPE_META).map(([type, item]) => `<option value="${type}"${node.type === type ? " selected" : ""}>${esc(item.label)}</option>`).join("")}</select></div></div><div class="form-field"><label>Nombre</label><input data-node-field="name" value="${esc(node.name)}" /></div><div class="form-field"><label>Descripción / instrucción</label><textarea data-node-field="description">${esc(node.description || "")}</textarea></div>${typeSpecific}${operational}${subprocessField}${operationRecordLink}`;
-  const relationsMarkup = `<div><span class="field-label">Conexiones del nodo</span><div class="connection-list">${connectionMarkup(node)}</div></div><div class="semantic-box"><h3><span class="material-symbols-rounded">hub</span>Identidad semántica</h3><div class="semantic-row"><span>node_id</span><code title="${esc(node.id)}">${esc(node.id)}</code></div><div class="semantic-row"><span>Clase</span><code>industrial:${esc(node.type)}</code></div><div class="semantic-row"><span>Coordenadas</span><code>capa visual local</code></div></div><div class="inspector-actions"><button class="button button-secondary" data-action="duplicate-selected"><span class="material-symbols-rounded">content_copy</span>Duplicar</button><button class="button button-secondary danger-button" data-action="delete-selected"><span class="material-symbols-rounded">delete</span>Eliminar</button></div>`;
+  const relationsMarkup = `<div><span class="field-label">Conexiones del nodo</span><div class="connection-list">${connectionMarkup(node)}</div></div><div class="semantic-box"><h3><span class="material-symbols-rounded">hub</span>Identidad semántica</h3><div class="semantic-row"><span>node_id</span><code title="${esc(node.id)}">${esc(node.id)}</code></div><div class="semantic-row"><span>Clase</span><code>industrial:${esc(node.type)}</code></div><div class="semantic-row"><span>Coordenadas</span><code>${databaseMode ? "proyección visual compartida" : "capa visual local"}</code></div></div><div class="inspector-actions"><button class="button button-secondary" data-action="duplicate-selected"><span class="material-symbols-rounded">content_copy</span>Duplicar</button><button class="button button-secondary danger-button" data-action="delete-selected"><span class="material-symbols-rounded">delete</span>Eliminar</button></div>`;
   const activeMarkup = inspectorTab === "context" ? renderContextTab(node) : inspectorTab === "relations" ? relationsMarkup : detailsMarkup;
   content.innerHTML = `<div class="inspector-head node-inspector-head"><span class="inspector-type-icon type-${esc(node.type)} material-symbols-rounded">${meta.icon}</span><div class="inspector-title"><span class="eyebrow">${esc(meta.label)}</span><h2 title="${esc(node.name)}">${esc(node.name)}</h2></div><div class="completeness" title="Completitud del contexto"><span style="--score:${completeness}%"></span><small>${completeness}%</small></div><button class="icon-button" data-action="clear-selection" aria-label="Cerrar inspector"><span class="material-symbols-rounded">close</span></button></div>${inspectorTabs()}<div class="inspector-body inspector-${inspectorTab}">${activeMarkup}</div>`;
 }
@@ -588,6 +720,7 @@ async function addNode(type, edgeId = null, dropPosition = null, branchLabel = n
     const edge = edgeById(edgeId);
     if (!edge?._persisted) return;
     try {
+      if (!await flushPendingChanges()) return;
       await api(`/api/bpm/processes/${encodeURIComponent(liveProcessId)}/transitions/${encodeURIComponent(edgeId)}/insert-operation`, {
         method: "POST", body: JSON.stringify({ name: TYPE_META.machine.defaultName, description: "", properties: { industrial_kind: "machine", studio: {} } }),
       });
@@ -604,7 +737,7 @@ async function addNode(type, edgeId = null, dropPosition = null, branchLabel = n
   if (branchLabel === "Sí") node.name = "Continuar proceso";
   if (branchLabel === "No") node.name = "Gestionar no conformidad";
   model.nodes.push(node);
-  if (dropPosition) manualPositions[node.id] = dropPosition;
+  if (dropPosition) { manualPositions[node.id] = dropPosition; layoutDirty = true; }
   if (edgeId) {
     const edge = edgeById(edgeId);
     if (edge) {
@@ -724,14 +857,21 @@ async function deleteSelected() {
       else {
         const node = nodeById(deleting.id);
         if (["machine", "manual", "inspection", "verification"].includes(node?.type)) {
-          const reconnect = window.confirm(`¿Eliminar «${node.name}» y reconectar automáticamente sus extremos?\n\nAceptar: elimina y reconecta.\nCancelar: permite elegir eliminar sin reconectar.`);
-          if (!reconnect && !window.confirm("¿Eliminar la operación sin reconectar los nodos anterior y posterior?")) return;
+          const incoming = model.edges.filter((edge) => edge.target === deleting.id);
+          const outgoing = model.edges.filter((edge) => edge.source === deleting.id);
+          const canReconnect = incoming.length === 1 && outgoing.length === 1
+            && incoming[0].source !== outgoing[0].target;
+          const reconnect = canReconnect
+            ? window.confirm(`¿Eliminar «${node.name}» y reconectar automáticamente sus extremos?\n\nAceptar: elimina y reconecta.\nCancelar: elimina sin reconectar.`)
+            : (window.confirm(`¿Eliminar «${node.name}» sin reconectar?\n\nLa operación no tiene exactamente una entrada y una salida válidas para reconectar.`));
+          if (!reconnect) return;
           await api(`/api/bpm/nodes/${encodeURIComponent(deleting.id)}/operation-delete`, { method: "POST", body: JSON.stringify({ reconnect }) });
         } else {
           if (!window.confirm(`¿Eliminar «${node?.name || "este elemento"}» del flujo?`)) return;
           await api(`/api/bpm/nodes/${encodeURIComponent(deleting.id)}`, { method: "DELETE" });
         }
       }
+      delete manualPositions[deleting.id];
       await loadDatabaseProcess(liveProcessId, { announce: false });
       toast("Elemento eliminado de la base de datos", "delete_sweep");
     } catch (error) { toast(`No se pudo eliminar: ${error.message}`, "error"); }
@@ -842,8 +982,9 @@ function semanticPayload() {
 }
 
 async function save(notify = true) {
+  clearTimeout(saveTimer);
+  saveTimer = null;
   model.process.name = $("#process-title").value.trim() || "Proceso sin nombre";
-  model.process.revision = Number(model.process.revision || 0) + 1;
   if (databaseMode) {
     try {
       $("#save-label").textContent = "Guardando…";
@@ -858,22 +999,36 @@ async function save(notify = true) {
       }
       dirtyNodeIds.clear();
       dirtyEdgeIds.clear();
-      try { localStorage.setItem(positionStorageKey(), JSON.stringify(manualPositions)); } catch { /* Visual positions are optional. */ }
-      $("#save-label").textContent = "Guardado en base de datos";
-      if (notify) toast("Proceso y relaciones guardados en PostgreSQL", "cloud_done");
+      if (layoutDirty) {
+        if (layoutPersistenceAvailable) {
+          const layout = await api(`/api/bpm/processes/${encodeURIComponent(liveProcessId)}/layout`, {
+            method: "PUT", body: JSON.stringify({ positions: canonicalLayoutPositions() }),
+          });
+          applyLayoutPositions(layout.positions || []);
+        }
+        layoutDirty = false;
+      }
+      $("#save-label").textContent = layoutPersistenceAvailable ? "Guardado en base de datos" : "Grafo guardado · diseño automático";
+      if (notify) toast(layoutPersistenceAvailable
+        ? "Proceso, relaciones y diseño guardados en PostgreSQL"
+        : "Proceso y relaciones guardados; el layout compartido no está disponible", layoutPersistenceAvailable ? "cloud_done" : "warning");
+      return true;
     } catch (error) {
       $("#save-label").textContent = "Error al guardar";
       toast(`No se pudo guardar: ${error.message}`, "error");
+      return false;
     }
-    return;
   }
+  model.process.revision = Number(model.process.revision || 0) + 1;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, manualPositions }));
     $("#save-label").textContent = `Versión ${model.process.revision} guardada`;
     if (notify) toast("Versión guardada localmente; el grafo conserva su semántica", "cloud_done");
+    return true;
   } catch {
     $("#save-label").textContent = "Edición activa";
     if (notify) toast("El navegador no permite almacenamiento local; puedes exportar el grafo", "info");
+    return false;
   }
 }
 
@@ -935,6 +1090,7 @@ async function createProcessFromStudio(form) {
   const data = new FormData(form);
   submit.disabled = true;
   try {
+    if (!await flushPendingChanges()) return;
     const created = await api("/api/bpm/processes", { method: "POST", body: JSON.stringify({ name: data.get("name"), description: data.get("description") || null, status: "draft" }) });
     processCatalog = await api("/api/bpm/processes");
     $("#db-process-selector").innerHTML = processCatalog.map((process) => `<option value="${esc(process.process_id)}">${esc(process.name)}</option>`).join("");
@@ -977,6 +1133,7 @@ async function openSubprocess(nodeId) {
   if (!node.childProcessId) return toast("Este subproceso todavía no está vinculado a un grafo", "link_off");
   const visited = new Set([liveProcessId, ...navigationStack.map((item) => item.processId)].map(String));
   if (visited.has(String(node.childProcessId))) return toast("No se puede abrir una referencia cíclica de procesos", "error");
+  if (!await flushPendingChanges()) return;
   const parent = { processId: String(liveProcessId), name: model.process.name, code: model.process.code, viaNodeId: node.id };
   navigationStack.push(parent);
   try {
@@ -990,6 +1147,7 @@ async function openSubprocess(nodeId) {
 }
 
 async function navigateToParent() {
+  if (!await flushPendingChanges()) return;
   const parent = navigationStack.pop();
   if (!parent) return;
   try {
@@ -1040,8 +1198,7 @@ function alignSelection(mode) {
     const last = ordered.at(-1).y + ordered.at(-1).height / 2;
     ordered.forEach((box, index) => apply(box, box.x, first + ((last - first) * index) / (ordered.length - 1) - box.height / 2));
   }
-  try { localStorage.setItem(positionStorageKey(), JSON.stringify(manualPositions)); } catch { /* Layout persistence is optional. */ }
-  $("#save-label").textContent = "Diseño visual actualizado";
+  markLayoutChanged();
   render();
   toast("Selección alineada; la semántica del grafo no ha cambiado", "align_vertical_center");
 }
@@ -1119,7 +1276,9 @@ document.addEventListener("click", (event) => {
     "create-process-dialog": openCreateProcessDialog,
     "open-process-detail": () => navigateApp("procesos_detalle", { bpm_process_id: liveProcessId }),
     "toggle-fullscreen": toggleFullscreen,
-    "auto-layout": () => { manualPositions = {}; render(); markChanged(); toast("Diseño recalculado desde la topología del grafo", "auto_awesome_motion"); },
+    "auto-layout": () => { manualPositions = {}; render(); markLayoutChanged(); toast("Diseño recalculado desde la topología del grafo", "auto_awesome_motion"); },
+    "import-legacy-layout": importLegacyLayout,
+    "ignore-legacy-layout": ignoreLegacyLayout,
     "zoom-in": () => { zoom = Math.min(1.5, zoom + .1); updateZoom(); },
     "zoom-out": () => { zoom = Math.max(.4, zoom - .1); updateZoom(); },
     "zoom-reset": () => { zoom = 1; updateZoom(); }, fit,
@@ -1160,6 +1319,7 @@ document.addEventListener("input", (event) => {
 
 $("#db-process-selector").addEventListener("change", async (event) => {
   if (!event.target.value || !databaseMode) return;
+  if (!await flushPendingChanges()) { event.target.value = liveProcessId; return; }
   const previousStack = navigationStack;
   navigationStack = [];
   try { await loadDatabaseProcess(event.target.value); syncNavigationUrl(); }
@@ -1231,7 +1391,7 @@ $("#canvas-viewport").addEventListener("drop", (event) => {
     manualPositions[payload.nodeId] = { x: point.x - size.width / 2, y: point.y - size.height / 2 };
     selected = { kind: "node", id: payload.nodeId };
     selectedNodeIds = new Set([payload.nodeId]);
-    markChanged(); render(); toast("Elemento reposicionado; su identidad no ha cambiado", "open_with");
+    markLayoutChanged(); render(); toast("Elemento reposicionado; su identidad no ha cambiado", "open_with");
   }
 });
 

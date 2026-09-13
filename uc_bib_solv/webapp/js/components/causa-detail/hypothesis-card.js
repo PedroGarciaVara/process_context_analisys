@@ -9,12 +9,15 @@ export function createHypothesisCard() {
       createElement("div", { className: "detail-card__subtitle", text: "Crea, edita y elimina hipotesis vinculadas a la causa activa." }),
     ] }),
     createElement("div", { className: "detail-card__body", children: [
-      buildDetailField("Descripcion", createElement("textarea", { className: "input-control control-textarea", attrs: { id: "cd-hypothesis-description", rows: "4", placeholder: "Descripcion de la hipotesis" } })),
-      buildDetailField("Tipo", createElement("select", { className: "input-control control-input", attrs: { id: "cd-hypothesis-type" } })),
-      buildDetailField("Criterio de validacion", createElement("textarea", { className: "input-control control-textarea", attrs: { id: "cd-hypothesis-criterion", rows: "3", placeholder: "Criterio de validacion" } })),
+      createElement("p", { className: "detail-form-hint", text: "Edita únicamente los cuatro datos descriptivos de la hipótesis. Los atributos históricos se conservan al guardar." }),
+      buildDetailField("Título hipótesis", createElement("input", { className: "input-control control-input", attrs: { id: "cd-hypothesis-title", name: "hypothesis_title", type: "text", placeholder: "Título de la hipótesis", autocomplete: "off" } })),
+      buildDetailField("Descripción", createElement("textarea", { className: "input-control control-textarea", attrs: { id: "cd-hypothesis-description", name: "hypothesis_description", rows: "4", placeholder: "Describe qué causa esperas que explique el problema…", autocomplete: "off" } })),
+      buildDetailField("Criterio de validación", createElement("textarea", { className: "input-control control-textarea", attrs: { id: "cd-hypothesis-criterion", name: "hypothesis_criterion", rows: "3", placeholder: "Qué resultado confirma o rechaza la hipótesis…", autocomplete: "off" } })),
+      buildDetailField("Método de cálculo", createElement("textarea", { className: "input-control control-textarea", attrs: { id: "cd-hypothesis-method", name: "metodo", rows: "3", placeholder: "Describe el método utilizado para calcular o validar…", autocomplete: "off" } })),
     ] }),
     createElement("div", { className: "detail-card__footer", children: [
       createElement("button", { className: "btn btn-primary", text: "Guardar hipotesis", attrs: { type: "button", id: "cd-hypothesis-save" } }),
+      createElement("p", { className: "detail-inline-feedback detail-inline-feedback--success", text: "", attrs: { id: "cd-hypothesis-creation-feedback", role: "status", "aria-live": "polite", hidden: "true" } }),
       createElement("button", { className: "btn btn-secondary", text: "Nueva hipotesis", attrs: { type: "button", id: "cd-hypothesis-new" } }),
     ] }),
     createElement("div", { className: "detail-hypothesis-section", children: [

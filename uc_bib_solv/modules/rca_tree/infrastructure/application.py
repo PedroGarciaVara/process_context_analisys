@@ -19,6 +19,7 @@ from ..application.use_cases import (
     UpdateCause,
     UpdateHypothesis,
 )
+from ..application.use_cases.causes.move_cause import MoveCause
 
 
 class RcaTreeApplication:
@@ -40,6 +41,7 @@ class RcaTreeApplication:
         search_reusable_nodes: SearchReusableNodes,
         link_reusable_node: LinkReusableNode,
         create_contract_node: CreateContractNode,
+        move_cause: MoveCause | None = None,
     ):
         self._get_tree = get_tree
         self._get_cause_detail = get_cause_detail
@@ -54,6 +56,7 @@ class RcaTreeApplication:
         self._search_reusable_nodes = search_reusable_nodes
         self._link_reusable_node = link_reusable_node
         self._create_contract_node = create_contract_node
+        self._move_cause = move_cause
 
     def get_tree_payload(self, view="arbol", selected_cause_id=None, zoom=1.0, contract_id=None):
         payload = self._get_tree.execute(view, selected_cause_id, zoom, contract_id)
@@ -97,6 +100,11 @@ class RcaTreeApplication:
 
     def create_contract_node(self, payload):
         return self._create_contract_node.execute(payload)
+
+    def move_cause(self, cause_id, payload):
+        if self._move_cause is None:
+            raise RuntimeError("El movimiento de causas no está configurado.")
+        return self._move_cause.execute(payload, cause_id=cause_id)
 
 
 __all__ = ["RcaTreeApplication"]

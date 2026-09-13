@@ -1,23 +1,6 @@
 import { createElement, escapeHtml } from "../core/utils.js";
 import { renderModal } from "./modal.js";
 
-function normalizeStatus(value) {
-  const raw = String(value || "pending").toLowerCase();
-  if (raw === "validada") return "retained";
-  if (raw === "rechazada") return "discarded";
-  if (raw === "pendiente") return "pending";
-  if (raw === "retained" || raw === "discarded" || raw === "pending") return raw;
-  return "pending";
-}
-
-function formatStatusLabel(status) {
-  return ({
-    pending: "Pendiente",
-    retained: "Validada",
-    discarded: "Rechazada",
-  })[normalizeStatus(status)] || "Pendiente";
-}
-
 function formatContextLabel(label) {
   const normalized = String(label || "").trim().toLowerCase();
   return ({
@@ -48,14 +31,6 @@ function formatContextValue(value) {
   })[normalized] || String(value || "");
 }
 
-export function renderStatusPill(status) {
-  const normalized = normalizeStatus(status);
-  return createElement("span", {
-    className: `status-chip status-chip--${normalized}`,
-    text: formatStatusLabel(status),
-  });
-}
-
 function renderContextItem(item) {
   const element = createElement("div", { className: "context-chip" });
   element.append(
@@ -63,6 +38,15 @@ function renderContextItem(item) {
     createElement("strong", { className: "context-chip__value", text: formatContextValue(item.value) }),
   );
   return element;
+}
+
+function renderDefinitionMeta(label, value, fallback) {
+  const block = createElement("div", { className: "detail-mini-meta" });
+  block.append(
+    createElement("span", { className: "detail-mini-meta__label", text: label }),
+    createElement("strong", { className: "detail-mini-meta__value", text: value || fallback }),
+  );
+  return block;
 }
 
 export function renderContextBanner(payload) {
@@ -87,15 +71,6 @@ export function renderContextBanner(payload) {
   return section;
 }
 
-function renderMiniMeta(label, value) {
-  const block = createElement("div", { className: "detail-mini-meta" });
-  block.append(
-    createElement("span", { className: "detail-mini-meta__label", text: label }),
-    createElement("strong", { className: "detail-mini-meta__value", text: value || "-" }),
-  );
-  return block;
-}
-
 export function renderHypothesisCard(hypothesis, selected = false) {
   const card = createElement("article", {
     className: `detail-hypothesis-card${selected ? " is-selected" : ""}`,
@@ -104,20 +79,19 @@ export function renderHypothesisCard(hypothesis, selected = false) {
 
   const top = createElement("div", { className: "detail-hypothesis-card__top" });
   top.append(
-    createElement("div", { className: "detail-hypothesis-card__title", text: hypothesis.descripcion || "Hipotesis sin titulo" }),
-    renderStatusPill(hypothesis.estado),
+    createElement("div", { className: "detail-hypothesis-card__title", text: hypothesis.nombre || hypothesis.name || hypothesis.descripcion || "Hipotesis sin titulo" }),
   );
 
   const body = createElement("div", { className: "detail-hypothesis-card__body" });
   body.append(
     createElement("p", {
       className: "detail-hypothesis-card__text",
-      text: hypothesis.criterio_validacion || "Sin criterio de validacion.",
+      text: hypothesis.descripcion || "Sin descripcion.",
     }),
-    createElement("div", { className: "detail-hypothesis-card__meta" }),
-  );
-  body.lastChild.append(
-    renderMiniMeta("Tipo", hypothesis.tipo || "aceptacion"),
+    createElement("div", { className: "detail-hypothesis-card__meta", children: [
+      renderDefinitionMeta("Criterio de validación", hypothesis.criterio_validacion, "Sin criterio de validación."),
+      renderDefinitionMeta("Método de cálculo", hypothesis.metodo || hypothesis.method, "Sin método de cálculo."),
+    ] }),
   );
 
   const actions = createElement("div", { className: "detail-hypothesis-card__actions" });
@@ -172,7 +146,11 @@ export function renderDeleteModalShell() {
       createElement("div", {
         children: [
           createElement("p", { className: "detail-kicker", text: "Zona de riesgo" }),
-          createElement("h3", { className: "modal-card__title", text: "Confirmar eliminacion" }),
+          createElement("h3", {
+            className: "modal-card__title",
+            text: "Confirmar eliminacion",
+            attrs: { id: "rca-delete-modal-title" },
+          }),
         ],
       }),
     ],
@@ -205,8 +183,12 @@ export function renderDeleteModalShell() {
     footerClassName: "modal-card__footer",
     overlayAttrs: {
       "aria-hidden": "true",
+      "data-modal-kind": "rca-delete",
+    },
+    dialogAttrs: {
       role: "dialog",
       "aria-modal": "true",
+      "aria-labelledby": "rca-delete-modal-title",
     },
   });
 }

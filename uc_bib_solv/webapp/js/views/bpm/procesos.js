@@ -51,7 +51,7 @@ function buildCenter(state) {
 
   return `
     <div class="max-w-6xl mx-auto space-y-xl">
-      <section class="space-y-sm">
+      <section class="michelin-page-hero michelin-page-hero--blue space-y-sm">
         <span class="font-label-md text-label-md text-primary tracking-widest uppercase">Espacio de procesos</span>
         <div class="flex items-end justify-between gap-lg flex-wrap">
           <div>

@@ -320,6 +320,7 @@ export function renderCausaDetalle() {
     alert: root.querySelector("#cd-alert"),
     modeChip: root.querySelector("#cd-mode-chip"),
     editorModeWrap: root.querySelector("#cd-editor-mode-wrap"),
+    editorModePanel: root.querySelector("#cd-editor-mode-panel"),
     editorHelp: root.querySelector("#cd-editor-help"),
     editorFields: root.querySelector("#cd-editor-fields"),
     linkActions: root.querySelector("#cd-link-actions"),
@@ -331,17 +332,19 @@ export function renderCausaDetalle() {
     causeCategory: root.querySelector("#cd-cause-category"),
     causeDescription: root.querySelector("#cd-cause-description"),
     causeSave: root.querySelector("#cd-cause-save"),
+    causeCreationFeedback: root.querySelector("#cd-cause-creation-feedback"),
     causeCancel: root.querySelector("#cd-cause-cancel"),
     causeExit: root.querySelector("#cd-cause-exit"),
     causeNameLabel: root.querySelector('[data-field-label="name"]'),
     causeCategoryLabel: root.querySelector('[data-field-label="category"]'),
     causeDescriptionLabel: root.querySelector('[data-field-label="description"]'),
     causeTypeField: root.querySelector('[data-field-key="type"]'),
+    hypothesisTitle: root.querySelector("#cd-hypothesis-title"),
     hypothesisDescription: root.querySelector("#cd-hypothesis-description"),
-    hypothesisType: root.querySelector("#cd-hypothesis-type"),
-    hypothesisStatus: root.querySelector("#cd-hypothesis-status"),
     hypothesisCriterion: root.querySelector("#cd-hypothesis-criterion"),
+    hypothesisMethod: root.querySelector("#cd-hypothesis-method"),
     hypothesisSave: root.querySelector("#cd-hypothesis-save"),
+    hypothesisCreationFeedback: root.querySelector("#cd-hypothesis-creation-feedback"),
     hypothesisNew: root.querySelector("#cd-hypothesis-new"),
     hypothesisList: root.querySelector("#cd-hypothesis-list"),
     backLink: root.querySelector("#cd-back-link"),
@@ -369,6 +372,33 @@ export function renderCausaDetalle() {
     selectedReusableNode: null,
   };
 
+  let creationFeedbackEpoch = 0;
+
+  function clearCreationFeedback({ invalidate = true, token } = {}) {
+    if (token !== undefined && token !== creationFeedbackEpoch) return false;
+    if (invalidate) creationFeedbackEpoch += 1;
+    [refs.causeCreationFeedback, refs.hypothesisCreationFeedback].forEach((node) => {
+      if (!node) return;
+      node.hidden = true;
+      node.textContent = "";
+    });
+    return true;
+  }
+
+  function beginCreationAttempt() {
+    creationFeedbackEpoch += 1;
+    clearCreationFeedback({ invalidate: false });
+    return creationFeedbackEpoch;
+  }
+
+  function showCreationFeedback(message, token) {
+    if (token !== creationFeedbackEpoch) return;
+    const node = message === "Causa creada" ? refs.causeCreationFeedback : refs.hypothesisCreationFeedback;
+    if (!node) return;
+    node.textContent = message;
+    node.hidden = false;
+  }
+
   const hypothesisActions = createCausaDetailHypothesisActions({
     state,
     refs,
@@ -379,7 +409,10 @@ export function renderCausaDetalle() {
     setDeleteModalContent,
     setAlert,
     setModalVisible,
-    refreshDetail: () => refreshDetail(),
+    refreshDetail: (options) => refreshDetail(options),
+    clearCreationFeedback,
+    beginCreationAttempt,
+    showCreationFeedback,
   });
   const editorActions = createCausaDetailEditor({
     state,
@@ -418,19 +451,16 @@ export function renderCausaDetalle() {
     linkReusableNode,
     updateCausa,
     setAlert,
-    refreshDetail: () => refreshDetail(),
+    refreshDetail: (options) => refreshDetail(options),
+    clearCreationFeedback,
+    beginCreationAttempt,
+    showCreationFeedback,
   });
 
   setDetailSelectOptions(refs.causeType, [
     { label: "Causa", value: "causa" },
     { label: "Efecto", value: "efecto" },
   ], "causa");
-
-  setDetailSelectOptions(refs.hypothesisType, [
-    { label: "Aceptacion", value: "aceptacion" },
-    { label: "Rechazo", value: "rechazo" },
-  ], "aceptacion");
-
 
   function setModeChip(mode) {
     clearNode(refs.modeChip);
@@ -487,10 +517,10 @@ export function renderCausaDetalle() {
     refs.causeDescription.value = causeForm.descripcion || "";
 
     const hypothesisForm = payload.hypothesis_form || {};
+    refs.hypothesisTitle.value = hypothesisForm.nombre || hypothesisForm.titulo || hypothesisForm.title || hypothesisForm.descripcion || "";
     refs.hypothesisDescription.value = hypothesisForm.descripcion || "";
-    refs.hypothesisType.value = hypothesisForm.tipo || "aceptacion";
     refs.hypothesisCriterion.value = hypothesisForm.criterio_validacion || "";
-    if (refs.hypothesisStatus) refs.hypothesisStatus.value = hypothesisForm.estado || "pendiente";
+    if (refs.hypothesisMethod) refs.hypothesisMethod.value = hypothesisForm.metodo || hypothesisForm.method || "";
     refs.hypothesisSave.textContent = payload.labels?.hypothesis_save || "Guardar hipotesis";
 
     if (refs.backLink) {
@@ -503,31 +533,52 @@ export function renderCausaDetalle() {
       refs.linkSearch, refs.linkClear].forEach((node) => {
       node.disabled = !canEditDetail;
     });
-    [refs.hypothesisDescription, refs.hypothesisType, refs.hypothesisStatus, refs.hypothesisCriterion,
+    [refs.hypothesisTitle, refs.hypothesisDescription, refs.hypothesisCriterion, refs.hypothesisMethod,
       refs.hypothesisSave, refs.hypothesisNew].forEach((node) => {
       if (node) node.disabled = !canEditHypotheses;
     });
   }
 
-  async function refreshDetail() {
+  async function refreshDetail({ feedbackToken } = {}) {
+    clearCreationFeedback({ token: feedbackToken, invalidate: feedbackToken === undefined });
     const payload = await fetchCausaDetail(readRouteParams());
     state.detail = payload;
     state.activeHypothesisId = payload.hipotesis_id ? Number(payload.hipotesis_id) : null;
     renderDetail(payload);
   }
 
+  function selectEditorMode(nextMode, restoreFocus = false) {
+    if (!state.detail || !nextMode || nextMode === state.editorMode) return;
+    editorActions.setMode(nextMode);
+    editorActions.renderModeSelector(state.detail);
+    editorActions.applyConfig(state.detail);
+    if (restoreFocus) {
+      Array.from(refs.editorModeWrap.querySelectorAll("[data-editor-mode]"))
+        .find((tab) => tab.getAttribute("data-editor-mode") === nextMode)?.focus();
+    }
+    setModeChip(nextMode);
+    clearCreationFeedback();
+  }
+
   refs.editorModeWrap.addEventListener("click", (event) => {
     const button = event.target.closest("[data-editor-mode]");
     if (!button || !state.detail) return;
     const nextMode = button.getAttribute("data-editor-mode");
-    if (!nextMode || nextMode === state.editorMode) return;
-    state.editorMode = nextMode;
-    if (!isLinkMode(nextMode)) {
-      state.selectedReusableNode = null;
-    }
-    setModeChip(nextMode);
-    editorActions.renderModeSelector(state.detail);
-    editorActions.applyConfig(state.detail);
+    selectEditorMode(nextMode);
+  });
+
+  refs.editorModeWrap.addEventListener("keydown", (event) => {
+    const tabs = Array.from(refs.editorModeWrap.querySelectorAll('[role="tab"]'));
+    const currentIndex = tabs.indexOf(event.target);
+    if (currentIndex < 0 || tabs.length < 2) return;
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = (currentIndex + 1) % tabs.length;
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = tabs.length - 1;
+    if (nextIndex === currentIndex) return;
+    event.preventDefault();
+    selectEditorMode(tabs[nextIndex].getAttribute("data-editor-mode"), true);
   });
 
   refs.linkSearch.addEventListener("click", () => reusableNodeActions.openSearch());
@@ -572,6 +623,10 @@ export function renderCausaDetalle() {
     setModalVisible(refs.deleteModal, false);
   });
   refs.deleteModalConfirm.addEventListener("click", () => hypothesisActions.confirmDelete());
+  [refs.causeName, refs.causeType, refs.causeCategory, refs.causeDescription,
+    refs.hypothesisTitle, refs.hypothesisDescription, refs.hypothesisCriterion, refs.hypothesisMethod]
+    .filter(Boolean)
+    .forEach((field) => field.addEventListener("input", clearCreationFeedback));
   setAlert("warning", "Cargando contexto de detalle...");
 
   refreshDetail().catch((error) => {
@@ -613,7 +668,7 @@ export function renderCausaDetallePage(state = {}) {
   );
   const mainWrap = createElement("div", { className: "max-w-6xl mx-auto" });
   const detailView = renderCausaDetalle();
-  detailView.classList.add("detail-page--single-column", "detail-page--compact", "detail-page--causal-only");
+  detailView.classList.add("detail-page--single-column", "detail-page--causal-only");
   mainWrap.appendChild(detailView);
   mainSlot.appendChild(mainWrap);
   rightSlot.innerHTML = buildRightPanel(params, state.catalog);

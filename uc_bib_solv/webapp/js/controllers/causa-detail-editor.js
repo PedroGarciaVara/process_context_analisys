@@ -18,17 +18,35 @@ export function createCausaDetailEditor({ state, refs, readRouteParams, getEdito
 
   function renderModeSelector(payload) {
     clearNode(refs.editorModeWrap);
+    refs.editorModeWrap.setAttribute("role", "tablist");
+    refs.editorModeWrap.setAttribute("aria-label", "Modo del editor de causa");
+    refs.editorModeWrap.setAttribute("aria-orientation", "horizontal");
     const options = getEditorModeOptions(readRouteParams());
     if (payload?.causa_id) {
       refs.editorModeWrap.classList.add("is-hidden");
+      refs.editorModePanel.removeAttribute("aria-labelledby");
       return;
     }
     refs.editorModeWrap.classList.remove("is-hidden");
-    options.forEach((option) => refs.editorModeWrap.appendChild(createElement("button", {
-      className: `detail-mode-selector__button${state.editorMode === option.value ? " is-active" : ""}`,
-      text: option.label,
-      attrs: { type: "button", "data-editor-mode": option.value },
-    })));
+    options.forEach((option) => {
+      const isActive = state.editorMode === option.value;
+      const tabId = `cd-editor-mode-${option.value}`;
+      const tab = createElement("button", {
+        className: `detail-mode-selector__button${isActive ? " is-active" : ""}`,
+        text: option.label,
+        attrs: {
+          type: "button",
+          id: tabId,
+          role: "tab",
+          "aria-selected": isActive ? "true" : "false",
+          "aria-controls": "cd-editor-mode-panel",
+          tabindex: isActive ? "0" : "-1",
+          "data-editor-mode": option.value,
+        },
+      });
+      refs.editorModeWrap.appendChild(tab);
+      if (isActive) refs.editorModePanel.setAttribute("aria-labelledby", tabId);
+    });
   }
 
   function renderSearchSummary(config) {

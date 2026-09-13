@@ -3,6 +3,7 @@ from .contract_context import ContractContextPort
 from .process_ports import (
     NodeRepositoryPort,
     OperationRepositoryPort,
+    ProcessLayoutRepositoryPort,
     ProcessRepositoryPort,
     TransitionRepositoryPort,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "ContractContextPort",
     "NodeRepositoryPort",
     "OperationRepositoryPort",
+    "ProcessLayoutRepositoryPort",
     "ProcessRepositoryPort",
     "TransitionRepositoryPort",
     "ContractRepositoryPort",

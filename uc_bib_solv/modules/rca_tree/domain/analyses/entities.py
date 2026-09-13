@@ -8,8 +8,8 @@ from ..exceptions import CausalTreeStateError, CausalTreeValidationError
 
 ANALYSIS_STATES = ("abierto", "cerrado")
 RESULT_TYPES = ("causa", "hipotesis")
-CAUSE_EVALUATIONS = ("retenida", "evaluada")
-HYPOTHESIS_EVALUATIONS = ("validada", "rechazada")
+CAUSE_EVALUATIONS = ("retenida", "evaluada", "pendiente")
+HYPOTHESIS_EVALUATIONS = ("validada", "confirmada", "rechazada", "descartada", "inconclusa", "pendiente")
 
 
 def normalize_state(value: str | None) -> str:
@@ -40,6 +40,63 @@ def validate_evaluation(result_type: str, evaluation: str) -> str:
     if normalized not in allowed:
         raise CausalTreeValidationError(f"Evaluación de {normalized_type} inválida: {evaluation!r}")
     return normalized
+
+
+def _has_text(value: object) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, (list, tuple, set)):
+        return any(_has_text(item) for item in value)
+    return bool(str(value).strip())
+
+
+def validate_scientific_decision(evaluation: str, *, evidence: object = None,
+                                 criterion: object = None, justification: object = None) -> str:
+    """Validate evidence and rationale required by an explicit decision."""
+    normalized = (evaluation or "pendiente").strip().lower()
+    if normalized in {"confirmada", "rechazada", "descartada"}:
+        if not _has_text(evidence) or not _has_text(criterion):
+            raise CausalTreeValidationError(
+                "Una decisión confirmada o rechazada requiere evidencia y criterio."
+            )
+    elif normalized == "inconclusa" and not _has_text(justification):
+        raise CausalTreeValidationError("Una evaluación inconclusa requiere justificación.")
+    return normalized
+
+
+@dataclass(frozen=True)
+class Hypothesis:
+    """Scientific hypothesis independent from its persistence representation."""
+    id: int | None
+    cause_id: int
+    description: str
+    kind: str = "aceptacion"
+    validation_criterion: str | None = None
+    status: str = "pendiente"
+    prediction: str | None = None
+    metric: str | None = None
+    unit: str | None = None
+    data_source: str | None = None
+    method: str | None = None
+    period: str | None = None
+    calculation: str | None = None
+    threshold: str | None = None
+    evidence: str | None = None
+    decision: str | None = None
+    decision_justification: str | None = None
+    control_action: str | None = None
+    action_owner: str | None = None
+    control_date: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.cause_id <= 0 or not self.description.strip():
+            raise CausalTreeValidationError("La hipótesis requiere causa y descripción.")
+        status = (self.status or "pendiente").strip().lower()
+        if status not in HYPOTHESIS_EVALUATIONS:
+            raise CausalTreeValidationError(f"Estado de hipótesis inválido: {self.status!r}")
+        validate_scientific_decision(status, evidence=self.evidence,
+                                     criterion=self.validation_criterion,
+                                     justification=self.decision_justification)
 
 
 @dataclass(frozen=True)
@@ -78,6 +135,20 @@ class AnalysisResult:
     evidence: str | None = None
     conclusion: str | None = None
     evaluation: str = "pendiente"
+    validation_criterion: str | None = None
+    decision_justification: str | None = None
+    prediction: str | None = None
+    metric: str | None = None
+    unit: str | None = None
+    data_source: str | None = None
+    method: str | None = None
+    period: str | None = None
+    calculation: str | None = None
+    threshold: str | None = None
+    decision: str | None = None
+    control_action: str | None = None
+    action_owner: str | None = None
+    control_date: str | None = None
 
     def __post_init__(self) -> None:
         result_type = normalize_result_type(self.result_type)
@@ -87,3 +158,7 @@ class AnalysisResult:
             raise CausalTreeValidationError("Falta la identidad del resultado.")
         if self.analysis_id <= 0:
             raise CausalTreeValidationError("El análisis es obligatorio.")
+        normalized_evaluation = validate_evaluation(result_type, self.evaluation)
+        validate_scientific_decision(normalized_evaluation, evidence=self.evidence,
+                                     criterion=self.validation_criterion,
+                                     justification=self.decision_justification)

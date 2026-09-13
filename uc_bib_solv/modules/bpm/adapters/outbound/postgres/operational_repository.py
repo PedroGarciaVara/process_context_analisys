@@ -623,20 +623,35 @@ def get_contract_machines(contract_id: str) -> dict:
 
 def save_contract_machines(contract_id: str, payload: dict) -> dict:
     contract_id_int = int(contract_id)
-    contract = contrato_repo.get_by_id(contract_id_int)
-    if not contract:
-        raise ValueError("Contrato no encontrado.")
-
     raw_machine_ids = payload.get("machine_ids")
     if raw_machine_ids is None:
         raw_machine_ids = payload.get("machineIds", [])
-    selected_ids = {int(machine_id) for machine_id in (raw_machine_ids or [])}
-    current_ids = {int(item["id"]) for item in contrato_repo.get_maquinas(contract_id_int)}
+    try:
+        selected_ids = {int(machine_id) for machine_id in (raw_machine_ids or [])}
+    except (TypeError, ValueError) as exc:
+        raise ValueError("machine_ids debe contener identificadores enteros.") from exc
+    if any(machine_id <= 0 for machine_id in selected_ids):
+        raise ValueError("machine_ids solo puede contener identificadores positivos.")
 
-    for machine_id in selected_ids - current_ids:
-        contrato_repo.add_maquina(contract_id_int, machine_id)
-    for machine_id in current_ids - selected_ids:
-        contrato_repo.remove_maquina(contract_id_int, machine_id)
+    # Replace the association set in one caller-owned transaction.  The old
+    # implementation delegated each INSERT/DELETE to contrato_repo, opening a
+    # transaction per row and allowing a bad ID to leave a partial update.
+    with db_cursor() as cur:
+        cur.execute("SELECT id FROM contrato WHERE id=%s FOR UPDATE", (contract_id_int,))
+        if not cur.fetchone():
+            raise ValueError("Contrato no encontrado.")
+        if selected_ids:
+            cur.execute("SELECT id FROM maquina WHERE id = ANY(%s)", (list(selected_ids),))
+            existing_ids = {int(row["id"]) for row in cur.fetchall()}
+            missing_ids = sorted(selected_ids - existing_ids)
+            if missing_ids:
+                raise ValueError(f"Máquina(s) no encontrada(s): {', '.join(map(str, missing_ids))}.")
+        cur.execute("DELETE FROM contrato_maquina WHERE contrato_id=%s", (contract_id_int,))
+        if selected_ids:
+            cur.executemany(
+                "INSERT INTO contrato_maquina(contrato_id, maquina_id) VALUES (%s,%s)",
+                [(contract_id_int, machine_id) for machine_id in sorted(selected_ids)],
+            )
 
     return get_contract_machines(contract_id)
 
@@ -818,7 +833,9 @@ def _bpm_identity(process_id: str | None) -> dict | None:
         relations = []
         for row in cur.fetchall():
             ids = dict((row["properties"] or {}).get("canonical_ids") or {})
-            if ids.get("contrato_id") is None:
+            contract_id = ids.get("contrato_id", ids.get("contract_id"))
+            process_id = ids.get("proceso_id", ids.get("process_id"))
+            if contract_id is None:
                 continue
             cur.execute(
                 """SELECT c.id AS contract_id, c.proceso_id AS process_id,
@@ -827,14 +844,14 @@ def _bpm_identity(process_id: str | None) -> dict | None:
                      LEFT JOIN contrato_maquina cm ON cm.contrato_id = c.id
                     WHERE c.id = %s
                     GROUP BY c.id, c.proceso_id""",
-                (int(ids["contrato_id"]),),
+                (int(contract_id),),
             )
             canonical = cur.fetchone()
             relations.append({
                 "node_id": str(row["node_id"]),
                 "node_code": row["node_code"],
-                "process_id": ids.get("proceso_id"),
-                "contract_id": ids.get("contrato_id"),
+                "process_id": process_id,
+                "contract_id": contract_id,
                 "machine_ids": list((canonical or {}).get("machine_ids") or []),
             })
     return {"process": dict(version), "relations": relations}

@@ -15,6 +15,8 @@ export const deleteProcess = (id, options = {}) => {
   return call(`/processes/${encodeURIComponent(id)}${query}`, { method: "DELETE" });
 };
 export const createProcess = (data) => call("/processes", { method: "POST", body: JSON.stringify(data) });
+export const getProcessLayout = (processId) => call(`/processes/${encodeURIComponent(processId)}/layout`);
+export const replaceProcessLayout = (processId, positions) => call(`/processes/${encodeURIComponent(processId)}/layout`, { method: "PUT", body: JSON.stringify({ positions }) });
 export const createNode = (processId, data) => call(`/processes/${encodeURIComponent(processId)}/nodes`, { method: "POST", body: JSON.stringify(data) });
 export const createNodeWithTransition = (processId, data) => call(`/processes/${encodeURIComponent(processId)}/nodes-with-transition`, { method: "POST", body: JSON.stringify(data) });
 export const updateNode = (nodeId, data) => call(`/nodes/${encodeURIComponent(nodeId)}`, { method: "PATCH", body: JSON.stringify(data) });

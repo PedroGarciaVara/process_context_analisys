@@ -44,7 +44,19 @@ class RcaTreeAnalysisApplication:
         return self._update_analysis.execute(analysis_id, payload)
 
     def save_result(self, analysis_id, payload):
-        return self._save_result.execute(analysis_id, payload)
+        result = self._save_result.execute(analysis_id, payload)
+        if isinstance(result, dict):
+            aliases = {
+                "decision": "decision",
+                "justificacion_decision": "decision_justification",
+                "accion_control": "control_action",
+                "responsable_accion": "action_owner",
+                "fecha_control": "control_date",
+            }
+            for source, target in aliases.items():
+                if source in result and target not in result:
+                    result[target] = result[source]
+        return result
 
 
 __all__ = ["RcaTreeAnalysisApplication"]

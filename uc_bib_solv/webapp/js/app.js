@@ -17,6 +17,7 @@ const root = document.getElementById("app-root");
 const bus = createEventBus();
 const router = createRouter(bus);
 let operationalLoadToken = 0;
+let mountedPage = null;
 
 function applyCatalogDefaults(catalog, allowDefaults = true) {
   if (!allowDefaults) return;
@@ -64,11 +65,10 @@ async function loadOperationalPage(route) {
 
 function mount() {
   const page = renderView(AppState.route || "inicio", AppState, bus);
-  // The application shell normally owns scrolling inside its main column. The
-  // process-modeling view is standalone, so let the document grow vertically
-  // while it is mounted instead of clipping its content at the viewport.
-  document.body.classList.toggle("pm-document-scroll", AppState.route === "modelado-procesos");
+  mountedPage?.beforeUnmount?.();
+  mountedPage = page;
   document.body.classList.toggle("bpm-studio-document", AppState.route === "studio-procesos");
+  document.body.dataset.route = AppState.route || "inicio";
   root.innerHTML = "";
   root.appendChild(page.main);
   if (typeof page.afterMount === "function") {

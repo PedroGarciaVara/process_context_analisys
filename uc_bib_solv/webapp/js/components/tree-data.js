@@ -34,6 +34,50 @@ export function findParentId(nodes, nodeId) {
   return null;
 }
 
+export function getDescendantIds(node, options = {}) {
+  const ids = new Set();
+  const stack = Array.isArray(node?.children) ? [...node.children] : [];
+  const includeHypotheses = options.includeHypotheses === true;
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) continue;
+    if (includeHypotheses || String(current.node_type || current.tipo || "").toUpperCase() !== "HYPOTHESIS") {
+      ids.add(String(current.id));
+    }
+    if (Array.isArray(current.children)) stack.push(...current.children);
+  }
+  return ids;
+}
+
+export function isProjectedTreeNode(node, payload = {}) {
+  const metadata = payload?.graph_metadata || {};
+  const reused = new Set((metadata.reused_node_ids || []).map((value) => String(value)));
+  const explicitAuthority = node?.can_move === true || node?.movable === true || node?.reparentable === true;
+  return Boolean(
+    node?.projected
+      || node?.is_projected
+      || node?.projection_only
+      || node?.root_protected
+      || node?.is_protected_root
+      || node?.can_reparent === false
+      || node?.movable === false
+      || node?.can_move === false
+      || (reused.has(String(node?.id)) && !explicitAuthority),
+  );
+}
+
+export function isTreeNodeMovable(node, payload = {}) {
+  if (!node || String(node.node_type || node.tipo || "").toUpperCase() === "HYPOTHESIS") return false;
+  if (payload?.view === "analisis_causas_v2" || payload?.analysis?.estado === "cerrado") return false;
+  return !isProjectedTreeNode(node, payload);
+}
+
+export function canDropTreeNode(sourceNode, targetNode, payload = {}) {
+  if (!sourceNode || !targetNode || String(sourceNode.id) === String(targetNode.id)) return false;
+  if (!isTreeNodeMovable(sourceNode, payload) || !isTreeNodeMovable(targetNode, payload)) return false;
+  return !getDescendantIds(sourceNode).has(String(targetNode.id));
+}
+
 export function removeNodeById(nodes, nodeId) {
   const target = String(nodeId);
   return (nodes || [])

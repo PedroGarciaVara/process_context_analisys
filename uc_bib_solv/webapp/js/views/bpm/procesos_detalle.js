@@ -73,7 +73,7 @@ export function renderProcesosDetalle(state, bus) {
       const mainSlotNode = mountRoot.querySelector("[data-shell-main]");
       const rightSlotNode = mountRoot.querySelector("[data-shell-right]");
       if (mainSlotNode) mainSlotNode.innerHTML = buildPage(currentState, data, processList);
-      if (rightSlotNode) rightSlotNode.innerHTML = `<div class="p-lg border-b border-outline-variant bg-surface-container-low"><p class="font-label-md text-label-md text-secondary uppercase tracking-widest">Proceso seleccionado</p><h2 class="font-headline-md text-headline-md text-primary mt-xs">${escapeHtml(data?.name || process.name)}</h2><p class="text-[12px] text-on-surface-variant mt-sm">Ficha BPM editable.</p></div>`;
+      if (rightSlotNode) rightSlotNode.innerHTML = `<div class="p-lg border-b border-outline-variant bg-surface-container-low"><p class="font-label-md text-label-md text-secondary uppercase tracking-widest">Proceso seleccionado</p><h2 class="font-headline-md text-headline-md text-primary mt-xs">${escapeHtml(data?.name || process.name)}</h2><p class="text-[12px] text-on-surface-variant mt-sm">${escapeHtml(data?.description || "Sin descripción del proceso.")}</p></div><div class="p-lg"><a class="inline-flex w-full justify-center px-md py-sm bg-primary text-on-primary rounded text-label-md" href="#/studio-procesos?processId=${encodeURIComponent(data?.process_id || process.bpmProcessId)}">Abrir flujo BPM</a></div>`;
       const form = mountRoot.querySelector("#process-page-form");
       const alert = mountRoot.querySelector("#process-page-alert");
       form?.addEventListener("submit", async (event) => {

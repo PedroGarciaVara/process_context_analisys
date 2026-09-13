@@ -1,5 +1,7 @@
 import { escapeHtml } from "../core/utils.js";
 
+const mountedStageDrafts = new WeakMap();
+
 export function stageDraftFromMachine(activeMachine) {
   const selected = activeMachine?.operations?.find((item) => item.operation_id === activeMachine.selectedOperationId) || activeMachine?.operations?.[0];
   return (selected?.etapas || []).map((stage, index) => ({
@@ -20,4 +22,38 @@ export function stagePathsMarkup(activeMachine) {
   const stages = operation?.etapas || [];
   if (!stages.length) return '<p class="text-[12px] text-on-surface-variant">Sin etapas definidas.</p>';
   return stages.flatMap((stage) => (stage.subetapas?.length ? stage.subetapas.map((child) => `<div class="text-[12px] text-primary">${escapeHtml(stage.nombre)} › ${escapeHtml(child.nombre)}</div>`) : [`<div class="text-[12px] text-primary">${escapeHtml(stage.nombre)}</div>`])).join("");
+}
+
+export function mountStageEditor(editor, initialStages = []) {
+  if (!editor || mountedStageDrafts.has(editor)) return;
+  const draft = (initialStages || []).map((stage, index) => ({
+    ...stage, id: stage.id || `stage-${Date.now()}-${index + 1}`, nombre: stage.nombre || "", orden: index + 1,
+    subetapas: (stage.subetapas || []).map((child, childIndex) => ({ ...child, id: child.id || `stage-${Date.now()}-${index + 1}-${childIndex + 1}`, nombre: child.nombre || "", orden: childIndex + 1, subetapas: [] })),
+  }));
+  mountedStageDrafts.set(editor, draft);
+  const list = editor.querySelector("[data-stage-list]"); const live = editor.querySelector("[data-stage-live]");
+  const normalize = () => draft.forEach((stage, index) => { stage.orden = index + 1; stage.subetapas.forEach((child, childIndex) => { child.orden = childIndex + 1; }); });
+  const render = () => { normalize(); if (list) list.innerHTML = stageEditorMarkup(draft); };
+  const announce = (message) => { if (live) live.textContent = message; };
+  editor.querySelector("[data-stage-add]")?.addEventListener("click", () => { draft.push({ id: `stage-${Date.now()}`, nombre: "", orden: draft.length + 1, subetapas: [] }); render(); list?.querySelector("[data-stage-index]:last-child [data-stage-name]")?.focus(); announce("Etapa añadida."); });
+  list?.addEventListener("input", (event) => { const stageNode = event.target.closest("[data-stage-index]"); if (!stageNode) return; const index = Number(stageNode.dataset.stageIndex); if (event.target.matches("[data-stage-name]")) draft[index].nombre = event.target.value; if (event.target.matches("[data-substage-name]")) draft[index].subetapas[Number(event.target.closest("[data-substage-index]").dataset.substageIndex)].nombre = event.target.value; });
+  list?.addEventListener("click", (event) => {
+    const stageNode = event.target.closest("[data-stage-index]"); if (!stageNode) return;
+    const index = Number(stageNode.dataset.stageIndex); let changed = false;
+    if (event.target.closest("[data-stage-delete]")) { if (draft[index].subetapas.length && !window.confirm("La etapa contiene subetapas. ¿Eliminarla?")) return; draft.splice(index, 1); changed = true; announce("Etapa eliminada."); }
+    const move = event.target.closest("[data-stage-move]")?.dataset.stageMove;
+    if (move) { const target = move === "up" ? index - 1 : index + 1; if (target >= 0 && target < draft.length) { [draft[index], draft[target]] = [draft[target], draft[index]]; changed = true; announce("Etapa reordenada."); } }
+    if (event.target.closest("[data-stage-add-substage]")) { draft[index].subetapas.push({ id: `${draft[index].id}-substage-${Date.now()}`, nombre: "", orden: draft[index].subetapas.length + 1, subetapas: [] }); changed = true; announce("Subetapa añadida."); }
+    const substageNode = event.target.closest("[data-substage-index]"); const childIndex = substageNode ? Number(substageNode.dataset.substageIndex) : -1;
+    if (event.target.closest("[data-substage-delete]")) { draft[index].subetapas.splice(childIndex, 1); changed = true; announce("Subetapa eliminada."); }
+    const childMove = event.target.closest("[data-substage-move]")?.dataset.substageMove;
+    if (childMove) { const children = draft[index].subetapas; const target = childMove === "up" ? childIndex - 1 : childIndex + 1; if (target >= 0 && target < children.length) { [children[childIndex], children[target]] = [children[target], children[childIndex]]; changed = true; announce("Subetapa reordenada."); } }
+    if (changed) render();
+  });
+  render();
+}
+
+export function readStageEditor(editor) {
+  const draft = mountedStageDrafts.get(editor) || [];
+  return draft.map((stage, index) => ({ ...stage, nombre: String(stage.nombre || "").trim(), orden: index + 1, subetapas: stage.subetapas.map((child, childIndex) => ({ ...child, nombre: String(child.nombre || "").trim(), orden: childIndex + 1, subetapas: [] })) }));
 }

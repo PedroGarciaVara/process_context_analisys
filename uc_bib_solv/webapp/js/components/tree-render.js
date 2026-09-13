@@ -1,4 +1,11 @@
-import { readStatus, readableTreeContractLabel } from "./tree-data.js";
+import {
+  canDropTreeNode,
+  findNodeById,
+  findParentId,
+  isTreeNodeMovable,
+  readStatus,
+  readableTreeContractLabel,
+} from "./tree-data.js";
 
 const TREE_CARD_WIDTH = 320;
 const TREE_CHILD_GAP = 40;
@@ -112,7 +119,7 @@ function renderStatusChip(state, focus = false) {
   return chip;
 }
 
-function renderHypothesisSummary(hypotheses, limit = 2) {
+function renderHypothesisSummary(hypotheses, limit = 2, showEvaluation = false) {
   const summary = createElement("div", "acv2-tree-hypothesis-list");
   const slice = (hypotheses || []).slice(0, limit);
   if (slice.length === 0) {
@@ -122,15 +129,23 @@ function renderHypothesisSummary(hypotheses, limit = 2) {
     return summary;
   }
   slice.forEach((hypothesis) => {
-    const state = readStatus(hypothesis.analysis_result?.evaluacion || hypothesis.estado);
     const item = createElement("div", "acv2-tree-hypothesis-item");
     if (hypothesis.id !== undefined && hypothesis.id !== null) {
       item.dataset.hypothesisId = String(hypothesis.id);
     }
     const main = createElement("div", "acv2-tree-hypothesis-main");
-    const title = createElement("div", "acv2-tree-hypothesis-title", hypothesis.descripcion || "Hipotesis sin descripcion");
+    const titleValue = hypothesis.nombre || hypothesis.name || hypothesis.descripcion || "Hipotesis sin titulo";
+    const descriptionValue = hypothesis.descripcion || "";
+    const title = createElement("div", "acv2-tree-hypothesis-title", titleValue);
     main.append(title);
-    item.append(main, renderStatusChip(state));
+    if (descriptionValue && descriptionValue !== titleValue) {
+      main.appendChild(createElement("div", "acv2-tree-hypothesis-meta", descriptionValue));
+    }
+    item.append(main);
+    if (showEvaluation) {
+      const state = readStatus(hypothesis.analysis_result?.evaluacion || hypothesis.estado);
+      item.appendChild(renderStatusChip(state));
+    }
     summary.appendChild(item);
   });
   if ((hypotheses || []).length > limit) {
@@ -165,7 +180,24 @@ function subtreeWidth(node, mode) {
   return Math.max(TREE_CARD_WIDTH, childrenWidth + gaps);
 }
 
-function renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload) {
+function announceTreeInteraction(stage, message) {
+  const live = stage?.querySelector(".acv2-tree-interaction-status");
+  if (live) live.textContent = message;
+}
+
+function dispatchMoveRequest(element, causeId, parentId, source) {
+  element.dispatchEvent(new CustomEvent("rca:cause-move-request", {
+    bubbles: true,
+    detail: { causeId, parentId, source },
+  }));
+}
+
+function findRenderedCard(stage, nodeId) {
+  return Array.from(stage?.querySelectorAll('[data-node-id]') || [])
+    .find((card) => String(card.dataset.nodeId) === String(nodeId)) || null;
+}
+
+function renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload, interaction = {}) {
   const isHypothesis = isHypothesisNode(node);
   if (isHypothesis) {
     const card = createElement("div", "acv2-tree-hypothesis-node");
@@ -184,19 +216,34 @@ function renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload)
   const hypotheses = hypothesesByCause[String(causeId)]?.length
     ? hypothesesByCause[String(causeId)]
     : childHypotheses;
-  const state = hypotheses.length ? readStatus(hypotheses[0].analysis_result?.evaluacion || hypotheses[0].estado) : "pending";
+  const isAnalysisMode = mode === "analisis_causas_v2";
+  const state = isAnalysisMode && hypotheses.length
+    ? readStatus(hypotheses[0].analysis_result?.evaluacion || hypotheses[0].estado)
+    : "pending";
   const isActive = selectedCauseId !== null && Number(selectedCauseId) === causeId;
   const projectionMetadata = readProjectionMetadata(payload);
   const isReusedNode = projectionMetadata.reusedNodeIdSet.has(String(causeId));
-  const card = createElement("button", "acv2-tree-node-button");
+  const movable = isTreeNodeMovable(node, payload);
+  const card = createElement("button", `acv2-tree-node-button ${movable ? "acv2-tree-node-movable" : "acv2-tree-node-readonly"}`.trim());
   card.type = "button";
+  card.setAttribute("role", "treeitem");
   card.dataset.nodeId = String(causeId);
+  card.dataset.dragState = movable ? "idle" : "unavailable";
+  card.draggable = movable;
+  card.tabIndex = interaction.tabIndex ?? -1;
+  card.setAttribute("aria-level", String(interaction.level || 1));
+  card.setAttribute("aria-setsize", String(interaction.setSize || 1));
+  card.setAttribute("aria-posinset", String(interaction.posInSet || 1));
+  card.setAttribute("aria-label", `${node.nombre || "Causa sin nombre"}${movable ? ". Movible" : ""}`);
+  if (interaction.hasChildren) card.setAttribute("aria-expanded", "true");
+  const statusId = `acv2-tree-node-status-${causeId}`;
+  card.setAttribute("aria-describedby", statusId);
   const wrap = createElement(
     "div",
-    `acv2-tree-card ${isActive ? "acv2-tree-card-active" : ""} ${state === "discarded" ? "acv2-tree-card-muted" : ""}`.trim(),
+    `acv2-tree-card ${isActive ? "acv2-tree-card-active" : ""} ${isAnalysisMode && state === "discarded" ? "acv2-tree-card-muted" : ""}`.trim(),
   );
   const bar = createElement("div", "acv2-node-topbar");
-  bar.style.backgroundColor = STATUS_COLORS[state];
+  bar.style.backgroundColor = isAnalysisMode ? STATUS_COLORS[state] : "#94a3b8";
   const body = createElement("div", "acv2-tree-card-surface");
   const head = createElement("div", "acv2-tree-card-head");
   const headLeft = createElement("div", "acv2-tree-card-head-left");
@@ -207,20 +254,31 @@ function renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload)
     badge.title = "Nodo reutilizado o alcanzado a traves de una proyeccion automatica del DAG.";
     headLeft.appendChild(badge);
   }
-  head.append(headLeft, renderStatusChip(state, isActive));
+  if (isAnalysisMode) head.appendChild(renderStatusChip(state, isActive));
   const title = createElement("h4", "acv2-tree-card-title", node.nombre || "Causa sin nombre");
   const description = createElement("div", "acv2-tree-card-desc", node.descripcion || "Sin descripcion");
-  body.append(head, title, description, renderHypothesisSummary(hypotheses));
+  const dragHandle = createElement("span", "acv2-tree-drag-handle", movable ? "↕ Mover" : "");
+  dragHandle.setAttribute("aria-hidden", "true");
+  const status = createElement("span", "acv2-tree-interaction-hint", movable ? "Arrastra o pulsa Espacio para mover" : "No disponible para mover");
+  status.id = statusId;
+  body.append(head, title, description, renderHypothesisSummary(hypotheses, 2, isAnalysisMode), dragHandle, status);
   wrap.append(bar, body);
   card.appendChild(wrap);
   card.addEventListener("click", () => {
     const event = new CustomEvent("tree:select-node", { bubbles: true, detail: { nodeId: causeId, mode } });
     card.dispatchEvent(event);
   });
+  card.addEventListener("keydown", (event) => interaction.onKeyDown?.(event, card, node));
+  card.addEventListener("dragstart", (event) => interaction.onDragStart?.(event, card, node));
+  card.addEventListener("dragover", (event) => interaction.onDragOver?.(event, card, node));
+  card.addEventListener("dragleave", (event) => interaction.onDragLeave?.(event, card, node));
+  card.addEventListener("drop", (event) => interaction.onDrop?.(event, card, node));
+  card.addEventListener("dragend", (event) => interaction.onDragEnd?.(event, card, node));
+  card.addEventListener("dragcancel", (event) => interaction.onDragEnd?.(event, card, node));
   return card;
 }
 
-function renderSubtree(node, selectedCauseId, hypothesesByCause, mode, payload) {
+function renderSubtree(node, selectedCauseId, hypothesesByCause, mode, payload, interaction, level = 1, posInSet = 1, setSize = 1) {
   const children = getRenderableTreeChildren(node, mode);
   const width = subtreeWidth(node, mode);
   const shell = createElement("div", `acv2-tree-node-shell ${node.parent_id === null ? "acv2-tree-node-shell-root" : ""}`.trim());
@@ -231,7 +289,14 @@ function renderSubtree(node, selectedCauseId, hypothesesByCause, mode, payload) 
 
   const cardShell = createElement("div", "acv2-tree-node-card-shell");
   const inner = createElement("div", "acv2-tree-node-card-shell-inner");
-  inner.append(renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload));
+  inner.append(renderTreeCard(node, selectedCauseId, hypothesesByCause, mode, payload, {
+    ...interaction,
+    level,
+    posInSet,
+    setSize,
+    hasChildren: children.length > 0,
+    tabIndex: interaction.focusId === String(node.id) || (interaction.focusId === null && level === 1 && posInSet === 1) ? 0 : -1,
+  }));
   if (children.length > 0) {
     inner.append(createElement("div", "acv2-tree-parent-drop"));
   }
@@ -252,6 +317,8 @@ function renderSubtree(node, selectedCauseId, hypothesesByCause, mode, payload) 
       childrenShell.appendChild(line);
     }
     const body = createElement("div", "acv2-tree-children-body");
+    body.setAttribute("role", "group");
+    body.setAttribute("aria-label", `Hijas de ${node.nombre || "la causa"}`);
     body.style.width = `${width}px`;
     children.forEach((child) => {
       const childWidth = subtreeWidth(child, mode);
@@ -262,7 +329,7 @@ function renderSubtree(node, selectedCauseId, hypothesesByCause, mode, payload) 
       cell.style.maxWidth = `${childWidth}px`;
       cell.style.flex = `0 0 ${childWidth}px`;
       cell.style.setProperty("--acv2-tree-child-drop-offset", `${TREE_CARD_WIDTH / 2}px`);
-      cell.append(childDrop, renderSubtree(child, selectedCauseId, hypothesesByCause, mode, payload));
+      cell.append(childDrop, renderSubtree(child, selectedCauseId, hypothesesByCause, mode, payload, interaction, level + 1, children.indexOf(child) + 1, children.length));
       body.appendChild(cell);
     });
     childrenShell.appendChild(body);
@@ -274,11 +341,151 @@ function renderSubtree(node, selectedCauseId, hypothesesByCause, mode, payload) 
 
 export function renderTreeCanvas(payload) {
   const stage = createElement("div", "acv2-tree-stage");
+  stage.setAttribute("role", "tree");
+  stage.setAttribute("aria-label", "Árbol causal");
+  stage.tabIndex = -1;
+  stage.appendChild(createElement("div", "acv2-canvas-scroll-cue", "Desplaza horizontalmente para explorar el árbol completo"));
+  const live = createElement("div", "acv2-tree-interaction-status", "");
+  live.id = "acv2-tree-live-status";
+  live.setAttribute("role", "status");
+  live.setAttribute("aria-live", "polite");
+  stage.appendChild(live);
   const forest = createElement("div", "acv2-tree-forest");
   forest.style.transform = `scale(${payload.zoom || 1})`;
   forest.style.zoom = `${payload.zoom || 1}`;
-  (payload.tree || []).forEach((root) => {
-    forest.appendChild(renderSubtree(root, payload.selected_cause_id, payload.hypotheses_by_cause || {}, payload.view, payload));
+  const roots = payload.tree || [];
+  const focusId = payload.selected_cause_id === null || payload.selected_cause_id === undefined
+    ? null
+    : String(payload.selected_cause_id);
+  let dragSourceId = null;
+  let keyboardMoveSourceId = null;
+  const allCards = () => Array.from(stage.querySelectorAll('[role="treeitem"]'));
+  const focusNode = (id) => {
+    const target = findRenderedCard(stage, id);
+    if (!target) return;
+    allCards().forEach((card) => { card.tabIndex = card === target ? 0 : -1; });
+    target.focus();
+  };
+  const resetDropFeedback = () => {
+    allCards().forEach((card) => {
+      card.classList.remove("acv2-tree-drop-valid", "acv2-tree-drop-invalid", "acv2-tree-drop-active");
+      card.dataset.dragState = isTreeNodeMovable(findNodeById(payload.tree, card.dataset.nodeId), payload) ? "idle" : "unavailable";
+    });
+  };
+  const emitKeyboardMove = (sourceId, targetId) => {
+    const source = findNodeById(payload.tree, sourceId);
+    const target = findNodeById(payload.tree, targetId);
+    if (!canDropTreeNode(source, target, payload)) {
+      announceTreeInteraction(stage, "Destino no válido: no puedes mover una causa sobre sí misma ni sobre su subárbol.");
+      return;
+    }
+    dispatchMoveRequest(stage, Number(sourceId), Number(targetId), "keyboard");
+    announceTreeInteraction(stage, `Movimiento preparado: ${source.nombre || "causa"} bajo ${target.nombre || "causa"}.`);
+    keyboardMoveSourceId = null;
+  };
+  const onKeyDown = (event, card, node) => {
+    const cards = allCards();
+    const index = cards.indexOf(card);
+    const parentId = findParentId(payload.tree, node.id);
+    let destination = null;
+    if (event.key === "ArrowDown") destination = cards[index + 1];
+    if (event.key === "ArrowUp") destination = cards[index - 1];
+    if (event.key === "Home") destination = cards[0];
+    if (event.key === "End") destination = cards[cards.length - 1];
+    if (event.key === "ArrowRight") destination = card.getAttribute("aria-expanded") === "true"
+      ? card.closest(".acv2-tree-node-shell")?.querySelector(".acv2-tree-children-body [role=\"treeitem\"]")
+      : null;
+    if (event.key === "ArrowLeft") destination = parentId === null || parentId === undefined ? null : findRenderedCard(stage, parentId);
+    if (destination) {
+      event.preventDefault();
+      focusNode(destination.dataset.nodeId);
+      return;
+    }
+    if (event.key === "Escape" && keyboardMoveSourceId !== null) {
+      event.preventDefault();
+      keyboardMoveSourceId = null;
+      announceTreeInteraction(stage, "Movimiento cancelado.");
+      resetDropFeedback();
+      return;
+    }
+    if ((event.key === " " || event.key.toLowerCase() === "m") && keyboardMoveSourceId === null) {
+      if (!isTreeNodeMovable(node, payload)) {
+        announceTreeInteraction(stage, "Este nodo no tiene autoridad para moverse en esta vista.");
+        return;
+      }
+      event.preventDefault();
+      keyboardMoveSourceId = String(node.id);
+      card.dataset.dragState = "keyboard-source";
+      announceTreeInteraction(stage, "Movimiento iniciado. Usa las flechas para elegir un destino y pulsa Enter.");
+      return;
+    }
+    if ((event.key === "Enter" || event.key === " ") && keyboardMoveSourceId !== null) {
+      event.preventDefault();
+      emitKeyboardMove(keyboardMoveSourceId, node.id);
+    }
+  };
+  const onDragStart = (event, card, node) => {
+    if (!isTreeNodeMovable(node, payload)) {
+      event.preventDefault();
+      return;
+    }
+    dragSourceId = String(node.id);
+    card.setAttribute("aria-grabbed", "true");
+    card.dataset.dragState = "dragging";
+    event.dataTransfer?.setData("text/plain", dragSourceId);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    announceTreeInteraction(stage, `Moviendo ${node.nombre || "causa"}. Elige un destino válido.`);
+  };
+  const onDragOver = (event, card, node) => {
+    if (dragSourceId === null) return;
+    const source = findNodeById(payload.tree, dragSourceId);
+    const valid = canDropTreeNode(source, node, payload);
+    card.classList.toggle("acv2-tree-drop-valid", valid);
+    card.classList.toggle("acv2-tree-drop-invalid", !valid);
+    card.classList.add("acv2-tree-drop-active");
+    card.dataset.dragState = valid ? "drop-target" : "drop-invalid";
+    if (valid) {
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+      announceTreeInteraction(stage, `↳ Soltar aquí para mover bajo ${node.nombre || "esta causa"}.`);
+    } else {
+      announceTreeInteraction(stage, `⛔ Destino no válido: ${node.nombre || "esta causa"}.`);
+    }
+  };
+  const onDragLeave = (event, card) => {
+    if (event.relatedTarget && card.contains(event.relatedTarget)) return;
+    card.classList.remove("acv2-tree-drop-valid", "acv2-tree-drop-invalid", "acv2-tree-drop-active");
+    card.dataset.dragState = card.classList.contains("acv2-tree-node-readonly") ? "unavailable" : "idle";
+  };
+  const onDrop = (event, card, node) => {
+    event.preventDefault();
+    const sourceId = dragSourceId || event.dataTransfer?.getData("text/plain");
+    const source = findNodeById(payload.tree, sourceId);
+    if (source && canDropTreeNode(source, node, payload)) {
+      dispatchMoveRequest(stage, Number(source.id), Number(node.id), "drag");
+      announceTreeInteraction(stage, `Movimiento preparado bajo ${node.nombre || "causa"}.`);
+    } else {
+      announceTreeInteraction(stage, "Destino no válido; el movimiento no se ha solicitado.");
+    }
+    resetDropFeedback();
+  };
+  const onDragEnd = () => {
+    dragSourceId = null;
+    resetDropFeedback();
+    allCards().forEach((card) => card.removeAttribute("aria-grabbed"));
+    announceTreeInteraction(stage, "");
+  };
+  const interaction = {
+    focusId,
+    onKeyDown,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onDragEnd,
+  };
+  roots.forEach((root, index) => {
+    forest.appendChild(renderSubtree(root, payload.selected_cause_id, payload.hypotheses_by_cause || {}, payload.view, payload, interaction, 1, index + 1, roots.length));
   });
   stage.appendChild(forest);
   return stage;
@@ -290,22 +497,44 @@ function renderHypothesisCard(hypothesis, handlers = {}) {
   const head = createElement("div", "acv2-hypothesis-head");
   const left = createElement("div");
   left.style.minWidth = "0";
-  const title = createElement("div", "acv2-hypothesis-title", hypothesis.descripcion || "Hipotesis sin descripcion");
+  const title = createElement("div", "acv2-hypothesis-title", hypothesis.nombre || hypothesis.name || hypothesis.descripcion || "Hipotesis sin titulo");
   left.append(title);
-  head.append(left, renderStatusChip(state));
-  const note = createElement("div", "acv2-hypothesis-note", hypothesis.criterio_validacion || "Sin nota");
-  card.append(head, note);
+  if (handlers.analysisMode) head.append(left, renderStatusChip(state));
+  else head.append(left);
+  const description = createElement("div", "acv2-hypothesis-note", hypothesis.descripcion || "Sin descripcion");
+  const definition = createElement("div", "acv2-hypothesis-definition");
+  definition.append(
+    createElement("div", "acv2-hypothesis-definition-item", `Criterio de validación: ${hypothesis.criterio_validacion || "Sin criterio de validación."}`),
+    createElement("div", "acv2-hypothesis-definition-item", `Método de cálculo: ${hypothesis.metodo || hypothesis.method || "Sin método de cálculo."}`),
+  );
+  card.append(head, description, definition);
   if (handlers.analysisMode) {
     const evidence = document.createElement("textarea");
     evidence.className = "acv2-analysis-hypothesis-evidence";
+    evidence.id = `analysis-hypothesis-${hypothesis.id}-evidence`;
     evidence.rows = 3;
     evidence.placeholder = "Evidencia obligatoria para aceptar o rechazar esta hipotesis";
     evidence.value = hypothesis.analysis_result?.evidencia || "";
+    const criterion = document.createElement("textarea");
+    criterion.className = "acv2-analysis-hypothesis-criterion";
+    criterion.id = `analysis-hypothesis-${hypothesis.id}-criterion`;
+    criterion.rows = 2;
+    criterion.placeholder = "Criterio que confirma o rechaza esta hipótesis";
+    criterion.value = hypothesis.analysis_result?.criterio_validacion || hypothesis.criterio_validacion || "";
     const comment = document.createElement("textarea");
     comment.className = "acv2-analysis-hypothesis-comment";
+    comment.id = `analysis-hypothesis-${hypothesis.id}-decision-justification`;
     comment.rows = 2;
-    comment.placeholder = "Comentario / conclusión de la evaluación";
-    comment.value = hypothesis.analysis_result?.conclusion || "";
+    comment.placeholder = "Justificación de decisión (obligatoria para NO OK)";
+    comment.value = hypothesis.analysis_result?.decision_justification
+      || hypothesis.analysis_result?.justificacion_decision
+      || hypothesis.analysis_result?.conclusion
+      || "";
+    const fieldLabel = (forId, text) => {
+      const label = createElement("label", "acv2-analysis-hypothesis-label", text);
+      label.htmlFor = forId;
+      return label;
+    };
     const errorNode = createElement("div", "acv2-analysis-hypothesis-error", "La evidencia es obligatoria.");
     errorNode.hidden = true;
     const actions = createElement("div", "acv2-hypothesis-actions");
@@ -318,13 +547,19 @@ function renderHypothesisCard(hypothesis, handlers = {}) {
     });
     const readOnly = Boolean(handlers.readOnly);
     evidence.disabled = readOnly;
+    criterion.disabled = readOnly;
     comment.disabled = readOnly;
     if (!readOnly) {
-      accept.addEventListener("click", () => handlers.onEvaluateHypothesis?.(hypothesis, "confirmada", evidence.value, comment.value, errorNode));
-      reject.addEventListener("click", () => handlers.onEvaluateHypothesis?.(hypothesis, "descartada", evidence.value, comment.value, errorNode));
+      accept.addEventListener("click", () => handlers.onEvaluateHypothesis?.(hypothesis, "confirmada", evidence.value, criterion.value, comment.value, errorNode));
+      reject.addEventListener("click", () => handlers.onEvaluateHypothesis?.(hypothesis, "descartada", evidence.value, criterion.value, comment.value, errorNode));
       actions.append(accept, reject);
     }
-    card.append(evidence, comment, errorNode, actions);
+    card.append(
+      fieldLabel(evidence.id, "Evidencia"), evidence,
+      fieldLabel(criterion.id, "Criterio de validación"), criterion,
+      fieldLabel(comment.id, "Justificación de decisión"), comment,
+      errorNode, actions,
+    );
   }
   return card;
 }
@@ -337,12 +572,13 @@ export function renderDetailPanel(payload, handlers = {}) {
     return panel;
   }
   const hypotheses = payload.detail?.hypotheses || [];
-  const nodeState = hypotheses.length
+  const isAnalysisMode = payload.view === "analisis_causas_v2";
+  const nodeState = isAnalysisMode && hypotheses.length
     ? readStatus(hypotheses[0].analysis_result?.evaluacion || hypotheses[0].estado)
     : "pending";
   const header = createElement("div");
   header.className = "d-flex justify-content-between align-items-start gap-3";
-  header.append(createElement("div", "acv2-detail-title", "Detalle del nodo"), renderStatusChip(nodeState));
+  header.append(createElement("div", "acv2-detail-title", "Detalle del nodo"));
   if (payload.detail?.context_message) {
     const contextMessage = createElement("div", "acv2-empty-state", payload.detail.context_message);
     contextMessage.style.padding = "0.7rem 0.8rem";
@@ -384,7 +620,7 @@ export function renderDetailPanel(payload, handlers = {}) {
     row.append(createElement("span", "acv2-detail-meta-label", label), createElement("span", "", value));
     metadata.appendChild(row);
   });
-  const isAnalysisMode = payload.view === "analisis_causas_v2";
+  if (isAnalysisMode) header.appendChild(renderStatusChip(nodeState));
   const analysisReadOnly = isAnalysisMode && payload.analysis?.estado === "cerrado";
   const actionsTitle = createElement("div");
   actionsTitle.className = "acv2-detail-title";
@@ -404,7 +640,7 @@ export function renderDetailPanel(payload, handlers = {}) {
     deleteBtn.addEventListener("click", () => handlers.onDelete?.(cause));
     actions.append(editBtn, childBtn, deleteBtn);
   } else {
-    actions.appendChild(createElement("div", "acv2-empty-state", "Los metadatos de la plantilla son solo lectura. Usa el panel de trazabilidad para validar o rechazar.",));
+    actions.appendChild(createElement("div", "acv2-empty-state", "Selecciona una hipótesis para registrar su evaluación y evidencia.",));
   }
   const hypTitle = createElement("div");
   hypTitle.className = "acv2-detail-title";
@@ -515,6 +751,10 @@ export function renderMain(payload) {
   right.append(createElement("span", "acv2-context-overline", `ZOOM ${Number(payload.zoom || 1).toFixed(2)}x`));
   header.append(left, right);
   const treeSlot = createElement("div", "acv2-canvas-shell");
+  treeSlot.setAttribute("role", "region");
+  treeSlot.setAttribute("aria-label", "Lienzo del árbol causal; desplázate horizontalmente para ver el contenido completo");
+  treeSlot.tabIndex = 0;
+  treeSlot.appendChild(createElement("div", "acv2-canvas-scroll-cue", "Desplaza horizontalmente para explorar el árbol completo"));
   treeSlot.appendChild(createElement("div", "acv2-empty-state", "Cargando arbol..."));
   const toolbar = createElement("div", "acv2-tree-toolbar");
   const zoomGrid = createElement("div", "acv2-zoom-grid");
@@ -537,7 +777,8 @@ export function renderMain(payload) {
     row.append(dot, createElement("span", "", translateTreeLabel(entry.label, entry.label)));
     legend.appendChild(row);
   });
-  toolbar.append(zoomGrid, legend);
+  toolbar.appendChild(zoomGrid);
+  if (payload.view === "analisis_causas_v2") toolbar.appendChild(legend);
   main.append(header, treeSlot, toolbar);
   return main;
 }

@@ -8,6 +8,9 @@ from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import graph_query_
 from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
 
 
+_UNSET = object()
+
+
 def _replace_collection(table_name: str, node_id: int, values: list[str]) -> None:
     with db_cursor() as cur:
         cur.execute(f"DELETE FROM {table_name} WHERE hypothesis_node_id=%s", (node_id,))
@@ -42,6 +45,21 @@ def create(
     expected_evidence: list[str] | None = None,
     kpi_args: str = "",
     kpi_function: str = "",
+    title: str | None = None,
+    prediction: str | None = None,
+    metric: str | None = None,
+    unit: str | None = None,
+    data_source: str | None = None,
+    method: str | None = None,
+    period: str | None = None,
+    calculation: str | None = None,
+    threshold: str | None = None,
+    evidence: str | None = None,
+    decision: str | None = None,
+    decision_justification: str | None = None,
+    control_action: str | None = None,
+    action_owner: str | None = None,
+    control_date: str | None = None,
 ) -> dict:
     if not descripcion or not descripcion.strip():
         raise ValueError("La descripción de la hipótesis es obligatoria.")
@@ -55,7 +73,7 @@ def create(
         cur.execute("""INSERT INTO node(node_type, code, name, description, status, metadata)
                        VALUES ('HYPOTHESIS', %s, %s, %s, %s, %s)
                        RETURNING id, node_type, code, name, description, status, metadata""",
-                    (f"HYPOTHESIS:{uuid.uuid4().hex}", descripcion.strip(), criterio_validacion,
+                    (f"HYPOTHESIS:{uuid.uuid4().hex}", (title or descripcion).strip(), descripcion.strip(),
                      estado, psycopg2.extras.Json({"source": "app", "type": tipo})))
         node = dict(cur.fetchone())
         cur.execute(
@@ -77,15 +95,23 @@ def create(
                 industrial_machine,
                 industrial_asset,
                 analysis_window,
-                decision_rule
+                decision_rule,
+                prediccion,
+                metrica,
+                unidad,
+                fuente_datos,
+                metodo,
+                periodo,
+                calculo,
+                umbral
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
                 int(node["id"]),
                 int(causa_id),
-                descripcion.strip(),
+                (title or descripcion).strip(),
                 descripcion.strip(),
                 kpi_args,
                 kpi_function,
@@ -100,6 +126,14 @@ def create(
                 industrial_asset,
                 analysis_window,
                 decision_rule,
+                prediction,
+                metric,
+                unit,
+                data_source,
+                method,
+                period,
+                calculation,
+                threshold,
             ),
         )
         hipotesis_id = int(cur.fetchone()["id"])
@@ -119,12 +153,54 @@ def create(
 
 def get_by_causa(causa_id: int) -> list[dict]:
     graph_sync.sync_causa_graph(int(causa_id))
-    return graph_query_repo.get_hypotheses_for_cause(int(causa_id))
+    rows = graph_query_repo.get_hypotheses_for_cause(int(causa_id))
+    return _with_scientific_fields(rows)
+
+
+def _with_scientific_fields(rows: list[dict]) -> list[dict]:
+    ids = [int(row["id"]) for row in rows if row.get("id") is not None]
+    if not ids:
+        return rows
+    placeholders = ",".join(["%s"] * len(ids))
+    with db_cursor() as cur:
+        cur.execute(
+            f"""SELECT id, prediccion, metrica, unidad, fuente_datos, metodo,
+                       periodo, calculo, umbral
+                FROM hipotesis WHERE id IN ({placeholders})""",
+            ids,
+        )
+        by_id = {int(item["id"]): dict(item) for item in cur.fetchall()}
+    for row in rows:
+        scientific = by_id.get(int(row["id"]))
+        if scientific:
+            row.update(scientific)
+            row.update({
+                "prediction": row.get("prediccion"),
+                "metric": row.get("metrica"),
+                "unit": row.get("unidad"),
+                "data_source": row.get("fuente_datos"),
+                "method": row.get("metodo"),
+                "period": row.get("periodo"),
+                "calculation": row.get("calculo"),
+                "threshold": row.get("umbral"),
+            })
+    return rows
 
 
 def get_by_id(hipotesis_id: int) -> dict | None:
     graph_sync.sync_hypothesis_graph(int(hipotesis_id))
-    return graph_query_repo.get_hypothesis_record(int(hipotesis_id))
+    hypothesis = graph_query_repo.get_hypothesis_record(int(hipotesis_id))
+    if not hypothesis:
+        return None
+    with db_cursor() as cur:
+        cur.execute(
+            """SELECT prediccion, metrica, unidad, fuente_datos, metodo, periodo,
+                      calculo, umbral
+               FROM hipotesis WHERE id=%s""",
+            (int(hipotesis_id),),
+        )
+        scientific = cur.fetchone()
+    return _with_scientific_fields([hypothesis])[0] if scientific else hypothesis
 
 
 def update_status(hypothesis_id: int, status: str) -> dict:
@@ -166,6 +242,21 @@ def update(
     expected_evidence: list[str] | None = None,
     kpi_args: str = "",
     kpi_function: str = "",
+    title: str | None = None,
+    prediction: str | None = None,
+    metric: str | None = None,
+    unit: str | None = None,
+    data_source: str | None = None,
+    method: str | None | object = _UNSET,
+    period: str | None = None,
+    calculation: str | None = None,
+    threshold: str | None = None,
+    evidence: str | None = None,
+    decision: str | None = None,
+    decision_justification: str | None = None,
+    control_action: str | None = None,
+    action_owner: str | None = None,
+    control_date: str | None = None,
 ) -> dict:
     if not descripcion or not descripcion.strip():
         raise ValueError("La descripción de la hipótesis es obligatoria.")
@@ -174,71 +265,33 @@ def update(
         raise ValueError("Hipótesis no encontrada.")
 
     with db_cursor() as cur:
+        assignments = ["nombre=%s", "descripcion=%s", "criterio_validacion=%s"]
+        params = [(title or descripcion).strip(), descripcion.strip(), criterio_validacion]
+        if method is not _UNSET:
+            assignments.append("metodo=%s")
+            params.append(method)
+        params.append(hipotesis_id)
         cur.execute(
-            """
-            UPDATE hipotesis
-            SET
-                nombre=%s,
-                descripcion=%s,
-                tipo=%s,
-                criterio_validacion=%s,
-                estado=%s,
-                business_reason=%s,
-                analysis_method=%s,
-                expected_result=%s,
-                industrial_process=%s,
-                industrial_machine=%s,
-                industrial_asset=%s,
-                analysis_window=%s,
-                decision_rule=%s,
-                kpi_args=%s,
-                kpi_function=%s,
-                updated_at=NOW()
-            WHERE id=%s
-            RETURNING id
-            """,
-            (
-                descripcion.strip(),
-                descripcion.strip(),
-                tipo,
-                criterio_validacion,
-                estado,
-                business_reason,
-                analysis_method,
-                expected_result,
-                industrial_process,
-                industrial_machine,
-                industrial_asset,
-                analysis_window,
-                decision_rule,
-                kpi_args,
-                kpi_function,
-                hipotesis_id,
-            ),
+            f"""UPDATE hipotesis SET {', '.join(assignments)}, updated_at=NOW()
+                WHERE id=%s RETURNING id""",
+            tuple(params),
         )
         if not cur.fetchone():
             raise ValueError("Hipótesis no encontrada.")
-        if current.get("is_initial_template"):
-            cur.execute(
-                """UPDATE contrato SET kpi_description=%s, kpi_args=%s, kpi_function=%s
-                   WHERE id=(SELECT c.contrato_id FROM causa c WHERE c.id=%s)""",
-                (descripcion.strip(), kpi_args, kpi_function, current["causa_id"]),
-            )
         # Entity, node, KPI synchronization, and collection replacement are
         # all committed together; a failed write rolls back the entity too.
         if current.get("node_id") is not None:
-            cur.execute("""UPDATE node SET name=%s, description=%s, status=%s,
-                           metadata=%s, updated_at=NOW() WHERE id=%s""",
-                        (descripcion.strip(), criterio_validacion, estado,
-                         psycopg2.extras.Json({**(current.get("metadata") or {}), "type": tipo}),
+            cur.execute("""UPDATE node SET name=%s, description=%s, updated_at=NOW() WHERE id=%s""",
+                        ((title or descripcion).strip(), descripcion.strip(),
                          int(current["node_id"])))
-            for table_name, values in (("hypothesis_required_data", required_data or []),
-                                       ("hypothesis_expected_evidence", expected_evidence or [])):
-                cur.execute(f"DELETE FROM {table_name} WHERE hypothesis_node_id=%s", (int(current["node_id"]),))
-                for position, value in enumerate(values):
-                    if value and str(value).strip():
-                        cur.execute(f"INSERT INTO {table_name}(hypothesis_node_id, position, value) VALUES (%s,%s,%s)",
-                                    (int(current["node_id"]), position, str(value).strip()))
+            if required_data is not None or expected_evidence is not None:
+                for table_name, values in (("hypothesis_required_data", required_data or []),
+                                           ("hypothesis_expected_evidence", expected_evidence or [])):
+                    cur.execute(f"DELETE FROM {table_name} WHERE hypothesis_node_id=%s", (int(current["node_id"]),))
+                    for position, value in enumerate(values):
+                        if value and str(value).strip():
+                            cur.execute(f"INSERT INTO {table_name}(hypothesis_node_id, position, value) VALUES (%s,%s,%s)",
+                                        (int(current["node_id"]), position, str(value).strip()))
     return get_by_id(int(hipotesis_id)) or current
 
 

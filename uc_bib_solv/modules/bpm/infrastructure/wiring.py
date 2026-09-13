@@ -33,17 +33,19 @@ def _operational_dependencies(adapter):
 
 def build_bpm_process_modeling_application(handler):
     """Compose process-modeling use cases from explicit repository ports."""
-    return ProcessModelingApplication(handler.processes, handler.nodes, handler.transitions)
+    return ProcessModelingApplication(handler.processes, handler.nodes, handler.transitions, handler.layouts)
 
 
 def build_bpm_postgres_persistence_adapter(*, connection_factory=None):
     """Compose the temporary SQL repositories only at the infrastructure edge."""
+    from uc_bib_solv.modules.bpm.adapters.outbound.postgres.pm_layout_repo import ProcessLayoutRepository
     from uc_bib_solv.modules.bpm.adapters.outbound.postgres.pm_process_repo import NodeRepository, ProcessRepository, TransitionRepository
 
     return BpmPostgresPersistenceAdapter(
         processes=ProcessRepository(),
         nodes=NodeRepository(),
         transitions=TransitionRepository(),
+        layouts=ProcessLayoutRepository(),
         connection_factory=connection_factory,
     )
 

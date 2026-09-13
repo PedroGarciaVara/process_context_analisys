@@ -26,7 +26,7 @@ function getRows(state) {
     ? getProcesses(state).find((item) => String(item.bpmProcessId) === String(bpmProcessFilter))
     : null;
   return getContracts(state).filter((item) => {
-    if (state.currentProcess && item.processId !== state.currentProcess) return false;
+    if (state.currentProcess && String(item.processId) !== String(state.currentProcess)) return false;
     if (process && String(item.processId) !== String(process.id)) return false;
     return true;
   });
@@ -48,7 +48,7 @@ function buildCenter(state) {
 
   return `
     <div class="max-w-6xl mx-auto space-y-xl">
-      <section class="space-y-sm">
+      <section class="michelin-page-hero michelin-page-hero--blue space-y-sm">
         <span class="font-label-md text-label-md text-primary tracking-widest uppercase">Espacio de contratos</span>
         <div class="flex items-end justify-between gap-lg flex-wrap">
           <div>
@@ -122,7 +122,6 @@ function buildCenter(state) {
                   <div class="flex justify-end gap-sm">
                     <button type="button" class="px-md py-sm bg-primary text-on-primary text-label-md font-label-md rounded hover:opacity-90" data-action="contract-detail" data-contract-id="${escapeHtml(item.id)}">Detalle</button>
                     <button type="button" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container" data-action="contract-tree" data-contract-id="${escapeHtml(item.id)}">Abrir arbol</button>
-                    <button type="button" class="px-md py-sm border border-red-200 text-red-700 text-label-md font-label-md rounded hover:bg-red-50" data-action="contract-delete" data-contract-id="${escapeHtml(item.id)}">Eliminar</button>
                   </div>
                 </td>
               </tr>
@@ -153,6 +152,7 @@ function buildCenter(state) {
             </label>
             <label class="block space-y-xs" for="contract-create-v02-process-scope">
               <span class="font-label-md text-label-md text-secondary">Proceso BPM</span>
+              <span class="relative block"><span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span><input id="contract-create-v02-process-search" class="w-full border border-outline rounded-lg py-sm pr-sm pl-xl bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="search" autocomplete="off" placeholder="Buscar proceso por nombre"></span>
               <select id="contract-create-v02-process-scope" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" required>
                 ${buildContractScopeOptions(getContractScopes(state).processes, state.currentProcess ? (getProcesses(state).find((item) => String(item.id) === String(state.currentProcess))?.bpmProcessId || "") : "")}
               </select>
@@ -160,6 +160,7 @@ function buildCenter(state) {
             <div class="space-y-xs hidden" data-contract-scope-field="operation">
               <label class="block space-y-xs" for="contract-create-v02-operation-scope">
               <span class="font-label-md text-label-md text-secondary">Operación BPM</span>
+              <span class="relative block"><span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span><input id="contract-create-v02-operation-search" class="w-full border border-outline rounded-lg py-sm pr-sm pl-xl bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" type="search" autocomplete="off" placeholder="Buscar operación por nombre"></span>
               <select id="contract-create-v02-operation-scope" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
                 ${buildContractScopeOptions(getContractScopes(state).operations)}
               </select>
@@ -341,7 +342,9 @@ export function renderContratos(state, bus) {
       const createModal = mountRoot.querySelector("#contract-create-v02-modal");
       const createForm = mountRoot.querySelector("[data-contract-create-form]");
       const createScopeTypeInput = mountRoot.querySelector("#contract-create-v02-scope-type");
+      const createProcessSearchInput = mountRoot.querySelector("#contract-create-v02-process-search");
       const createProcessScopeInput = mountRoot.querySelector("#contract-create-v02-process-scope");
+      const createOperationSearchInput = mountRoot.querySelector("#contract-create-v02-operation-search");
       const createOperationScopeInput = mountRoot.querySelector("#contract-create-v02-operation-scope");
       const createOperationHelp = mountRoot.querySelector("#contract-create-v02-operation-help");
       const createNameInput = mountRoot.querySelector("#contract-create-v02-name");
@@ -418,6 +421,8 @@ export function renderContratos(state, bus) {
         if (createSubmitting) return;
         setCreateState("closed");
         createForm?.reset();
+        if (createProcessSearchInput) createProcessSearchInput.value = "";
+        if (createOperationSearchInput) createOperationSearchInput.value = "";
         if (createNameInput) delete createNameInput.dataset.userEdited;
         if (createScopeTypeInput) createScopeTypeInput.value = "process";
         if (createProcessScopeInput && currentState.currentProcess) {
@@ -430,6 +435,8 @@ export function renderContratos(state, bus) {
       const openCreateModal = () => {
         if (!createModal) return;
         createPreviousFocus = document.activeElement;
+        if (createProcessSearchInput) createProcessSearchInput.value = "";
+        if (createOperationSearchInput) createOperationSearchInput.value = "";
         if (createScopeTypeInput) createScopeTypeInput.value = "process";
         if (createProcessScopeInput && currentState.currentProcess) {
           const process = findProcess(currentState, currentState.currentProcess);
@@ -446,7 +453,8 @@ export function renderContratos(state, bus) {
         if (!createProcessScopeInput) return;
         const scopes = getScopeCatalog();
         const selectedValue = createProcessScopeInput.value;
-        const filtered = scopes.processes;
+        const query = String(createProcessSearchInput?.value || "").trim().toLocaleLowerCase();
+        const filtered = scopes.processes.filter((item) => !query || `${item.name || ""} ${item.processName || ""}`.toLocaleLowerCase().includes(query));
         createProcessScopeInput.innerHTML = buildContractScopeOptions(filtered, selectedValue);
         if (selectedValue && filtered.some((item) => String(item.id) === String(selectedValue))) {
           createProcessScopeInput.value = selectedValue;
@@ -459,7 +467,8 @@ export function renderContratos(state, bus) {
         const operations = processId
           ? scopes.operations.filter((item) => String(item.bpmProcessId) === String(processId))
           : [];
-        const filtered = operations;
+        const query = String(createOperationSearchInput?.value || "").trim().toLocaleLowerCase();
+        const filtered = operations.filter((item) => !query || `${item.name || ""} ${item.processName || ""}`.toLocaleLowerCase().includes(query));
         createOperationScopeInput.disabled = !processId || !filtered.length;
         createOperationScopeInput.required = createScopeTypeInput?.value === "operation";
         createOperationScopeInput.innerHTML = filtered.length
@@ -489,6 +498,11 @@ export function renderContratos(state, bus) {
       };
       createScopeTypeInput?.addEventListener("change", () => updateScopeControls({ clearOperation: true }));
       createProcessScopeInput?.addEventListener("change", () => updateScopeControls({ clearOperation: true }));
+      createProcessSearchInput?.addEventListener("input", () => {
+        renderProcessScopeOptions();
+        updateScopeControls({ clearOperation: true });
+      });
+      createOperationSearchInput?.addEventListener("input", renderOperationScopeOptions);
       createOperationScopeInput?.addEventListener("change", updateSuggestedContractName);
       createNameInput?.addEventListener("input", () => { createNameInput.dataset.userEdited = "true"; });
       const refreshCatalog = async () => {
@@ -498,23 +512,6 @@ export function renderContratos(state, bus) {
         const rows = getRows(AppState);
         return getActiveContract(AppState, rows);
       };
-      mountRoot.querySelectorAll("[data-action='contract-delete']").forEach((node) => {
-        node.addEventListener("click", async (event) => {
-          event.preventDefault();
-          const contractId = node.getAttribute("data-contract-id");
-          const contract = contractId ? findContract(AppState, contractId) : null;
-          if (!contract || !window.confirm(`¿Eliminar el contrato \"${contract.name || contract.nombre || ""}\"? Esta acción no se puede deshacer.`)) return;
-          node.disabled = true;
-          try {
-            await deleteContract(contract.id);
-            if (String(AppState.currentContract || "") === String(contract.id)) setCurrentContract(null);
-            await refreshCatalog();
-          } catch (error) {
-            node.disabled = false;
-            window.alert(error.message || "No se pudo eliminar el contrato.");
-          }
-        });
-      });
       mountRoot.querySelector("[data-action='contract-create-open']")?.addEventListener("click", openCreateModal);
       mountRoot.querySelectorAll("[data-action='contract-create-close'], [data-action='contract-create-cancel']").forEach((node) => {
         node.addEventListener("click", closeCreateModal);

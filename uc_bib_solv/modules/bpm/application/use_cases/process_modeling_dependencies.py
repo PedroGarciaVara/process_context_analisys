@@ -8,10 +8,11 @@ from uc_bib_solv.modules.bpm.domain.processes.exceptions import NotDraftError, N
 class ProcessModelingDependencies:
     """Application-facing repository dependencies for BPM modeling."""
 
-    def __init__(self, processes, nodes, transitions):
+    def __init__(self, processes, nodes, transitions, layouts):
         self.processes = processes
         self.nodes = nodes
         self.transitions = transitions
+        self.layouts = layouts
 
     def process(self, process_id):
         try:

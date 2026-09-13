@@ -4,6 +4,7 @@ from .causal_repositories import (
     HypothesisRepositoryPort,
     NodeRepositoryPort,
     RelationshipRepositoryPort,
+    CausalReparentingPort,
 )
 from .context import BpmContextPort
 from .transaction import TransactionPort
@@ -17,6 +18,7 @@ __all__ = [
     "HypothesisRepositoryPort",
     "NodeRepositoryPort",
     "RelationshipRepositoryPort",
+    "CausalReparentingPort",
     "BpmContextPort",
     "TransactionPort",
     "TreeQueryPort",

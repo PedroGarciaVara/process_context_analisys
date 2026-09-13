@@ -1,6 +1,8 @@
 """Canonical HTTP adapter for the RCA_TREE bounded context."""
 
-from flask import Blueprint, request
+import uuid
+
+from flask import Blueprint, g, request
 
 from uc_bib_solv.modules.rca_tree.infrastructure.wiring import build_rca_tree_application
 from uc_bib_solv.modules.rca_tree.domain.exceptions import CausalTreeError, CausalTreeNotFoundError, CausalTreeStateError, CausalTreeValidationError
@@ -54,6 +56,27 @@ def create_blueprint(service=None, analysis_service=None):
             return ok(service.save_cause(payload))
         except Exception as exc:
             return error(str(exc), status_code=400)
+
+    @bp.patch("/api/rca-tree/causes/<int:cause_id>/parent")
+    def cause_move(cause_id):
+        correlation_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())
+        try:
+            payload = request.get_json(silent=True)
+            if not isinstance(payload, dict):
+                raise CausalTreeValidationError("El cuerpo JSON del movimiento es obligatorio.")
+            missing = [key for key in ("parent_id", "expected_version", "reason") if key not in payload]
+            if missing:
+                raise CausalTreeValidationError("Faltan campos obligatorios para mover la causa.", details={"fields": missing})
+            # Actor identity is sourced from the authenticated request context;
+            # a client payload must not be able to impersonate another actor.
+            actor_id = getattr(g, "user_id", None) or getattr(g, "actor_id", None) or request.environ.get("REMOTE_USER")
+            command_payload = dict(payload)
+            command_payload["actor_id"] = str(actor_id) if actor_id else None
+            command_payload["correlation_id"] = correlation_id
+            result = service.move_cause(cause_id, command_payload)
+            return ok(result)
+        except Exception as exc:
+            return _handle_exception(exc, correlation_id=correlation_id)
 
     @bp.delete("/api/rca-tree/causes/<int:cause_id>")
     def cause_delete(cause_id):
@@ -153,15 +176,25 @@ def create_blueprint(service=None, analysis_service=None):
     return bp
 
 
-def _handle_exception(exc: Exception):
+def _handle_exception(exc: Exception, *, correlation_id: str | None = None):
     """Translate domain failures centrally without hiding unexpected errors as 4xx."""
     if isinstance(exc, CausalTreeNotFoundError):
-        return error(str(exc), status_code=404)
+        return _error_from_exception(exc, 404, correlation_id)
     if isinstance(exc, CausalTreeStateError):
-        return error(str(exc), status_code=409)
+        status = 403 if getattr(exc, "code", "") == "RCA_READONLY_ANALYSIS" else 409
+        return _error_from_exception(exc, status, correlation_id)
     if isinstance(exc, (CausalTreeValidationError, CausalTreeError, TypeError, ValueError, KeyError)):
-        return error(str(exc), status_code=400)
-    return error("Error interno del árbol causal.", status_code=500)
+        status = getattr(exc, "status", 400)
+        return _error_from_exception(exc, status, correlation_id)
+    return error("Error interno del árbol causal.", status_code=500, code="RCA_MOVE_FAILED", correlation_id=correlation_id)
+
+
+def _error_from_exception(exc: Exception, status_code: int, correlation_id: str | None):
+    extra = {"code": getattr(exc, "code", "RCA_INVALID_REQUEST"), "correlation_id": correlation_id}
+    details = getattr(exc, "details", None)
+    if details:
+        extra["details"] = details
+    return error(str(exc), status_code=status_code, **extra)
 
 
 def _integer(value):

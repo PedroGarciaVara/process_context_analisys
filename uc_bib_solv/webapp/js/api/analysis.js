@@ -24,3 +24,11 @@ export function updateAnalysis(analysisId, payload) {
 export function saveAnalysisResult(analysisId, payload) {
   return requestJson(`/api/rca-tree/analyses/${analysisId}/results`, { method: "POST", body: JSON.stringify(payload) });
 }
+
+export function retrySaveAnalysisResult(analysisId, payload) {
+  return saveAnalysisResult(analysisId, payload);
+}
+
+export function reopenAnalysis(analysisId) {
+  return updateAnalysis(analysisId, { status: "abierto" });
+}

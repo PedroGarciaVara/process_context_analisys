@@ -57,6 +57,14 @@ export function updateCausa(causaId, payload) {
   return requestJson(`/api/rca-tree/causes/${causaId}`, jsonOptions("PATCH", payload));
 }
 
+export function moveCausa(causaId, payload) {
+  return requestJson(`/api/rca-tree/causes/${causaId}/parent`, jsonOptions("PATCH", payload));
+}
+
+export function retryMoveCausa(causaId, payload) {
+  return moveCausa(causaId, payload);
+}
+
 export function deleteCausa(causaId) {
   return requestJson(`/api/rca-tree/causes/${causaId}`, { method: "DELETE" });
 }

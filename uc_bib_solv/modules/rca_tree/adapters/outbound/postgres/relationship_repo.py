@@ -124,3 +124,43 @@ def delete_structural_links(child_node_id: int) -> int:
             (child_node_id,),
         )
         return cur.rowcount
+
+
+def lock_primary_edges_for_child(cursor, child_node_id: int) -> list[dict]:
+    """Lock primary structural incoming edges using a caller-owned transaction."""
+    cursor.execute(
+        """
+        SELECT id, parent_node_id, child_node_id, relationship_type, metadata, is_primary
+        FROM relationship
+        WHERE child_node_id=%s AND is_primary
+          AND relationship_type IN ('CAUSES', 'DEPENDS_ON')
+        ORDER BY id
+        FOR UPDATE
+        """,
+        (int(child_node_id),),
+    )
+    return [dict(row) for row in cursor.fetchall()]
+
+
+def replace_primary_cause_relationship(cursor, *, child_node_id: int, parent_node_id: int, contract_id: int) -> dict:
+    """Replace only the primary structural incoming edge; retain secondary links."""
+    cursor.execute(
+        """
+        DELETE FROM relationship
+        WHERE child_node_id=%s AND is_primary
+          AND relationship_type IN ('CAUSES', 'DEPENDS_ON')
+        """,
+        (int(child_node_id),),
+    )
+    cursor.execute(
+        """
+        INSERT INTO relationship(
+            parent_node_id, child_node_id, relationship_type, metadata, is_primary
+        ) VALUES (%s, %s, 'CAUSES', %s, TRUE)
+        ON CONFLICT (parent_node_id, child_node_id, relationship_type)
+        DO UPDATE SET is_primary=TRUE, updated_at=NOW()
+        RETURNING id, parent_node_id, child_node_id, relationship_type, metadata, is_primary
+        """,
+        (int(parent_node_id), int(child_node_id), _metadata_payload({"source": "rca-reparent", "contract_id": int(contract_id)})),
+    )
+    return dict(cursor.fetchone())

@@ -45,6 +45,8 @@ def create_blueprint(operational, process_modeling):
     bp.add_url_rule("/api/bpm/processes/<process_id>", "process_get", lambda process_id: process_call("get_process", process_id, request.args.get("expand_node_id")), methods=["GET"])
     bp.add_url_rule("/api/bpm/processes/<process_id>", "process_update", lambda process_id: process_call("update_process", process_id, payload()), methods=["PATCH"])
     bp.add_url_rule("/api/bpm/processes/<process_id>", "process_delete", lambda process_id: process_call("delete_process", process_id, request.args.get("cascade", "false").lower() == "true"), methods=["DELETE"])
+    bp.add_url_rule("/api/bpm/processes/<process_id>/layout", "process_layout_get", lambda process_id: process_call("get_process_layout", process_id), methods=["GET"])
+    bp.add_url_rule("/api/bpm/processes/<process_id>/layout", "process_layout_replace", lambda process_id: process_call("replace_process_layout", process_id, payload()), methods=["PUT"])
     bp.add_url_rule("/api/bpm/processes/<process_id>/nodes", "node_create", lambda process_id: created(process_call("create_node", process_id, payload())), methods=["POST"])
     bp.add_url_rule("/api/bpm/processes/<process_id>/nodes-with-transition", "node_with_transition_create", lambda process_id: created(process_call("create_node_with_transition", process_id, payload())), methods=["POST"])
     bp.add_url_rule("/api/bpm/nodes/<node_id>", "node_update", lambda node_id: process_call("update_node", node_id, payload()), methods=["PATCH"])

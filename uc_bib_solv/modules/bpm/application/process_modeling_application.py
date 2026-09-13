@@ -1,6 +1,7 @@
 """Application composition for BPM process-modeling use cases."""
 
 from .use_cases.context.context_records import CalculateContextKpi, CreateContextRecord, GetContext
+from .use_cases.layout import GetProcessLayout, ReplaceProcessLayout
 from .use_cases.nodes import CreateProcessNode, CreateProcessNodeWithTransition, DeleteOperation, DeleteProcessNode, GetNodeMetadata, InsertOperationOnTransition, UpdateNodeMetadata, UpdateProcessNode
 from .use_cases.operations import GetProcessOperation, UpdateProcessOperationStages
 from .use_cases.process_modeling_dependencies import ProcessModelingDependencies
@@ -18,14 +19,16 @@ from .use_cases.transitions import CreateTransition, DeleteTransition, UpdateTra
 class ProcessModelingApplication:
     """Explicit application facade composed from individual use cases."""
 
-    def __init__(self, processes, nodes, transitions):
-        dependencies = ProcessModelingDependencies(processes, nodes, transitions)
+    def __init__(self, processes, nodes, transitions, layouts):
+        dependencies = ProcessModelingDependencies(processes, nodes, transitions, layouts)
         self._list_processes = ListProcesses(dependencies)
         self._get_process = GetProcess(dependencies)
         self._create_process = CreateProcess(dependencies)
         self._update_process = UpdateProcess(dependencies)
         self._delete_process = DeleteProcess(dependencies)
         self._validate_process = ValidateProcess(dependencies)
+        self._get_process_layout = GetProcessLayout(dependencies)
+        self._replace_process_layout = ReplaceProcessLayout(dependencies)
         self._create_node = CreateProcessNode(dependencies)
         self._create_node_with_transition = CreateProcessNodeWithTransition(dependencies)
         self._update_node = UpdateProcessNode(dependencies)
@@ -49,6 +52,8 @@ class ProcessModelingApplication:
     def update_process(self, process_id, data): return self._update_process.execute(process_id, data)
     def delete_process(self, process_id, cascade=False): return self._delete_process.execute(process_id, cascade)
     def validate_process(self, process_id): return self._validate_process.execute(process_id)
+    def get_process_layout(self, process_id): return self._get_process_layout.execute(process_id)
+    def replace_process_layout(self, process_id, data): return self._replace_process_layout.execute(process_id, data)
     def create_node(self, process_id, data): return self._create_node.execute(process_id, data)
     def create_node_with_transition(self, process_id, data): return self._create_node_with_transition.execute(process_id, data)
     def update_node(self, node_id, data): return self._update_node.execute(node_id, data)

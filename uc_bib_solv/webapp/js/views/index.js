@@ -10,7 +10,6 @@ import { renderMaquinasDetalle } from "./maquinas/maquinas_detalle.js";
 import { renderCausaDetallePage } from "./rca/causa_detalle.js";
 import { renderArboles } from "./rca/arboles.js";
 import { renderAnalisisCausasShell } from "./rca/analisis_causas.js";
-import { renderProcessModeling } from "./nodes/process-modeling.js";
 import { renderProcessStudio } from "./bpm/studio.js";
 import { renderContexto } from "./contexto/contexto.js";
 
@@ -27,7 +26,6 @@ const VIEW_RENDERERS = {
   causa_detalle: renderCausaDetallePage,
   arboles: renderArboles,
   analisis_causas: renderAnalisisCausasShell,
-  "modelado-procesos": renderProcessModeling,
   "studio-procesos": renderProcessStudio,
   contexto: renderContexto,
 };
@@ -55,7 +53,6 @@ export function getRouteLabel(route) {
     causa_detalle: "Detalle de causa",
     arboles: "Arbol",
     analisis_causas: "Analisis causas",
-    "modelado-procesos": "Modelado de procesos",
     "studio-procesos": "Industrial Flow Studio",
     contexto: "Contexto estructurado",
   };

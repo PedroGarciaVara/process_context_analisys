@@ -120,8 +120,8 @@ function buildSideMenu(state) {
   return MAIN_MENU.map((item) => {
     const active = state.route === item.route;
     return `
-      <button type="button" class="w-full flex items-center gap-md px-md py-sm ${active ? "bg-surface-container-highest text-primary" : "text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-highest dark:hover:bg-surface-variant"} transition-colors duration-150 ease-in-out font-label-md text-label-md" data-route="${escapeHtml(item.route)}" data-action="sidebar-nav">
-        <span class="material-symbols-outlined">${escapeHtml(item.icon)}</span> ${escapeHtml(item.label)}
+      <button type="button" class="michelin-nav-item w-full flex items-center gap-md px-md py-sm ${active ? "is-active bg-surface-container-highest text-primary" : "text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-highest dark:hover:bg-surface-variant"} transition-colors duration-150 ease-in-out font-label-md text-label-md" data-route="${escapeHtml(item.route)}" data-action="sidebar-nav">
+        <span class="michelin-nav-icon material-symbols-outlined">${escapeHtml(item.icon)}</span><span>${escapeHtml(item.label)}</span>
       </button>
     `;
   }).join("");
@@ -133,10 +133,10 @@ function buildPageHtml(state) {
   const machines = getMachines(state);
 
   return `
-    <header class="flex justify-between items-center px-lg h-16 w-full sticky top-0 z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline">
+    <header class="michelin-topbar flex justify-between items-center px-lg h-16 w-full sticky top-0 z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline">
       <div class="flex items-center gap-xl">
-        <span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Industrial RCA</span>
-        <nav class="hidden md:flex items-center gap-md">
+        <span class="michelin-brand font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed"><i>MI</i><span>Industrial Intelligence<small>UC BIB Solve</small></span></span>
+        <nav class="michelin-topnav hidden md:flex items-center gap-md">
           ${buildTopMenu(state)}
         </nav>
       </div>
@@ -145,9 +145,9 @@ function buildPageHtml(state) {
         <button type="button" class="material-symbols-outlined text-primary cursor-pointer p-base rounded-full hover:bg-surface-container-highest" data-action="account">account_circle</button>
       </div>
     </header>
-    <div class="flex flex-1 overflow-hidden">
-      <aside class="flex flex-col h-full border-r border-outline-variant p-md bg-surface-container dark:bg-surface-container-low w-[380px] shrink-0">
-        <div class="mb-xl px-sm">
+    <div class="michelin-shell-body flex flex-1 overflow-hidden">
+      <aside class="michelin-nav-rail flex flex-col h-full border-r border-outline-variant p-md bg-surface-container dark:bg-surface-container-low w-[380px] shrink-0">
+        <div class="michelin-nav-context mb-xl px-sm">
           <div class="flex items-center gap-sm mb-base">
             <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-fixed">
               <span class="material-symbols-outlined">analytics</span>
@@ -158,21 +158,21 @@ function buildPageHtml(state) {
             </div>
           </div>
         </div>
-        <nav class="flex-1 space-y-1">
+        <nav class="michelin-nav-menu flex-1 space-y-1">
           ${buildSideMenu(state)}
         </nav>
-        <div class="mt-auto border-t border-outline-variant pt-md space-y-1">
-          <button type="button" class="w-full flex items-center gap-md px-md py-sm text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest rounded-lg transition-colors" data-action="help">
-            <span class="material-symbols-outlined">help</span> Ayuda
+        <div class="michelin-rail-utility mt-auto border-t border-outline-variant pt-md space-y-1">
+          <button type="button" class="michelin-nav-item w-full flex items-center gap-md px-md py-sm text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest rounded-lg transition-colors" data-action="help">
+            <span class="michelin-nav-icon material-symbols-outlined">help</span><span>Ayuda</span>
           </button>
-          <button type="button" class="w-full flex items-center gap-md px-md py-sm text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest rounded-lg transition-colors" data-action="signout">
-            <span class="material-symbols-outlined">logout</span> Cerrar sesion
+          <button type="button" class="michelin-nav-item w-full flex items-center gap-md px-md py-sm text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest rounded-lg transition-colors" data-action="signout">
+            <span class="michelin-nav-icon material-symbols-outlined">logout</span><span>Salir</span>
           </button>
         </div>
       </aside>
-      <main class="flex-1 overflow-y-auto bg-surface p-xl">
+      <main class="michelin-main flex-1 overflow-y-auto bg-surface p-xl">
         <div class="w-full max-w-[1600px] mx-auto space-y-xl">
-          <section class="space-y-sm">
+          <section class="michelin-page-hero michelin-page-hero--light space-y-sm">
             <span class="font-label-md text-label-md text-primary tracking-widest uppercase">Entrada operativa</span>
             <h1 class="font-display-lg text-display-lg text-on-background">Bienvenido de nuevo</h1>
             <p class="font-body-md text-body-md text-secondary max-w-2xl">

@@ -26,8 +26,13 @@ def _cause_form_values(cause, mode):
 
 def _hypothesis_form_values(hypothesis, mode):
     if not hypothesis or mode == "new_hipotesis":
-        return {"descripcion": "", "tipo": "aceptacion", "criterio_validacion": "", "estado": "pendiente"}
-    return {"descripcion": hypothesis.get("descripcion") or "", "tipo": hypothesis.get("tipo") or "aceptacion", "criterio_validacion": hypothesis.get("criterio_validacion") or "", "estado": hypothesis.get("estado") or "pendiente"}
+        return {"nombre": "", "descripcion": "", "criterio_validacion": "", "metodo": ""}
+    return {
+        "nombre": hypothesis.get("nombre") or hypothesis.get("name") or "",
+        "descripcion": hypothesis.get("descripcion") or "",
+        "criterio_validacion": hypothesis.get("criterio_validacion") or "",
+        "metodo": hypothesis.get("metodo") or hypothesis.get("method") or "",
+    }
 
 
 class GetCauseDetail:

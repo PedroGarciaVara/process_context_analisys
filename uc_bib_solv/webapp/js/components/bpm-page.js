@@ -1,7 +1,7 @@
 import { escapeHtml } from "../core/utils.js";
 
 export function renderDetailHeader({ eyebrow, title, description, backHref, backLabel }) {
-  return `<div class="flex items-center justify-between gap-lg flex-wrap"><div><span class="font-label-md text-label-md text-primary tracking-widest uppercase">${escapeHtml(eyebrow)}</span><h1 class="font-display-lg text-display-lg text-on-background">${escapeHtml(title)}</h1><p class="font-body-md text-body-md text-secondary">${escapeHtml(description)}</p></div><a href="${escapeHtml(backHref)}" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container">${escapeHtml(backLabel)}</a></div>`;
+  return `<div class="michelin-page-hero michelin-page-hero--blue flex items-center justify-between gap-lg flex-wrap"><div><span class="font-label-md text-label-md text-primary tracking-widest uppercase">${escapeHtml(eyebrow)}</span><h1 class="font-display-lg text-display-lg text-on-background">${escapeHtml(title)}</h1><p class="font-body-md text-body-md text-secondary">${escapeHtml(description)}</p></div><a href="${escapeHtml(backHref)}" class="px-md py-sm border border-outline-variant text-on-surface-variant text-label-md font-label-md rounded hover:bg-surface-container">${escapeHtml(backLabel)}</a></div>`;
 }
 
 export function renderPageAlert(id) {

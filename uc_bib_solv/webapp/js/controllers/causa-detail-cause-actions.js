@@ -1,5 +1,6 @@
-export function createCausaDetailCauseActions({ state, refs, appState, readRouteParams, isLinkMode, buildCausaDetalleHash, createCausa, createContractNode, linkReusableNode, updateCausa, setAlert, refreshDetail }) {
+export function createCausaDetailCauseActions({ state, refs, appState, readRouteParams, isLinkMode, buildCausaDetalleHash, createCausa, createContractNode, linkReusableNode, updateCausa, setAlert, refreshDetail, clearCreationFeedback, beginCreationAttempt, showCreationFeedback }) {
   async function saveCause() {
+    const feedbackToken = beginCreationAttempt();
     const routeContractId = readRouteParams().contrato_id;
     const activeContractId = state.detail?.contract_id || routeContractId || appState.currentContract;
     if (!activeContractId && !state.detail?.causa_id) {
@@ -53,8 +54,10 @@ export function createCausaDetailCauseActions({ state, refs, appState, readRoute
           causa_id: response.cause.id,
         }));
       }
-      await refreshDetail();
+      await refreshDetail({ feedbackToken });
+      if (!payload.causa_id) showCreationFeedback("Causa creada", feedbackToken);
     } catch (error) {
+      clearCreationFeedback({ token: feedbackToken });
       setAlert("danger", error.message);
     }
   }

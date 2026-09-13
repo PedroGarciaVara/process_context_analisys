@@ -8,8 +8,9 @@ from uc_bib_solv.modules.rca_tree.domain.causal_graph.rules import (
     validate_no_cycle,
     validate_relationship_signature,
 )
-from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import graph_query_repo, graph_sync, node_repo
+from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres import graph_query_repo, graph_sync, node_repo, relationship_repo
 from uc_bib_solv.modules.platform.infrastructure.postgres import db_cursor
+from uc_bib_solv.modules.rca_tree.adapters.outbound.postgres.transaction_postgres import move_cause_transaction
 
 
 def _get_contract_node(contrato_id: int) -> dict:
@@ -179,6 +180,85 @@ def update(
                 (nombre.strip(), descripcion, cause["contrato_id"]),
             )
     return get_by_id(int(causa_id)) or cause
+
+
+def move(
+    causa_id: int,
+    parent_id: int | None,
+    expected_version: int,
+    reason: str,
+    *,
+    actor_id: str | None = None,
+    correlation_id: str | None = None,
+) -> dict:
+    """Atomically reparent a cause and return the persistence result."""
+    try:
+        normalized_version = int(expected_version)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("expected_version debe ser numérico.") from exc
+    return move_cause_transaction(
+        cause_id=int(causa_id),
+        parent_id=int(parent_id) if parent_id is not None else None,
+        expected_version=normalized_version,
+        reason=reason,
+        actor_id=actor_id,
+        correlation_id=correlation_id,
+    )
+
+
+def get_move_context(causa_id: int, parent_id: int | None = None) -> dict:
+    """Read the context consumed by the MoveCause application interactor."""
+    with db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, node_id, contrato_id, parent_id, nombre, descripcion,
+                   tipo, categoria, is_initial_template, version
+            FROM causa WHERE id=%s
+            """,
+            (int(causa_id),),
+        )
+        cause_row = cur.fetchone()
+        if not cause_row:
+            return {}
+        cause = dict(cause_row)
+        cur.execute(
+            """
+            SELECT id, node_id, contrato_id, parent_id, nombre, descripcion,
+                   tipo, categoria, is_initial_template, version
+            FROM causa WHERE contrato_id=%s ORDER BY id
+            """,
+            (int(cause["contrato_id"]),),
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+    by_id = {int(row["id"]): row for row in rows}
+    descendants: list[int] = []
+    pending = [int(row["id"]) for row in rows if row.get("parent_id") == int(causa_id)]
+    while pending:
+        child_id = pending.pop(0)
+        descendants.append(child_id)
+        pending.extend(int(row["id"]) for row in rows if row.get("parent_id") == child_id)
+    parent = by_id.get(int(parent_id)) if parent_id is not None else None
+    roots = [int(row["id"]) for row in rows if row.get("parent_id") is None]
+    return {
+        "cause": cause,
+        "parent": parent,
+        "affected_descendant_ids": descendants,
+        "root_id": roots[0] if len(roots) == 1 else None,
+        "allow_null_parent": len(roots) == 0 or (len(roots) == 1 and roots[0] == int(causa_id)),
+        "edges": relationship_repo.list_structural_edges(),
+    }
+
+
+def move_cause(command) -> dict:
+    """Concrete implementation of ``CausalReparentingPort`` for T05 wiring."""
+    return move(
+        command.cause_id,
+        command.parent_id,
+        command.expected_version,
+        command.reason,
+        actor_id=getattr(command, "actor_id", None),
+        correlation_id=getattr(command, "correlation_id", None),
+    )
 
 
 def delete(causa_id: int) -> bool:

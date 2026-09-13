@@ -47,6 +47,14 @@ class TransitionRepositoryPort(Protocol):
     def delete(self, transition_id: str) -> bool: ...
 
 
+class ProcessLayoutRepositoryPort(Protocol):
+    def list_for_process(self, process_id: str) -> list[dict[str, Any]]: ...
+
+    def replace_for_process(
+        self, process_id: str, positions: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]: ...
+
+
 class OperationRepositoryPort(Protocol):
     def get(self, operation_id: str) -> dict[str, Any] | None: ...
 

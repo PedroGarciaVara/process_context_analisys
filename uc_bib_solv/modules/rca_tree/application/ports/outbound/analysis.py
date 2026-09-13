@@ -22,9 +22,20 @@ class ParticipantRepositoryPort(Protocol):
 
 
 class ResultRepositoryPort(Protocol):
+    """Persistence boundary for scientific analysis results.
+
+    ``save`` receives the legacy payload plus nullable scientific fields. The
+    adapter owns their physical mapping; the application port deliberately
+    remains payload-based so old adapters continue to work during migration.
+    ``get`` is optional at runtime and lets the use case enforce closed
+    analysis read-only behavior before writing.
+    """
+
     def save(self, analysis_id: int, payload: dict[str, Any]) -> dict[str, Any]: ...
 
     def list_for_analysis(self, analysis_id: int) -> list[dict[str, Any]]: ...
+
+    def get(self, analysis_id: int) -> dict[str, Any] | None: ...
 
 
 __all__ = ["AnalysisRepositoryPort", "ParticipantRepositoryPort", "ResultRepositoryPort"]

@@ -28,6 +28,20 @@ class CauseRepositoryPort(Protocol):
     def delete(self, cause_id: int) -> bool: ...
 
 
+class CausalReparentingPort(Protocol):
+    """Atomic persistence boundary for a cause move.
+
+    Implementations must validate again under their transaction/lock and must
+    update parent_id, primary CAUSES link and audit row in one commit.
+    """
+
+    def get_move_context(self, cause_id: int, parent_id: int | None = None) -> dict[str, Any]: ...
+
+    def move_cause(self, command: Any) -> dict[str, Any]: ...
+
+    def reparent(self, command: Any) -> dict[str, Any]: ...
+
+
 class HypothesisRepositoryPort(Protocol):
     def get(self, hypothesis_id: int) -> dict[str, Any] | None: ...
 
@@ -47,9 +61,9 @@ class HypothesisRepositoryPort(Protocol):
         self,
         hypothesis_id: int,
         description: str,
-        kind: str,
-        validation_criterion: str | None,
-        status: str,
+        kind: str | None = None,
+        validation_criterion: str | None = None,
+        status: str | None = None,
         **extra: Any,
     ) -> dict[str, Any]: ...
 
@@ -72,4 +86,5 @@ __all__ = [
     "HypothesisRepositoryPort",
     "NodeRepositoryPort",
     "RelationshipRepositoryPort",
+    "CausalReparentingPort",
 ]

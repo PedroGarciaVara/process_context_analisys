@@ -9,6 +9,7 @@ from typing import Any
 
 from uc_bib_solv.modules.bpm.application.ports.process_ports import (
     NodeRepositoryPort,
+    ProcessLayoutRepositoryPort,
     ProcessRepositoryPort,
     TransitionRepositoryPort,
 )
@@ -20,6 +21,7 @@ class BpmPostgresPersistenceAdapter:
     processes: ProcessRepositoryPort
     nodes: NodeRepositoryPort
     transitions: TransitionRepositoryPort
+    layouts: ProcessLayoutRepositoryPort
 
     def __init__(
         self,
@@ -27,12 +29,14 @@ class BpmPostgresPersistenceAdapter:
         processes: ProcessRepositoryPort | None = None,
         nodes: NodeRepositoryPort | None = None,
         transitions: TransitionRepositoryPort | None = None,
+        layouts: ProcessLayoutRepositoryPort | None = None,
         connection_factory: Any = None,
     ):
-        missing = [name for name, value in (("processes", processes), ("nodes", nodes), ("transitions", transitions)) if value is None]
+        missing = [name for name, value in (("processes", processes), ("nodes", nodes), ("transitions", transitions), ("layouts", layouts)) if value is None]
         if missing:
             raise ValueError(f"El adaptador BPM requiere repositorios inyectados: {', '.join(missing)}")
         self.processes = processes
         self.nodes = nodes
         self.transitions = transitions
+        self.layouts = layouts
         self.connection_factory = connection_factory

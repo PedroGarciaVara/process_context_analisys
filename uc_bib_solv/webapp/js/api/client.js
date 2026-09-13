@@ -12,11 +12,24 @@ export async function requestJson(path, options = {}) {
     let payload = null;
     try {
       payload = await response.json();
-      if (payload?.message) message = payload.message;
+      const error = payload?.error && typeof payload.error === "object"
+        ? payload.error
+        : payload;
+      if (error?.message) message = error.message;
     } catch (_error) {
       // Ignore body parse failures and keep the generic message.
     }
-    throw Object.assign(new Error(message), { status: response.status, code: payload?.code || "request_failed", field: payload?.field || null, data: payload?.data });
+    const error = payload?.error && typeof payload.error === "object"
+      ? payload.error
+      : payload;
+    throw Object.assign(new Error(message), {
+      status: response.status,
+      code: error?.code || "request_failed",
+      details: error?.details,
+      correlation_id: error?.correlation_id,
+      field: error?.field || null,
+      data: payload?.data,
+    });
   }
 
   return response.json();

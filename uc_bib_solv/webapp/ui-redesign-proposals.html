@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>Propuestas UI Michelin · UC BIB Solve</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:FILL@0..1" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/ui-redesign-proposals.css" />
+</head>
+<body>
+  <div class="proposal-lab">
+    <header class="lab-bar">
+      <div class="lab-title">
+        <span class="lab-mark">UI</span>
+        <span><strong>UC BIB Solve</strong><small>Estudio visual · Michelin</small></span>
+      </div>
+      <div class="lab-switcher" role="tablist" aria-label="Propuestas de diseño">
+        <button class="lab-chip" data-concept="command" role="tab" aria-selected="false"><b>01</b> Control de planta</button>
+        <button class="lab-chip" data-concept="route" role="tab" aria-selected="false"><b>02</b> Ruta operativa</button>
+        <button class="lab-chip" data-concept="precision" role="tab" aria-selected="false"><b>03</b> Precisión técnica</button>
+        <button class="lab-chip lab-chip-selected is-active" data-concept="hybrid" role="tab" aria-selected="true"><b>04</b> Dirección combinada</button>
+      </div>
+      <div class="lab-page-switcher" aria-label="Vista de ejemplo">
+        <button class="is-active" data-screen="home">Inicio</button>
+        <button data-screen="machines">Máquinas</button>
+        <button data-screen="detail">Detalle BA01</button>
+      </div>
+    </header>
+
+    <section class="concept-note" aria-live="polite">
+      <div><span id="concept-number">DIRECCIÓN SELECCIONADA</span><strong id="concept-name">Navegación + ruta visual</strong></div>
+      <p id="concept-description">Rail compacto de Control de planta y cabeceras fotográficas de Ruta operativa, con contraste adaptado a cada página.</p>
+      <span class="concept-fit" id="concept-fit">Combinación solicitada · 10/10</span>
+    </section>
+
+    <main id="proposal-stage" class="proposal-stage" data-concept-view="hybrid"></main>
+  </div>
+  <script type="module" src="./js/ui-redesign-proposals.js"></script>
+</body>
+</html>

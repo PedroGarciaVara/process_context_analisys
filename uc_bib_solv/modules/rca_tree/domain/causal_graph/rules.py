@@ -6,12 +6,115 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import Any
 
-from ..exceptions import CycleDetectedError, InvalidRelationshipError, NodeDeletionError
+from ..exceptions import (
+    ContractMismatchError,
+    CycleDetectedError,
+    InvalidReasonError,
+    InvalidRelationshipError,
+    NodeDeletionError,
+    PrimaryRelationshipConflictError,
+    RootPolicyError,
+    SelfParentError,
+    VersionConflictError,
+)
 
 
 NODE_TYPES = {"CONTRACT", "CAUSE", "HYPOTHESIS", "MACHINE", "PROCESS"}
 RELATIONSHIP_TYPES = {"DEPENDS_ON", "CAUSES", "HAS_HYPOTHESIS", "BELONGS_TO"}
 STRUCTURAL_RELATIONSHIP_TYPES = {"DEPENDS_ON", "CAUSES", "HAS_HYPOTHESIS"}
+
+
+def validate_move_reason(reason: Any, *, max_length: int = 2000) -> str:
+    """Return the canonical audit reason or reject an unusable one."""
+    if not isinstance(reason, str):
+        raise InvalidReasonError("El motivo del movimiento debe ser texto.")
+    normalized = reason.strip()
+    if not normalized or len(normalized) > max_length:
+        raise InvalidReasonError(
+            "El motivo del movimiento debe tener entre 1 y 2000 caracteres.",
+            details={"max_length": max_length},
+        )
+    return normalized
+
+
+def normalize_expected_version(version: Any) -> int | str:
+    """Normalize the optimistic-concurrency token without inventing one."""
+    if isinstance(version, bool) or version is None:
+        raise ValueError("expected_version is required")
+    if isinstance(version, int):
+        if version < 1:
+            raise ValueError("expected_version must be positive")
+        return version
+    if isinstance(version, str) and version.strip():
+        return version.strip()
+    raise ValueError("expected_version must be a non-empty string or integer")
+
+
+def validate_reparenting_invariants(
+    *,
+    cause: dict[str, Any],
+    parent: dict[str, Any] | None,
+    edges: list[dict[str, Any]] = (),
+    root_id: int | None = None,
+    allow_null_parent: bool = False,
+    existing_root_id: int | None = None,
+    primary_relationships: list[dict[str, Any]] = (),
+) -> None:
+    """Validate all graph invariants needed before an atomic reparent.
+
+    ``parent`` is the proposed new parent. ``edges`` are the current graph
+    edges; they are never mutated by this pure function.
+    """
+    cause_id = int(cause["id"])
+    if parent is None:
+        if not allow_null_parent:
+            raise RootPolicyError("Este contrato no permite desanclar una causa.", details={"cause_id": cause_id})
+        if existing_root_id is not None and int(existing_root_id) != cause_id:
+            raise RootPolicyError("El contrato sólo puede tener una raíz.", details={"root_id": existing_root_id})
+    else:
+        parent_id = int(parent["id"])
+        if cause.get("node_type") and str(cause["node_type"]).upper() != "CAUSE":
+            raise InvalidRelationshipError("Sólo se pueden mover nodos CAUSE.")
+        if parent.get("node_type") and str(parent["node_type"]).upper() != "CAUSE":
+            raise InvalidRelationshipError("El padre estructural debe ser un nodo CAUSE.")
+        if parent_id == cause_id:
+            raise SelfParentError("Una causa no puede ser su propio padre.", details={"cause_id": cause_id, "parent_id": parent_id})
+        cause_contract = cause.get("contract_id", cause.get("contrato_id"))
+        parent_contract = parent.get("contract_id", parent.get("contrato_id"))
+        if cause_contract is not None and parent_contract is not None and int(cause_contract) != int(parent_contract):
+            raise ContractMismatchError(
+                "La causa padre pertenece a otro contrato.",
+                details={"cause_id": cause_id, "parent_id": parent_id},
+            )
+        if would_create_cycle(edges, parent_id, cause_id, relationship_type="CAUSES"):
+            raise CycleDetectedError(
+                "El destino pertenece al subárbol de la causa.",
+                details={"cause_id": cause_id, "parent_id": parent_id},
+            )
+
+    is_root = bool(cause.get("is_initial_template") or cause.get("is_root"))
+    if root_id is not None and cause_id == int(root_id):
+        is_root = True
+    if is_root and parent is not None:
+        raise RootPolicyError("La raíz protegida no puede convertirse en hija.", details={"cause_id": cause_id})
+
+    primary = [
+        link for link in primary_relationships
+        if link.get("relationship_type") == "CAUSES" and link.get("is_primary")
+    ]
+    if len(primary) > 1:
+        raise PrimaryRelationshipConflictError(
+            "La causa tiene más de una relación primaria CAUSES.",
+            details={"cause_id": cause_id, "relationship_count": len(primary)},
+        )
+
+
+def validate_expected_version(expected: Any, current: Any) -> None:
+    if normalize_expected_version(expected) != normalize_expected_version(current):
+        raise VersionConflictError(
+            "La versión de la causa está obsoleta.",
+            details={"expected_version": expected, "current_version": current},
+        )
 
 ALLOWED_RELATIONSHIPS = {
     ("CONTRACT", "DEPENDS_ON", "CONTRACT"),

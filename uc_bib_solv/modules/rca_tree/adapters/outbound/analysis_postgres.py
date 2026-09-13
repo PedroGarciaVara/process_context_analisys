@@ -124,6 +124,27 @@ class RcaTreeAnalysisPostgresAdapter:
             if not analysis: raise ValueError("Analisis no encontrado.")
             if analysis["estado"] == "cerrado":
                 raise ValueError("El análisis cerrado es de solo lectura; reábrelo para editarlo.")
+            if kind == "hipotesis":
+                cur.execute(
+                    """SELECT h.id
+                         FROM hipotesis h
+                         JOIN causa c ON c.id=h.causa_id
+                        WHERE h.id=%s AND c.contrato_id=(
+                            SELECT contrato_id FROM analisis_causas WHERE id=%s
+                        )""",
+                    (hypothesis_id, analysis_id),
+                )
+                if not cur.fetchone():
+                    raise ValueError("La hipótesis no existe o no pertenece al contrato del análisis.")
+            elif kind == "causa":
+                cur.execute(
+                    """SELECT id FROM causa WHERE id=%s AND contrato_id=(
+                        SELECT contrato_id FROM analisis_causas WHERE id=%s
+                    )""",
+                    (cause_id, analysis_id),
+                )
+                if not cur.fetchone():
+                    raise ValueError("La causa no existe o no pertenece al contrato del análisis.")
             cur.execute("""INSERT INTO analisis_resultado(analisis_id,tipo_elemento,causa_id,hipotesis_id,evidencia,conclusion,evaluacion)
                 VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (analisis_id,tipo_elemento,causa_id,hipotesis_id)
                 DO UPDATE SET evidencia=EXCLUDED.evidencia, conclusion=EXCLUDED.conclusion, evaluacion=EXCLUDED.evaluacion, fecha=NOW()

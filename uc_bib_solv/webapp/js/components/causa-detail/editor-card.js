@@ -9,24 +9,27 @@ export function createEditorCard() {
       createElement("div", { className: "detail-card__subtitle", text: "Gestiona altas nuevas o reutilizacion de contratos y causas sin romper el flujo industrial actual." }),
     ] }),
     createElement("div", { className: "detail-card__body", children: [
-      createElement("div", { className: "detail-mode-selector", attrs: { id: "cd-editor-mode-wrap" } }),
-      createElement("div", { className: "detail-editor-help", attrs: { id: "cd-editor-help" } }),
-      createElement("div", { className: "detail-link-actions", attrs: { id: "cd-link-actions" }, children: [
-        createElement("div", { attrs: { id: "cd-link-summary" } }),
-        createElement("div", { className: "detail-link-actions__footer", children: [
-          createElement("button", { className: "btn btn-primary", text: "Buscar nodo existente", attrs: { type: "button", id: "cd-link-search" } }),
-          createElement("button", { className: "btn btn-secondary", text: "Limpiar seleccion", attrs: { type: "button", id: "cd-link-clear" } }),
+      createElement("div", { className: "detail-mode-selector", attrs: { id: "cd-editor-mode-wrap", role: "tablist", "aria-label": "Modo del editor de causa", "aria-orientation": "horizontal" } }),
+      createElement("div", { className: "detail-editor-mode-panel", attrs: { id: "cd-editor-mode-panel", role: "tabpanel", "aria-live": "polite" }, children: [
+        createElement("div", { className: "detail-editor-help", attrs: { id: "cd-editor-help" } }),
+        createElement("div", { className: "detail-link-actions", attrs: { id: "cd-link-actions" }, children: [
+          createElement("div", { attrs: { id: "cd-link-summary" } }),
+          createElement("div", { className: "detail-link-actions__footer", children: [
+            createElement("button", { className: "btn btn-primary", text: "Buscar nodo existente", attrs: { type: "button", id: "cd-link-search" } }),
+            createElement("button", { className: "btn btn-secondary", text: "Limpiar seleccion", attrs: { type: "button", id: "cd-link-clear" } }),
+          ] }),
         ] }),
-      ] }),
-      createElement("div", { className: "detail-editor-fields", attrs: { id: "cd-editor-fields" }, children: [
-        buildDetailField("Nombre", createElement("input", { className: "input-control control-input", attrs: { id: "cd-cause-name", type: "text", placeholder: "Nombre de la causa" } }), "name"),
-        buildDetailField("Tipo", createElement("select", { className: "input-control control-input", attrs: { id: "cd-cause-type" } }), "type"),
-        buildDetailField("Categoria", createElement("input", { className: "input-control control-input", attrs: { id: "cd-cause-category", type: "text", placeholder: "Categoria" } }), "category"),
-        buildDetailField("Descripcion", createElement("textarea", { className: "input-control control-textarea", attrs: { id: "cd-cause-description", rows: "5", placeholder: "Descripcion de la causa" } }), "description"),
+        createElement("div", { className: "detail-editor-fields", attrs: { id: "cd-editor-fields" }, children: [
+          buildDetailField("Nombre", createElement("input", { className: "input-control control-input", attrs: { id: "cd-cause-name", type: "text", placeholder: "Nombre de la causa" } }), "name"),
+          buildDetailField("Tipo", createElement("select", { className: "input-control control-input", attrs: { id: "cd-cause-type" } }), "type"),
+          buildDetailField("Categoria", createElement("input", { className: "input-control control-input", attrs: { id: "cd-cause-category", type: "text", placeholder: "Categoria" } }), "category"),
+          buildDetailField("Descripcion", createElement("textarea", { className: "input-control control-textarea", attrs: { id: "cd-cause-description", rows: "5", placeholder: "Descripcion de la causa" } }), "description"),
+        ] }),
       ] }),
     ] }),
     createElement("div", { className: "detail-card__footer", children: [
       createElement("button", { className: "btn btn-primary", text: "Guardar causa", attrs: { type: "button", id: "cd-cause-save" } }),
+      createElement("p", { className: "detail-inline-feedback detail-inline-feedback--success", text: "", attrs: { id: "cd-cause-creation-feedback", role: "status", "aria-live": "polite", hidden: "true" } }),
       createElement("button", { className: "btn btn-secondary", text: "Cancelar", attrs: { type: "button", id: "cd-cause-cancel" } }),
       createElement("button", { className: "btn btn-secondary", text: "Salir", attrs: { type: "button", id: "cd-cause-exit" } }),
     ] }),

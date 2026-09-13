@@ -53,6 +53,12 @@
   display: flex;
 }
 
+/* RCA delete confirmation is portalled to body so it can cover the complete
+   viewport without changing the stacking order of unrelated modals. */
+.modal-overlay[data-modal-kind="rca-delete"] {
+  z-index: 1100;
+}
+
 .modal-card {
   width: min(640px, 100%);
   border: 1px solid rgba(203, 213, 225, 0.9);

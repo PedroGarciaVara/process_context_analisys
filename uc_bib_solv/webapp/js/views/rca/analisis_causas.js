@@ -1,4 +1,4 @@
-import { createAnalysis, fetchAnalysis, listAnalysisTemplates, updateAnalysis } from "../../api/analysis.js";
+import { createAnalysis, fetchAnalysis, listAnalysisTemplates, saveAnalysisResult, updateAnalysis } from "../../api/analysis.js";
 import { getContractScopes, getMachines } from "../../core/operational.js";
 import { createElement, escapeHtml } from "../../core/utils.js";
 import { createTreePageShell } from "../../components/tree-shell.js";
@@ -19,7 +19,7 @@ function today() {
 
 function buildHero() {
   return `
-    <section class="space-y-sm mb-xl">
+    <section class="michelin-page-hero michelin-page-hero--blue space-y-sm mb-xl">
       <span class="font-label-md text-label-md text-primary tracking-widest uppercase">Espacio de trabajo de investigacion</span>
       <div class="flex items-end justify-between gap-lg flex-wrap">
         <div>
@@ -68,6 +68,14 @@ function buildWorkspacePanel() {
       <p id="analysis-workspace-status" class="text-[12px] text-on-surface-variant mt-sm">Cargando analisis...</p>
     </div>
     <div class="p-lg space-y-lg">
+      <nav class="analysis-stepper" aria-label="Ciclo de investigación">
+        <ol class="analysis-stepper__list">
+          ${["Definir", "Medir", "Analizar", "Validar", "Controlar"].map((step, index) => `<li class="analysis-stepper__step${index === 0 ? " is-active" : ""}" data-step-index="${index}"><span class="analysis-stepper__index">${index + 1}</span><span>${step}</span></li>`).join("")}
+        </ol>
+        <p id="analysis-stepper-current" class="analysis-stepper__current" aria-live="polite">Fase actual: Definir</p>
+        <p id="analysis-stepper-next" class="analysis-stepper__next">Siguiente acción: selecciona una hipótesis y documenta el indicio.</p>
+        <p class="text-[12px] text-on-surface-variant">Guía de trabajo: cada paso registra información aportada por el equipo; no se automatizan cálculos ni decisiones.</p>
+      </nav>
       <div id="analysis-template-differences" class="p-md bg-surface-container-low rounded-lg border border-outline-variant text-[12px]" aria-live="polite">Comparando plantilla actual por IDs...</div>
       <div class="space-y-sm">
         <h3 class="font-label-md text-label-md text-primary uppercase">Apertura</h3>
@@ -81,14 +89,125 @@ function buildWorkspacePanel() {
         <button id="analysis-close-button" type="button" class="px-md py-sm border border-primary text-primary rounded-lg">Guardar conclusion y cerrar</button>
         <button id="analysis-reopen-button" type="button" class="hidden px-md py-sm border border-primary text-primary rounded-lg">Reabrir analisis</button>
       </div>
+      <section class="analysis-scientific-workspace border-t border-outline-variant pt-lg" aria-labelledby="analysis-scientific-title">
+        <p class="font-label-md text-label-md text-primary uppercase tracking-widest">Ficha de hipótesis</p>
+        <h3 id="analysis-scientific-title" class="font-headline-md text-headline-md text-primary mt-xs">Cadena científica</h3>
+        <p class="text-[12px] text-on-surface-variant mt-sm">Selecciona una hipótesis en el árbol para documentar su predicción, medición y decisión.</p>
+        <input id="analysis-scientific-hypothesis-id" type="hidden" name="hypothesis_id" value="">
+        <div class="detail-scientific-grid mt-md">
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Predicción</span><textarea id="analysis-prediction" name="prediccion" rows="2" placeholder="Qué debería observarse…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></textarea></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Criterio de validación</span><textarea id="analysis-criterion" name="criterio_validacion" rows="2" placeholder="Qué confirma o rechaza la hipótesis…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></textarea></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Métrica</span><input id="analysis-metric" name="metrica" type="text" placeholder="Métrica…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Unidad</span><input id="analysis-unit" name="unidad" type="text" placeholder="Unidad…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Fuente de datos</span><input id="analysis-source" name="fuente_datos" type="text" placeholder="Fuente…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Periodo</span><input id="analysis-period" name="periodo" type="text" placeholder="Periodo…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Método / datos</span><textarea id="analysis-method" name="metodo" rows="2" placeholder="Método de observación y datos…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></textarea></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Cálculo</span><textarea id="analysis-calculation" name="calculo" rows="2" placeholder="Fórmula y resultado aportado; no se calcula automáticamente…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></textarea></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Umbral</span><input id="analysis-threshold" name="umbral" type="text" placeholder="Umbral o rango…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Evidencia</span><textarea id="analysis-evidence" name="evidencia" rows="3" placeholder="Referencia o evidencia observada…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></textarea></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Decisión</span><select id="analysis-decision" name="decision" class="w-full border border-outline rounded-lg p-sm"><option value="pendiente">Pendiente</option><option value="confirmada">Confirmada</option><option value="rechazada">Rechazada</option><option value="inconclusa">Inconclusa</option></select></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Justificación</span><textarea id="analysis-justification" name="justificacion" rows="2" placeholder="Obligatoria si la decisión es inconclusa…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></textarea></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Acción / control</span><textarea id="analysis-control-action" name="accion_control" rows="2" placeholder="Acción posterior a la decisión…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></textarea></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Responsable</span><input id="analysis-control-owner" name="responsable_accion" type="text" placeholder="Persona o rol…" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></label>
+          <label class="block space-y-xs"><span class="text-[12px] text-secondary">Fecha de control</span><input id="analysis-control-date" name="fecha_control" type="date" autocomplete="off" class="w-full border border-outline rounded-lg p-sm"></label>
+        </div>
+        <p id="analysis-scientific-help" class="text-[12px] text-on-surface-variant mt-sm" aria-live="polite">Los campos antiguos se muestran aunque estén vacíos para guiar su completado.</p>
+        <button id="analysis-save-scientific" type="button" class="mt-md px-md py-sm border border-primary text-primary rounded-lg">Guardar ficha de hipótesis</button>
+      </section>
       <div id="analysis-workspace-alert" class="hidden rounded-lg border px-md py-sm text-[12px]"></div>
     </div>
   `;
 }
 
+function updateAnalysisStepper(root, analysis) {
+  const result = Array.isArray(analysis?.results) ? analysis.results[0] : null;
+  const evidence = String(result?.evidencia || result?.evidence || "").trim();
+  const decision = String(result?.decision || result?.evaluation || result?.evaluacion || "pendiente").toLowerCase();
+  const indication = String(analysis?.indicio_apertura || analysis?.descripcion_apertura || "").trim();
+  const control = String(result?.accion_control || result?.control_action || "").trim();
+  let current = 0;
+  let next = "Selecciona una hipótesis y documenta el indicio.";
+  if (indication) { current = 1; next = "Registra la medición y la fuente de datos."; }
+  if (result) { current = evidence ? 3 : 2; next = evidence ? "Revisa el criterio y registra una decisión explícita." : "Añade evidencia observable antes de decidir."; }
+  if (result && decision !== "pendiente") { current = 4; next = control ? "Mantén el control documentado y revisa sus resultados." : "Define la acción o control posterior a la decisión."; }
+  if (analysis?.estado === "cerrado") next = "Análisis cerrado: reabre explícitamente para editar o documentar el control.";
+  const labels = ["Definir", "Medir", "Analizar", "Validar", "Controlar"];
+  root.querySelectorAll(".analysis-stepper__step").forEach((step) => {
+    const index = Number(step.dataset.stepIndex);
+    const active = index === current;
+    step.classList.toggle("is-active", active);
+    step.classList.toggle("is-complete", index < current);
+    if (active) step.setAttribute("aria-current", "step"); else step.removeAttribute("aria-current");
+  });
+  const currentNode = root.querySelector("#analysis-stepper-current");
+  const nextNode = root.querySelector("#analysis-stepper-next");
+  if (currentNode) currentNode.textContent = `Fase actual: ${labels[current]}`;
+  if (nextNode) nextNode.textContent = `Siguiente acción: ${next}`;
+}
+
 function setAlert(node, message, tone = "success") {
   node.textContent = message;
   node.className = `rounded-lg border px-md py-sm text-[12px] ${tone === "success" ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"}`;
+  node.setAttribute("role", tone === "success" ? "status" : "alert");
+  node.setAttribute("aria-live", "polite");
+}
+
+function classifyAnalysisError(error) {
+  const status = Number(error?.status || 0);
+  if (status === 403) return "forbidden";
+  if (status === 0 || (typeof navigator !== "undefined" && navigator.onLine === false)) return "offline";
+  return "error";
+}
+
+function errorSummary(error, fallback = "No se pudo cargar el análisis.") {
+  const code = String(error?.code || error?.data?.code || "RCA_ANALYSIS_FAILED");
+  const correlation = String(error?.correlation_id || error?.data?.correlation_id || "no disponible");
+  return `${error?.message || fallback} Código: ${code}. Correlación: ${correlation}.`;
+}
+
+const scientificFieldIds = {
+  hypothesis_id: "analysis-scientific-hypothesis-id",
+  prediccion: "analysis-prediction",
+  criterio_validacion: "analysis-criterion",
+  metrica: "analysis-metric",
+  unidad: "analysis-unit",
+  fuente_datos: "analysis-source",
+  periodo: "analysis-period",
+  metodo: "analysis-method",
+  calculo: "analysis-calculation",
+  umbral: "analysis-threshold",
+  evidencia: "analysis-evidence",
+  decision: "analysis-decision",
+  justificacion: "analysis-justification",
+  accion_control: "analysis-control-action",
+  responsable_accion: "analysis-control-owner",
+  fecha_control: "analysis-control-date",
+};
+
+function readScientificForm(root) {
+  return Object.fromEntries(Object.entries(scientificFieldIds).map(([key, id]) => [key, root.querySelector(`#${id}`)?.value || ""]));
+}
+
+function fillScientificForm(root, result = {}) {
+  Object.entries(scientificFieldIds).forEach(([key, id]) => {
+    const control = root.querySelector(`#${id}`);
+    const legacyKey = ({ evidencia: "evidence", justificacion: "conclusion", decision: "evaluation" })[key];
+    if (control) control.value = result[key] || (legacyKey ? result[legacyKey] : "") || result[`legacy_${key}`] || "";
+  });
+  const decision = root.querySelector("#analysis-decision");
+  if (decision && (result.evaluation || result.evaluacion)) decision.value = result.evaluation || result.evaluacion;
+}
+
+function validateScientificForm(values) {
+  const decision = String(values.decision || "pendiente").toLowerCase();
+  if (["confirmada", "rechazada", "descartada"].includes(decision)) {
+    if (!String(values.criterio_validacion || "").trim()) {
+      return "Una decisión confirmada o rechazada necesita criterio o umbral.";
+    }
+    if (!String(values.evidencia || "").trim()) return "Una decisión confirmada o rechazada necesita evidencia.";
+  }
+  if (decision === "inconclusa" && !String(values.justificacion || "").trim()) return "Una decisión inconclusa necesita justificación.";
+  return "";
 }
 
 async function loadTemplates(select, processId, allowedContractIds = null) {
@@ -184,24 +303,54 @@ export function renderAnalisisCausasShell(state) {
   mainSlot.appendChild(mainWrap);
   const workspace = createElement("aside", { className: "analysis-workspace-panel" });
   workspace.innerHTML = buildWorkspacePanel();
-  rightSlot.append(treePage.detail, workspace);
+  // The hypothesis result is edited directly on the selected hypothesis card.
+  // The former duplicate scientific-chain form exposed a second, conflicting
+  // persistence model, so keep the workspace focused on opening/closing work.
+  workspace.querySelector(".analysis-scientific-workspace")?.remove();
+  // Keep the workflow state at the top of the active inspector; node details
+  // remain available immediately after it without burying the stepper.
+  rightSlot.append(workspace, treePage.detail);
 
   return {
     shellMode: "full",
     main: root,
+    beforeUnmount() {
+      treePage.beforeUnmount?.();
+    },
     afterMount(mountRoot, currentState, eventBus) {
       document.title = "Industrial RCA - Analisis causas";
       bindHomeShell(mountRoot);
       if (typeof treePage.afterMount === "function") treePage.afterMount(mountRoot, currentState, eventBus);
       const alertNode = mountRoot.querySelector("#analysis-workspace-alert");
       const statusNode = mountRoot.querySelector("#analysis-workspace-status");
-      const loadAnalysis = async () => {
-        const response = await fetchAnalysis(route.analysisId);
-        const analysis = response.data;
-        mountRoot.querySelector("#analysis-open-date").value = String(analysis.fecha_apertura || analysis.fecha_inicializacion || "").slice(0, 10);
-        mountRoot.querySelector("#analysis-indication").value = analysis.indicio_apertura || analysis.descripcion_apertura || "";
-        mountRoot.querySelector("#analysis-final-conclusion").value = analysis.conclusion_final || "";
-        statusNode.textContent = `Analisis #${analysis.id} · ${analysis.estado} · ${analysis.estado === "cerrado" ? "solo lectura" : "editable"} · ${analysis.results?.length || 0} resultados trazados`;
+      const retryNode = createElement("button", { className: "px-md py-sm border border-outline-variant rounded-lg text-primary", text: "Reintentar carga" });
+      retryNode.type = "button";
+      retryNode.hidden = true;
+      retryNode.setAttribute("aria-label", "Reintentar carga del análisis");
+      statusNode?.insertAdjacentElement("afterend", retryNode);
+      let analysisReadOnly = false;
+      let analysisFormDirty = false;
+      const captureForm = () => Object.fromEntries(Array.from(mountRoot.querySelectorAll(".analysis-workspace-panel input, .analysis-workspace-panel textarea, .analysis-workspace-panel select")).map((node) => [node.id, node.value]));
+      const restoreForm = (snapshot) => Object.entries(snapshot || {}).forEach(([id, value]) => { const node = mountRoot.querySelector(`#${id}`); if (node) node.value = value; });
+      const loadAnalysis = async ({ preserveDraft = analysisFormDirty } = {}) => {
+        const draft = preserveDraft ? captureForm() : null;
+        statusNode.textContent = "Cargando análisis…";
+        statusNode.setAttribute("role", "status");
+        statusNode.setAttribute("aria-live", "polite");
+        retryNode.hidden = true;
+        try {
+          const response = await fetchAnalysis(route.analysisId);
+          const analysis = response.data;
+          updateAnalysisStepper(mountRoot, analysis);
+          if (draft) restoreForm(draft);
+          else {
+            mountRoot.querySelector("#analysis-open-date").value = String(analysis.fecha_apertura || analysis.fecha_inicializacion || "").slice(0, 10);
+            mountRoot.querySelector("#analysis-indication").value = analysis.indicio_apertura || analysis.descripcion_apertura || "";
+            mountRoot.querySelector("#analysis-final-conclusion").value = analysis.conclusion_final || "";
+          }
+        const resultCount = analysis.results?.length || 0;
+        statusNode.textContent = `Analisis #${analysis.id} · ${analysis.estado} · ${analysis.estado === "cerrado" ? "cerrado" : "editable"} · ${resultCount} resultados trazados${resultCount ? "" : " · Aún no hay resultados registrados."}`;
+        statusNode.dataset.state = (analysis.results || []).length ? "ready" : "empty";
         const comparison = analysis.template_comparison || {};
         const differenceNode = mountRoot.querySelector("#analysis-template-differences");
         if (differenceNode) {
@@ -211,6 +360,7 @@ export function renderAnalisisCausasShell(state) {
           differenceNode.dataset.missingCount = String(missingCount);
         }
         const readOnly = analysis.estado === "cerrado";
+        analysisReadOnly = readOnly;
         ["#analysis-open-date", "#analysis-indication", "#analysis-final-conclusion", "#analysis-save-opening"].forEach((selector) => {
           const node = mountRoot.querySelector(selector);
           if (node) node.disabled = readOnly;
@@ -219,13 +369,81 @@ export function renderAnalisisCausasShell(state) {
         const reopenButton = mountRoot.querySelector("#analysis-reopen-button");
         if (closeButton) closeButton.disabled = readOnly;
         if (reopenButton) reopenButton.classList.toggle("hidden", !readOnly);
+        Object.values(scientificFieldIds).forEach((id) => {
+          const node = mountRoot.querySelector(`#${id}`);
+          if (node) node.disabled = readOnly;
+        });
+        const firstResult = Array.isArray(analysis.results) ? analysis.results[0] : null;
+        const scientificHypothesis = mountRoot.querySelector("#analysis-scientific-hypothesis-id");
+        if (firstResult && scientificHypothesis && !scientificHypothesis.value && !draft) fillScientificForm(mountRoot, firstResult);
+        if (!draft) analysisFormDirty = false;
+        } catch (error) {
+          if (draft) restoreForm(draft);
+          const kind = classifyAnalysisError(error);
+          const message = kind === "forbidden"
+            ? "No tienes permisos para consultar este análisis. Solicita acceso al responsable."
+            : kind === "offline"
+              ? "No hay conexión con el servicio. El formulario queda intacto; reintenta cuando vuelva la red."
+              : errorSummary(error);
+          statusNode.textContent = message;
+          statusNode.dataset.state = kind;
+          statusNode.setAttribute("role", "alert");
+          statusNode.setAttribute("aria-live", "polite");
+          retryNode.hidden = false;
+          throw error;
+        }
       };
-      loadAnalysis().catch((error) => setAlert(alertNode, error.message, "error"));
+      retryNode.addEventListener("click", () => loadAnalysis({ preserveDraft: true }).catch(() => null));
+      loadAnalysis().catch((error) => setAlert(alertNode, errorSummary(error), "error"));
+      mountRoot.addEventListener("input", (event) => {
+        if (event.target.closest(".analysis-workspace-panel") && event.target.id !== "analysis-scientific-hypothesis-id") analysisFormDirty = true;
+      });
+      mountRoot.addEventListener("click", (event) => {
+        const hypothesisNode = event.target.closest("[data-hypothesis-id]");
+        if (!hypothesisNode || !mountRoot.contains(hypothesisNode)) return;
+        const id = hypothesisNode.getAttribute("data-hypothesis-id");
+        const field = mountRoot.querySelector("#analysis-scientific-hypothesis-id");
+        if (field) field.value = id || "";
+        const help = mountRoot.querySelector("#analysis-scientific-help");
+        if (help) help.textContent = id ? `Hipótesis #${id} seleccionada. Documenta la cadena y guarda la ficha.` : "Selecciona una hipótesis en el árbol.";
+      });
+      mountRoot.querySelector("#analysis-save-scientific")?.addEventListener("click", async () => {
+        if (analysisReadOnly) {
+          setAlert(alertNode, "El análisis está cerrado y no admite cambios. Reábrelo explícitamente para editar.", "error");
+          return;
+        }
+        const values = readScientificForm(mountRoot);
+        if (!values.hypothesis_id) {
+          setAlert(alertNode, "Selecciona una hipótesis en el árbol antes de guardar su ficha.", "error");
+          return;
+        }
+        const validationMessage = validateScientificForm(values);
+        if (validationMessage) {
+          setAlert(alertNode, validationMessage, "error");
+          return;
+        }
+        try {
+          await saveAnalysisResult(route.analysisId, {
+            element_type: "hipotesis",
+            hypothesis_id: Number(values.hypothesis_id),
+            evaluation: values.decision,
+            evidence: values.evidencia,
+            conclusion: values.justificacion || values.decision,
+            ...values,
+          });
+          analysisFormDirty = false;
+          setAlert(alertNode, "Ficha científica guardada.");
+          if (eventBus) await eventBus.emit("analysis:refresh");
+        } catch (error) {
+          // Keep every input intact so a transient API error can be retried.
+          setAlert(alertNode, errorSummary(error, "No se pudo guardar la ficha científica."), "error");
+        }
+      });
       mountRoot.querySelector("#analysis-save-opening").addEventListener("click", async () => {
         try {
           await updateAnalysis(route.analysisId, { opening_date: mountRoot.querySelector("#analysis-open-date").value, indication: mountRoot.querySelector("#analysis-indication").value });
           setAlert(alertNode, "Apertura guardada.");
-        } catch (error) { setAlert(alertNode, error.message, "error"); }
+        } catch (error) { setAlert(alertNode, errorSummary(error, "No se pudo guardar la apertura."), "error"); }
       });
       mountRoot.querySelector("#analysis-close-button").addEventListener("click", async () => {
         try {
@@ -233,7 +451,7 @@ export function renderAnalisisCausasShell(state) {
           await loadAnalysis();
           if (eventBus) await eventBus.emit("analysis:refresh");
           setAlert(alertNode, "Analisis cerrado y conclusion guardada.");
-        } catch (error) { setAlert(alertNode, error.message, "error"); }
+        } catch (error) { setAlert(alertNode, errorSummary(error, "No se pudo cerrar el análisis."), "error"); }
       });
       mountRoot.querySelector("#analysis-reopen-button").addEventListener("click", async () => {
         try {
@@ -241,7 +459,7 @@ export function renderAnalisisCausasShell(state) {
           await loadAnalysis();
           if (eventBus) await eventBus.emit("analysis:refresh");
           setAlert(alertNode, "Analisis reabierto.");
-        } catch (error) { setAlert(alertNode, error.message, "error"); }
+        } catch (error) { setAlert(alertNode, errorSummary(error, "No se pudo reabrir el análisis."), "error"); }
       });
     },
   };

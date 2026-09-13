@@ -41,7 +41,7 @@ function buildTreeHero(state) {
   const objective = displayContext.objective || contract?.objetivo || "";
 
   return `
-    <section class="space-y-sm mb-xl">
+    <section class="michelin-page-hero michelin-page-hero--blue space-y-sm mb-xl">
       <span class="font-label-md text-label-md text-primary tracking-widest uppercase">Espacio de trabajo del arbol causal</span>
       <div class="flex items-end justify-between gap-lg flex-wrap">
         <div>
@@ -106,8 +106,10 @@ function buildTreeSidebarControls(state) {
     const selected = objective === item ? " selected" : "";
     return `<option value="${escapeHtml(item)}"${selected}>${escapeHtml(item)}</option>`;
   }).join("");
+  const selectedProcessName = processes.find((item) => String(item.id) === String(processId))?.name || "Todos los procesos";
+  const selectedObjective = objective || "Todos los objetivos";
   return `
-    <section class="mb-xl px-sm space-y-md">
+    <section class="tree-scope-toolbar mb-xl space-y-md">
       <div class="rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-sm">
         <div class="flex items-center gap-sm mb-sm">
           <span class="material-symbols-outlined text-primary">account_tree</span>
@@ -118,21 +120,28 @@ function buildTreeSidebarControls(state) {
           </div>
         <label class="block space-y-xs mb-md">
           <span class="font-label-md text-label-md text-secondary">Proceso</span>
-          <select id="arbol-v02-process-select" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
+          <select id="arbol-v02-process-select" title="${escapeHtml(selectedProcessName)}" aria-describedby="arbol-v02-process-value" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none">
             <option value="">Todos los procesos</option>
             ${processOptions}
           </select>
+          <span id="arbol-v02-process-value" class="tree-filter-value" tabindex="0">${escapeHtml(selectedProcessName)}</span>
         </label>
         <label class="block space-y-xs mb-md">
           <span class="font-label-md text-label-md text-secondary">Objetivo del contrato</span>
-          <select id="arbol-v02-objective-select" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" ${processId && scopedContracts.length ? "" : "disabled"}>
+          <select id="arbol-v02-objective-select" title="${escapeHtml(selectedObjective)}" aria-describedby="arbol-v02-objective-value" class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm focus:ring-1 focus:ring-primary outline-none" ${processId && scopedContracts.length ? "" : "disabled"}>
             <option value="">Todos los objetivos</option>
             ${objectiveOptions}
           </select>
+          <span id="arbol-v02-objective-value" class="tree-filter-value" tabindex="0">${escapeHtml(selectedObjective)}</span>
         </label>
-        <button type="button" class="w-full bg-primary text-on-primary py-sm rounded-lg font-label-md text-label-md hover:bg-primary-container transition-all" data-action="tree-add-root-v02" ${state.currentContract ? "" : "disabled"}>
-          Crear causa raiz
-        </button>
+        <div class="flex gap-sm flex-wrap">
+          <button type="button" class="flex-1 bg-primary text-on-primary py-sm rounded-lg font-label-md text-label-md hover:bg-primary-container transition-all" data-action="tree-add-root-v02" ${state.currentContract ? "" : "disabled"}>
+            Crear causa raiz
+          </button>
+          <button type="button" class="flex-1 border border-primary text-primary py-sm rounded-lg font-label-md text-label-md hover:bg-primary-container" data-action="tree-move-cause-v02" aria-label="Mover causa seleccionada…">
+            Mover causa…
+          </button>
+        </div>
       </div>
     </section>
   `;
@@ -150,20 +159,20 @@ export function renderArboles(state) {
   };
 
   const treePage = createTreePageShell("arbol", viewState);
-  const { root, mainSlot, rightSlot, sidebarTopSlot } = createHomeShell(viewState, { rightWidthClass: "w-[460px]" });
+  const { root, mainSlot, rightSlot } = createHomeShell(viewState, { rightWidthClass: "w-[460px]" });
 
   const mainWrap = createElement("div", { className: "max-w-none mx-auto space-y-xl min-w-0" });
-  mainWrap.innerHTML = buildTreeHero(viewState);
+  mainWrap.innerHTML = buildTreeHero(viewState) + buildTreeSidebarControls(viewState);
   mainWrap.appendChild(treePage.main);
   mainSlot.appendChild(mainWrap);
   rightSlot.appendChild(treePage.detail);
-  if (sidebarTopSlot) {
-    sidebarTopSlot.innerHTML = buildTreeSidebarControls(viewState);
-  }
 
   return {
     shellMode: "full",
     main: root,
+    beforeUnmount() {
+      treePage.beforeUnmount?.();
+    },
     afterMount(mountRoot, currentState, eventBus) {
       document.title = "Industrial RCA - Arbol";
       document.documentElement.classList.add("light");
@@ -177,6 +186,16 @@ export function renderArboles(state) {
       bindHomeShell(mountRoot);
       const processSelect = mountRoot.querySelector("#arbol-v02-process-select");
       const objectiveSelect = mountRoot.querySelector("#arbol-v02-objective-select");
+      const updateScopeSummaries = () => {
+        const processLabel = processSelect?.selectedOptions?.[0]?.textContent?.trim() || "Todos los procesos";
+        const objectiveLabel = objectiveSelect?.selectedOptions?.[0]?.textContent?.trim() || "Todos los objetivos";
+        const processSummary = mountRoot.querySelector("#arbol-v02-process-value");
+        const objectiveSummary = mountRoot.querySelector("#arbol-v02-objective-value");
+        if (processSelect) processSelect.title = processLabel;
+        if (objectiveSelect) objectiveSelect.title = objectiveLabel;
+        if (processSummary) processSummary.textContent = processLabel;
+        if (objectiveSummary) objectiveSummary.textContent = objectiveLabel;
+      };
       const applyContractScope = (processId, objective = "") => {
         currentState.treeObjective = objective;
         const scopedContracts = getTreeContracts(currentState, processId, objective);
@@ -203,7 +222,9 @@ export function renderArboles(state) {
         if (eventBus) {
           eventBus.emit("state:change");
         }
+        updateScopeSummaries();
       };
+      updateScopeSummaries();
       if (processSelect) {
         processSelect.addEventListener("change", () => {
           applyContractScope(processSelect.value || "", "");
@@ -221,6 +242,18 @@ export function renderArboles(state) {
             return;
           }
           window.location.hash = `#/causa_detalle?contrato_id=${encodeURIComponent(String(currentState.currentContract))}`;
+        });
+      }
+      const moveCauseBtn = mountRoot.querySelector("[data-action='tree-move-cause-v02']");
+      if (moveCauseBtn) {
+        moveCauseBtn.addEventListener("click", () => {
+          moveCauseBtn.dispatchEvent(new CustomEvent("rca:cause-move-request", {
+            bubbles: true,
+            detail: {
+              causeId: currentState.tree?.selectedNodeId || null,
+              source: "keyboard",
+            },
+          }));
         });
       }
       if (typeof treePage.afterMount === "function") {

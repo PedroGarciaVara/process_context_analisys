@@ -12,7 +12,7 @@ import {
 import { AppState, setCurrentContract, setCurrentMachine, setCurrentOperation, setCurrentProcess } from "../../core/state.js";
 import { createElement, displayName, escapeHtml, toHashRoute } from "../../core/utils.js";
 import { createMachine, deleteMachine, fetchMachineContext, updateMachine } from "../../api/operational.js";
-import { mountStructuredEditors, structuredEditorMarkup, validateJsonField } from "../../components/json-editor.js";
+import { mountStructuredEditors, readStructuredEditor, setStructuredEditorValue, structuredEditorMarkup } from "../../components/json-editor.js";
 import { MENU_ITEMS } from "../bpm/shell.js";
 import { stageDraftFromMachine, stageEditorMarkup, stagePathsMarkup } from "../../components/machine-stages.js";
 
@@ -63,8 +63,8 @@ function buildSideMenu(state) {
   return MENU_ITEMS.map((item) => {
     const active = state.route === item.route;
     return `
-      <button type="button" class="w-full flex items-center gap-md px-md py-sm ${active ? "bg-surface-container-highest text-primary" : "text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-highest dark:hover:bg-surface-variant"} transition-colors duration-150 ease-in-out font-label-md text-label-md" data-route="${escapeHtml(item.route)}" data-action="sidebar-nav">
-        <span class="material-symbols-outlined">${escapeHtml(item.icon)}</span> ${escapeHtml(item.label)}
+      <button type="button" class="michelin-nav-item w-full flex items-center gap-md px-md py-sm ${active ? "is-active bg-surface-container-highest text-primary" : "text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-highest dark:hover:bg-surface-variant"} transition-colors duration-150 ease-in-out font-label-md text-label-md" data-route="${escapeHtml(item.route)}" data-action="sidebar-nav">
+        <span class="michelin-nav-icon material-symbols-outlined">${escapeHtml(item.icon)}</span><span>${escapeHtml(item.label)}</span>
       </button>
     `;
   }).join("");
@@ -153,7 +153,7 @@ function buildRightPanel(activeMachine, state) {
   const contractLabel = catalogName(contract, activeMachine?.contractName || "—");
   const areaLabel = activeMachine?.area || activeMachine?.processName || selectedOperation?.processName || "—";
   return `
-    <aside class="w-[560px] shrink-0 border-l border-outline-variant bg-surface-container-lowest overflow-y-auto" data-shell-right>
+    <aside class="michelin-context-panel w-[560px] shrink-0 border-l border-outline-variant bg-surface-container-lowest overflow-y-auto" data-shell-right>
       <div class="p-lg border-b border-outline-variant bg-surface-container-low">
         <div class="flex justify-between items-start mb-md gap-md">
           <div>
@@ -214,10 +214,10 @@ function buildMainContent(state) {
   const selectedProcess = state.currentProcess ? findProcess(state, state.currentProcess) : null;
 
   return `
-    <header class="flex justify-between items-center px-lg h-16 w-full sticky top-0 z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline">
+    <header class="michelin-topbar flex justify-between items-center px-lg h-16 w-full sticky top-0 z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline">
       <div class="flex items-center gap-xl">
-        <span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Industrial RCA</span>
-        <nav class="hidden md:flex items-center gap-md">
+        <span class="michelin-brand font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed"><i>MI</i><span>Industrial Intelligence<small>UC BIB Solve</small></span></span>
+        <nav class="michelin-topnav hidden md:flex items-center gap-md">
           ${buildTopMenu(state)}
         </nav>
       </div>
@@ -226,9 +226,9 @@ function buildMainContent(state) {
         <button type="button" class="material-symbols-outlined text-primary cursor-pointer p-base rounded-full hover:bg-surface-container-highest" data-action="account">account_circle</button>
       </div>
     </header>
-    <div class="flex flex-1 overflow-hidden">
-      <aside class="flex flex-col h-full border-r border-outline-variant p-md bg-surface-container dark:bg-surface-container-low w-[280px] shrink-0">
-        <div class="mb-xl px-sm">
+    <div class="michelin-shell-body flex flex-1 overflow-hidden">
+      <aside class="michelin-nav-rail flex flex-col h-full border-r border-outline-variant p-md bg-surface-container dark:bg-surface-container-low w-[280px] shrink-0">
+        <div class="michelin-nav-context mb-xl px-sm">
           <div class="flex items-center gap-sm mb-base">
             <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-fixed">
               <span class="material-symbols-outlined">analytics</span>
@@ -239,21 +239,21 @@ function buildMainContent(state) {
             </div>
           </div>
         </div>
-        <nav class="flex-1 space-y-1">
+        <nav class="michelin-nav-menu flex-1 space-y-1">
           ${buildSideMenu(state)}
         </nav>
-        <div class="mt-auto border-t border-outline-variant pt-md space-y-1">
-          <button type="button" class="w-full flex items-center gap-md px-md py-sm text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest rounded-lg transition-colors" data-action="help">
-            <span class="material-symbols-outlined">help</span> Ayuda
+        <div class="michelin-rail-utility mt-auto border-t border-outline-variant pt-md space-y-1">
+          <button type="button" class="michelin-nav-item w-full flex items-center gap-md px-md py-sm text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest rounded-lg transition-colors" data-action="help">
+            <span class="michelin-nav-icon material-symbols-outlined">help</span><span>Ayuda</span>
           </button>
-          <button type="button" class="w-full flex items-center gap-md px-md py-sm text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest rounded-lg transition-colors" data-action="signout">
-            <span class="material-symbols-outlined">logout</span> Cerrar sesion
+          <button type="button" class="michelin-nav-item w-full flex items-center gap-md px-md py-sm text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest rounded-lg transition-colors" data-action="signout">
+            <span class="michelin-nav-icon material-symbols-outlined">logout</span><span>Salir</span>
           </button>
         </div>
       </aside>
-      <main class="machine-v02-main flex-1 overflow-y-auto bg-surface p-xl" data-shell-main>
+      <main class="michelin-main machine-v02-main flex-1 overflow-y-auto bg-surface p-xl" data-shell-main>
         <div class="max-w-6xl mx-auto space-y-xl">
-          <section class="space-y-sm">
+          <section class="michelin-page-hero michelin-page-hero--blue space-y-sm">
             <span class="font-label-md text-label-md text-primary tracking-widest uppercase">Espacio de maquinas</span>
             <div class="flex items-end justify-between gap-lg flex-wrap">
               <div>
@@ -262,7 +262,7 @@ function buildMainContent(state) {
                   Revisa la capa operativa de maquinas, filtra por operación BPM y proceso, y mantiene el detalle del activo visible a la derecha mientras decides el siguiente paso del RCA.
                 </p>
               </div>
-              <button type="button" class="px-lg py-md bg-primary text-on-primary rounded-lg font-label-md shadow-sm hover:opacity-90" data-action="machine-modal-new"><span class="material-symbols-outlined align-middle mr-xs">add</span>Crear nueva máquina</button>
+              <a href="#/maquinas_detalle?new=1" class="px-lg py-md bg-primary text-on-primary rounded-lg font-label-md shadow-sm hover:opacity-90"><span class="material-symbols-outlined align-middle mr-xs">add</span>Crear nueva máquina</a>
             </div>
           </section>
 
@@ -520,7 +520,11 @@ export function renderMaquinas(state, bus) {
         const machine = context.machine || {};
         const setValue = (id, value) => {
           const node = managementModal.querySelector(`#${id}`);
-          if (node && value !== null && value !== undefined) node.value = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+          if (node && value !== null && value !== undefined) {
+            const editor = node.closest("[data-json-editor]");
+            if (editor) setStructuredEditorValue(editor, value);
+            else node.value = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+          }
         };
         setValue("machine-v02-type-name", type.name || type.nombre);
         setValue("machine-v02-type-technology", type.technology_description);
@@ -683,17 +687,12 @@ export function renderMaquinas(state, bus) {
         modalDirty = true;
       });
       const parseModalJson = (id, label) => {
-        const value = managementModal?.querySelector(`#${id}`)?.value?.trim() || "";
-        if (!value) return null;
-        try {
-          const parsed = JSON.parse(value);
-          const field = ({ "machine-v02-type-capacity": "nominal_capacity", "machine-v02-type-controls": "control_systems", "machine-v02-type-limitations": "common_limitations", "machine-v02-type-characteristics": "common_technical_characteristics", "machine-v02-specific-characteristics": "specific_characteristics", "machine-v02-specific-parameters": "specific_parameters", "machine-v02-specific-ranges": "specific_operating_ranges", "machine-v02-specific-limitations": "specific_limitations", "machine-v02-specific-instructions": "specific_instructions", "machine-v02-specific-differences": "differences_from_machine_type" }[id] || id);
-          const checked = validateJsonField(field, parsed);
-          if (checked.errors.length) throw new Error(checked.errors[0].message);
-          return checked.value;
-        } catch (error) {
-          throw new Error(`${label} ${error.message}`);
-        }
+        const input = managementModal?.querySelector(`#${id}`);
+        const editor = input?.closest("[data-json-editor]");
+        if (!editor) return null;
+        const checked = readStructuredEditor(editor);
+        if (checked.errors.length) throw new Error(`${label}: ${checked.errors[0].message}`);
+        return checked.value;
       };
       managementModal?.querySelector("[data-action='machine-save']")?.addEventListener("click", async () => {
         try {

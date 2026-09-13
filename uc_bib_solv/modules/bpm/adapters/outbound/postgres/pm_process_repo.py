@@ -63,9 +63,12 @@ class ProcessRepository:
             result["transitions"] = [dict(item) for item in cur.fetchall()]
             result["canonical_relations"] = [
                 {"node_id": node["node_id"], "node_code": node["node_code"],
-                 "process_id": (node.get("properties") or {}).get("canonical_ids", {}).get("proceso_id"),
-                 "contract_id": (node.get("properties") or {}).get("canonical_ids", {}).get("contrato_id"),
-                 "machine_ids": (node.get("properties") or {}).get("canonical_ids", {}).get("maquina_ids", [])}
+                 "process_id": ((node.get("properties") or {}).get("canonical_ids", {}).get("proceso_id")
+                                or (node.get("properties") or {}).get("canonical_ids", {}).get("process_id")),
+                 "contract_id": ((node.get("properties") or {}).get("canonical_ids", {}).get("contrato_id")
+                                 or (node.get("properties") or {}).get("canonical_ids", {}).get("contract_id")),
+                 "machine_ids": ((node.get("properties") or {}).get("canonical_ids", {}).get("maquina_ids")
+                                 or (node.get("properties") or {}).get("canonical_ids", {}).get("machine_ids", []))}
                 for node in result["nodes"] if node.get("node_type") == "operation"
             ]
             return result

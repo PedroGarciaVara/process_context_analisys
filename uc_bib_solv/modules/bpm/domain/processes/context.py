@@ -118,6 +118,7 @@ class ContextDetail:
     data: dict[str, Any]
     source: dict[str, Any]
     provenance: dict[str, Any]
+    extensions: dict[str, Any] | None = None
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any], owner_id: str):
@@ -129,10 +130,12 @@ class ContextDetail:
         values = {key: payload.get(key, {}) for key in ("data", "source", "provenance")}
         if any(not isinstance(value, dict) for value in values.values()):
             raise ProcessModelingError("data, source y provenance deben ser objetos JSON", "invalid_context_payload")
-        return cls(context_type, _text(payload.get("context_id", owner_id), "context_id"), _text(payload.get("family", "general"), "family"), _text(payload.get("schema_version", "1.0"), "schema_version"), values["data"], values["source"], values["provenance"])
+        canonical_keys = {"context_type", "context_id", "family", "schema_version", "data", "source", "provenance"}
+        extensions = {key: value for key, value in payload.items() if key not in canonical_keys}
+        return cls(context_type, _text(payload.get("context_id", owner_id), "context_id"), _text(payload.get("family", "general"), "family"), _text(payload.get("schema_version", "1.0"), "schema_version"), values["data"], values["source"], values["provenance"], extensions)
 
     def to_dict(self):
-        return {"context_type": self.context_type, "context_id": self.context_id, "family": self.family, "schema_version": self.schema_version, "data": self.data, "source": self.source, "provenance": self.provenance}
+        return {**(self.extensions or {}), "context_type": self.context_type, "context_id": self.context_id, "family": self.family, "schema_version": self.schema_version, "data": self.data, "source": self.source, "provenance": self.provenance}
 
 
 @dataclass(frozen=True)

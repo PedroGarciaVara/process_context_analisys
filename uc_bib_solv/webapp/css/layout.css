@@ -7,6 +7,86 @@
     linear-gradient(180deg, #faf9fd 0%, #eef2f7 100%);
 }
 
+/* RCA workspace shell: keep the work surface discoverable on narrow screens. */
+body:is([data-route="arboles"], [data-route="analisis_causas"]) {
+  overflow-x: hidden;
+}
+
+body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-shell-body {
+  min-width: 0;
+}
+
+body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-main,
+body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-context-panel {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-shell-body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: visible !important;
+  }
+
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-nav-rail {
+    grid-row: 1;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0;
+    padding: 6px 8px !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--michelin-line) !important;
+  }
+
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-nav-context,
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-rail-utility {
+    display: none !important;
+  }
+
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-nav-menu {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 6px;
+    min-height: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-nav-item {
+    flex: 0 0 auto;
+    min-width: 64px;
+    min-height: 48px;
+    padding: 6px 8px !important;
+  }
+
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-main {
+    grid-row: 2;
+    width: 100%;
+    padding: 14px 12px 24px !important;
+    overflow: visible !important;
+  }
+
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .michelin-context-panel {
+    grid-row: 3;
+    width: 100% !important;
+    max-height: min(52vh, 560px);
+    border-top: 1px solid var(--michelin-line) !important;
+    border-left: 0 !important;
+    overflow: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .acv2-tree-stage { min-width: 700px; }
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .acv2-tree-card,
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .acv2-tree-node-card-shell-inner { width: 280px; min-width: 280px; max-width: 280px; }
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .acv2-tree-card-title,
+  body:is([data-route="arboles"], [data-route="analisis_causas"]) .acv2-tree-card-desc { overflow-wrap: anywhere; white-space: normal; }
+}
+
 .app-navbar-wrap {
   grid-column: 1 / -1;
   padding: 0;

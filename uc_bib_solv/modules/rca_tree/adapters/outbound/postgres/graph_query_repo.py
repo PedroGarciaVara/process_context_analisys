@@ -78,6 +78,7 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
                 child.status,
                 child_contract.id AS child_contract_id,
                 child_cause.id AS child_cause_id,
+                child_cause.version AS child_cause_version,
                 child_hypothesis.id AS child_hypothesis_id,
                 child_hypothesis.causa_id AS child_hypothesis_cause_id,
                 child_hypothesis.descripcion AS child_hypothesis_description,
@@ -154,6 +155,8 @@ def _structural_projection(contract_node_id: int, contract_id: int) -> dict[str,
             "relationship_type": row["relationship_type"],
             "metadata": metadata,
         }
+        if node_type == "CAUSE":
+            nodes_by_graph_id[graph_child_id]["version"] = row.get("child_cause_version")
         if node_type == "HYPOTHESIS":
             nodes_by_graph_id[graph_child_id].update(
                 {
