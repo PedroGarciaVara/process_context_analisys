@@ -284,6 +284,86 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_initial_hypothesis_per_cause ON hipotesis(c
 CREATE INDEX IF NOT EXISTS idx_machine_parent ON maquina(parent_maquina_id);
 CREATE INDEX IF NOT EXISTS idx_machine_type ON maquina(maquinas_tipo_id);
 
+-- RCA additive persistence (RCA-UI-ARBOLES-ANALISIS / T01).  These fields
+-- are deliberately nullable or defaulted so legacy rows and payloads remain
+-- readable.  `version` is RCA-cause concurrency only; it is not BPM
+-- process/contract/investigation versioning.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+ALTER TABLE IF EXISTS causa
+    ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 1;
+
+ALTER TABLE IF EXISTS hipotesis
+    ADD COLUMN IF NOT EXISTS prediccion TEXT,
+    ADD COLUMN IF NOT EXISTS metrica TEXT,
+    ADD COLUMN IF NOT EXISTS unidad TEXT,
+    ADD COLUMN IF NOT EXISTS fuente_datos TEXT,
+    ADD COLUMN IF NOT EXISTS metodo TEXT,
+    ADD COLUMN IF NOT EXISTS periodo TEXT,
+    ADD COLUMN IF NOT EXISTS calculo TEXT,
+    ADD COLUMN IF NOT EXISTS umbral TEXT;
+
+ALTER TABLE IF EXISTS analisis_resultado
+    ADD COLUMN IF NOT EXISTS decision TEXT,
+    ADD COLUMN IF NOT EXISTS justificacion_decision TEXT,
+    ADD COLUMN IF NOT EXISTS accion_control TEXT,
+    ADD COLUMN IF NOT EXISTS responsable_accion TEXT,
+    ADD COLUMN IF NOT EXISTS fecha_control DATE;
+
+DO $$
+BEGIN
+    ALTER TABLE hipotesis DROP CONSTRAINT IF EXISTS hipotesis_estado_check;
+    ALTER TABLE hipotesis ADD CONSTRAINT hipotesis_estado_check CHECK (
+        estado IN ('pendiente', 'validada', 'rechazada', 'confirmada',
+                   'descartada', 'inconclusa')
+    );
+EXCEPTION WHEN undefined_table THEN NULL;
+END $$;
+
+-- Audit rows are retained independently of mutable scientific payloads.  SET
+-- NULL on deletion preserves the append-only event without blocking legacy
+-- delete flows; historical consumers must account for deleted FK targets.
+CREATE TABLE IF NOT EXISTS causa_movimiento_auditoria (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    action TEXT NOT NULL DEFAULT 'CAUSE_REPARENTED',
+    actor_id TEXT,
+    contract_id INT REFERENCES contrato(id) ON DELETE SET NULL,
+    cause_id INT REFERENCES causa(id) ON DELETE SET NULL,
+    previous_parent_id INT REFERENCES causa(id) ON DELETE SET NULL,
+    new_parent_id INT REFERENCES causa(id) ON DELETE SET NULL,
+    expected_version BIGINT,
+    resulting_version BIGINT,
+    reason TEXT NOT NULL CHECK (btrim(reason) <> ''),
+    correlation_id TEXT,
+    resultado TEXT NOT NULL DEFAULT 'succeeded'
+        CHECK (resultado IN ('succeeded', 'failed')),
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT causa_movimiento_action_chk CHECK (action = 'CAUSE_REPARENTED')
+);
+
+CREATE INDEX IF NOT EXISTS idx_causa_mov_audit_cause
+    ON causa_movimiento_auditoria(cause_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_causa_mov_audit_contract
+    ON causa_movimiento_auditoria(contract_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_causa_mov_audit_correlation
+    ON causa_movimiento_auditoria(correlation_id)
+    WHERE correlation_id IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION prevent_causa_movimiento_auditoria_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RAISE EXCEPTION 'causa_movimiento_auditoria es append-only';
+END;
+$$;
+
+DROP TRIGGER IF EXISTS causa_movimiento_auditoria_immutable_trg
+    ON causa_movimiento_auditoria;
+CREATE TRIGGER causa_movimiento_auditoria_immutable_trg
+    BEFORE UPDATE OR DELETE ON causa_movimiento_auditoria
+    FOR EACH ROW EXECUTE FUNCTION prevent_causa_movimiento_auditoria_mutation();
+
 -- Process modeling bounded context (requerimiento_10). These tables are
 -- intentionally independent from the legacy causal graph tables above.
 -- Existing installations require a controlled migration that renames
@@ -453,6 +533,19 @@ CREATE INDEX IF NOT EXISTS idx_pm_node_code ON pm_process_node(node_code);
 CREATE INDEX IF NOT EXISTS idx_pm_node_child_process ON pm_process_node(child_process_id);
 CREATE INDEX IF NOT EXISTS idx_pm_transition_source ON pm_process_transition(source_node_id);
 CREATE INDEX IF NOT EXISTS idx_pm_transition_target ON pm_process_transition(target_node_id);
+
+-- Shared visual projection for BPM Studio.  Rows are manual overrides only;
+-- their absence means the deterministic graph layout is used.  Coordinates
+-- deliberately remain outside the semantic node and transition aggregates.
+CREATE TABLE IF NOT EXISTS pm_process_node_layout (
+    node_id UUID PRIMARY KEY REFERENCES pm_process_node(node_id) ON DELETE CASCADE,
+    x NUMERIC(12,3) NOT NULL,
+    y NUMERIC(12,3) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT pm_process_node_layout_x_chk CHECK (x BETWEEN -1000000 AND 1000000),
+    CONSTRAINT pm_process_node_layout_y_chk CHECK (y BETWEEN -1000000 AND 1000000)
+);
 
 DO $$
 BEGIN

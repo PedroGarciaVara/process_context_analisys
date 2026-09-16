@@ -88,7 +88,7 @@ JavaScript; esas dependencias entran por adaptadores.
 | `adapters/inbound/http/routes.py` | entrada HTTP | Blueprint REST, payloads, actor/correlation ID y traducción de errores. | Al cambiar endpoint o contrato HTTP. |
 | `webapp/js/api/causas.js` | adaptador UI | Cliente de causas, hipótesis, reparenting y nodos reutilizables. | Al cambiar rutas/payloads consumidos por la UI. |
 | `webapp/js/api/analysis.js` | adaptador UI | Cliente de análisis, resultados y reapertura. | Al cambiar rutas/payloads del análisis. |
-| `db_management/migrations/20260911_rca_versioning.sql` | persistencia | Versionado, campos científicos, auditoría e índices; migración aditiva. | Sólo mediante migración revisada y gate operativo. |
+| `db_management/schema.sql` | persistencia | DDL canónico vigente, incluyendo versionado, campos científicos, auditoría e índices. | Sólo mediante revisión del modelo y del despliegue completo. |
 
 La dirección de dependencias es:
 
@@ -254,16 +254,15 @@ referencias históricas.
 - Índices de auditoría por causa, contrato y correlación; trigger que impide
   actualizar o borrar eventos.
 
-### Migración y arranque
+### Despliegue y arranque
 
-`db_management/migrations/20260911_rca_versioning.sql` es aditiva e idempotente:
-usa `IF EXISTS`, `IF NOT EXISTS`, columnas nullable/defaulted y recreación
-controlada del check de estados. Una auditoría DB read-only confirmó en live la
-equivalencia estructural completa: `causa.version`, tabla de auditoría, trigger,
-índices, foreign keys y campos científicos. No existe un ledger que pruebe qué
-archivo o ejecución concreta aplicó el esquema; la auditoría confirma el
-resultado estructural, no la procedencia del cambio. No debe ejecutarse un
-`DROP` automático.
+`db_management/schema.sql` es el DDL canónico y `db_management/init_db.py` el
+único punto de despliegue. El DDL es aditivo e idempotente en los puntos
+compatibles: usa `IF EXISTS`, `IF NOT EXISTS`, columnas nullable/defaulted y
+recreación controlada de checks, índices y triggers. Una auditoría DB read-only
+confirmó en live la equivalencia estructural completa: `causa.version`, tabla
+de auditoría, trigger, índices, foreign keys y campos científicos. No debe
+ejecutarse un `DROP` automático ni recrearse una cadena de migraciones.
 
 Antes del despliegue:
 
@@ -339,7 +338,7 @@ Antes del despliegue:
 - **Contrato funcional/técnico:** [`docs/rca-reparenting-contract.md`](../../../docs/rca-reparenting-contract.md).
 - **Contexto funcional:** [`docs/ui-arbol-analisis-functional-context.md`](../../../docs/ui-arbol-analisis-functional-context.md).
 - **Handoff de implementación:** [`docs/rca-implementation-report.md`](../../../docs/rca-implementation-report.md).
-- **Migración:** [`db_management/migrations/20260911_rca_versioning.sql`](../../../db_management/migrations/20260911_rca_versioning.sql).
+- **DDL y despliegue:** [`db_management/schema.sql`](../../../db_management/schema.sql) y [`db_management/init_db.py`](../../../db_management/init_db.py).
 - **`spec.md`/`task_plan.md`:** no existen ni participan en este flujo no-SDD;
   `plan.md` fue solicitado explícitamente como artefacto de coordinación.
 - **`context.md`:** no se modifica en esta fase; su mantenimiento corresponde

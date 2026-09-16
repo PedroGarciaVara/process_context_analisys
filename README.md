@@ -23,15 +23,15 @@ npm install
 
 ## Configuración
 
-La configuración se carga desde variables de entorno y `.env` mediante `config/settings.py`.
+La configuración se carga desde variables de entorno y `.env.local` mediante `config/settings.py`. Las variables de base de datos son obligatorias; consulta [`.env.example`](.env.example) para los nombres esperados, sin valores reales.
 
-| Variable | Valor por defecto | Uso |
+| Variable | Requisito / ejemplo | Uso |
 | --- | --- | --- |
-| `DB_HOST` / `PGHOST` | `/var/run/postgresql` | Host o socket de PostgreSQL |
-| `DB_NAME` / `PGDATABASE` | `solve_ishikawa` | Base de datos |
-| `DB_USER` / `PGUSER` | `pedro` | Usuario |
-| `DB_PASSWORD` / `PGPASSWORD` | vacío | Contraseña |
-| `DB_PORT` / `PGPORT` | `5432` | Puerto |
+| `DB_HOST` / `PGHOST` | Obligatoria; sin valor por defecto | Host o socket de PostgreSQL |
+| `DB_NAME` / `PGDATABASE` | Obligatoria; sin valor por defecto | Base de datos |
+| `DB_USER` / `PGUSER` | Obligatoria; sin valor por defecto | Usuario |
+| `DB_PASSWORD` / `PGPASSWORD` | Obligatoria; sin valor por defecto | Contraseña |
+| `DB_PORT` / `PGPORT` | Obligatoria; sin valor por defecto | Puerto |
 | `WEBAPP_JAVA_HOST` | `127.0.0.1` | Host del servidor Flask |
 | `WEBAPP_JAVA_PORT` | `8050` | Puerto del servidor Flask |
 | `WEBAPP_JAVA_DEBUG` | `1` en el script | Modo debug del servidor local |
@@ -39,19 +39,18 @@ La configuración se carga desde variables de entorno y `.env` mediante `config/
 
 ## Base de datos
 
-Crear la base si es necesario y aplicar el esquema:
+Crear la base si es necesario y desplegar el esquema canónico:
 
 ```bash
 createdb -h /var/run/postgresql -U pedro solve_ishikawa
-psql -h /var/run/postgresql -U pedro -d solve_ishikawa -f db_management/schema.sql
-python3 scripts/check_postgres_pm.py
+python3 db_management/init_db.py
 ```
 
-Para aplicar el esquema de forma idempotente y comprobar las tablas de process modeling:
-
-```bash
-python3 scripts/check_postgres_pm.py --apply-schema
-```
+`db_management/schema.sql` es el único DDL vigente y `db_management/init_db.py`
+es el único script soportado para desplegarlo. Consulta
+[`db_management/documentacion.md`](db_management/documentacion.md) para
+prerrequisitos, transacciones, verificación, backup y seguridad. No se deben
+usar rutas alternativas para aplicar el esquema.
 
 El esquema incluye el modelo operativo/causal (`proceso`, `contrato`, `maquina`, `causa`, `hipotesis`, análisis y grafo canónico) y el bounded context de modelado de procesos (`bpm_process`, `pm_process_node`, `pm_process_transition`). Cada proceso posee un único grafo mutable; no se persiste histórico de versiones.
 
