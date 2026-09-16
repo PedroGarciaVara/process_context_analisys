@@ -33,3 +33,6 @@ build/
 
 # Temporal
 borrador/*.tmp
+
+# Memoria local regenerable
+.codebase-memory/
