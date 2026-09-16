@@ -1,10 +1,9 @@
-"""Load the ML manufacturing fixture into the existing generic BPM model.
+"""Expose the historical ML fixture contract without mutating PostgreSQL.
 
-The loader is deliberately fixture-scoped and idempotent.  It creates or
-reuses only the exact generic process, canonical operation contracts/resources,
-and rows marked with the
-seed provenance.  It does not create ML-specific tables or pretend to ingest
-PLC/MES/PI-AVEVA telemetry.
+The former loader was superseded after ``PROCESO_ML_FABRICACION`` was
+consolidated into the canonical process model. ``--contract`` remains useful
+for historical coverage checks. Every database-oriented mode is disabled so
+this script cannot recreate the deleted duplicate process.
 """
 
 from __future__ import annotations
@@ -28,6 +27,11 @@ PROCESS_NAME = "PROCESO_ML_FABRICACION"
 FIXTURE_PATH = "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
 NAMESPACE = UUID("f4ccf53d-29e5-4fb2-a34b-120260801001")
 PROCESS_ID = str(uuid5(NAMESPACE, f"{SEED}:process:{PROCESS_CODE}"))
+CANONICAL_LOAD_PROCESS_ID = "f247eee0-cfa1-4ea5-b4e6-fa4598a061b5"
+DEPRECATION_MESSAGE = (
+    "Carga ML deprecada: PROCESO_ML_FABRICACION fue consolidado y eliminado. "
+    f"Use el proceso canónico {CANONICAL_LOAD_PROCESS_ID}; sólo --contract permanece disponible."
+)
 
 NODE_SPECS = [
     ("INPUT_ML", "input", "Demanda de Receta ML", "§8.1", "normal"),
@@ -152,6 +156,8 @@ def envelope(context_type: str, context_id: str, family: str, data: dict, sectio
 
 
 def _target(cur, create: bool = True) -> dict:
+    if create:
+        raise RuntimeError(DEPRECATION_MESSAGE)
     cur.execute("SELECT * FROM bpm_process WHERE process_code = %s FOR UPDATE", (PROCESS_CODE,))
     process = cur.fetchone()
     if process is None:
@@ -283,6 +289,7 @@ def _context(cur, record_type: str, owner_type: str, owner_id: str, family: str,
 
 
 def load(cur, target: dict | None = None) -> dict:
+    raise RuntimeError(DEPRECATION_MESSAGE)
     target = target or _target(cur)
     canonical = _canonical(cur)
     cleanup = _cleanup(cur)
@@ -329,17 +336,8 @@ def main() -> int:
     if args.contract:
         print(json.dumps(contract_snapshot(), ensure_ascii=False, indent=2, default=str))
         return 0
-    try:
-        with db_cursor() as cur:
-            target = _target(cur, create=not args.dry_run)
-            result = {"target": target, "dry_run": True, "before": _counts(cur)} if args.dry_run else load(cur, target=target)
-            if not args.dry_run:
-                result["dry_run"] = False
-    except Exception as exc:
-        print(f"ERROR: seed ML abortado y transacción revertida: {exc}", file=sys.stderr)
-        return 2
-    print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
-    return 0
+    print(f"ERROR: {DEPRECATION_MESSAGE}", file=sys.stderr)
+    return 2
 
 
 if __name__ == "__main__":

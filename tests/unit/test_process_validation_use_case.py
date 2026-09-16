@@ -11,7 +11,7 @@ class ProcessValidationUseCaseTests(unittest.TestCase):
             get=lambda _process_id: process,
             list=lambda: processes if processes is not None else [process],
         )
-        return ProcessModelingApplication(repository, SimpleNamespace(), SimpleNamespace())
+        return ProcessModelingApplication(repository, SimpleNamespace(), SimpleNamespace(), SimpleNamespace())
 
     def test_returns_only_stable_validation_result_for_valid_graph(self):
         process_id = str(uuid4())

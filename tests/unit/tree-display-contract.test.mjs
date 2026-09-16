@@ -5,6 +5,7 @@ import {
   readableTreeContractLabel,
   resolveTreeDisplayContext,
 } from "../../uc_bib_solv/webapp/js/components/tree-data.js";
+import { deriveTreeScopeFromRoute } from "../../uc_bib_solv/webapp/js/views/rca/arboles.js";
 import { getRenderableTreeChildren } from "../../uc_bib_solv/webapp/js/components/tree-render.js";
 
 const treeRenderSource = readFileSync(
@@ -56,6 +57,26 @@ test("el markup del árbol no concatena IDs en textos visibles y conserva el con
   assert.match(treeRenderSource, /displayContext\.objective/);
   assert.match(treeViewSource, /Objetivo del contrato/);
   assert.match(treeViewSource, /escapeHtml\(objective\)/);
+  assert.match(treeRenderSource, /option\.textContent = "no hay contratos"/);
+  assert.match(treeViewSource, /scopedContracts\[0\]/);
+});
+
+test("un proceso sin contratos no hereda un contrato de otro proceso", () => {
+  const catalog = {
+    data: {
+      procesos: [{ id: 2, name: "Proceso sin contratos" }],
+      contratos: [{ id: 3, processId: 1, name: "Contrato ajeno" }],
+    },
+  };
+
+  assert.deepEqual(
+    deriveTreeScopeFromRoute({}, catalog, { currentProcess: 2, currentContract: 3 }),
+    { contractId: null, processId: 2 },
+  );
+  assert.deepEqual(
+    deriveTreeScopeFromRoute({ contract_id: "3" }, catalog, { currentProcess: 2 }),
+    { contractId: 3, processId: 1 },
+  );
 });
 
 test("la vista arbol renderiza las hipotesis dentro de la causa, no como nodos hijos", () => {
@@ -72,6 +93,6 @@ test("la vista arbol renderiza las hipotesis dentro de la causa, no como nodos h
   );
   assert.deepEqual(
     getRenderableTreeChildren(cause, "analisis_causas_v2").map((node) => node.id),
-    [11, 12],
+    [12],
   );
 });

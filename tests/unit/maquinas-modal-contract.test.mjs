@@ -15,16 +15,14 @@ test("el modal declara campos de máquina genérica y específica", () => {
   ]) assert.match(source, new RegExp(`field\\(\\"${id}\\"`), `falta ${id}`);
 });
 
-test("la gestión de máquina enlaza el botón con el diálogo y carga el contexto activo", () => {
+test("la gestión de máquina enlaza el botón con su ficha dedicada", () => {
   assert.match(source, /data-action="machine-select"/);
-  assert.match(source, /const openManagementModal = \(machineId = null\)/);
-  assert.match(source, /buildMachineManagementModal\(activeMachine, state\)/);
-  assert.match(source, /setModalVisible\(true\)/);
-  assert.doesNotMatch(source, /data-action="machine-modal-open"/);
+  assert.match(source, /#\/maquinas_detalle\?machine_id=/);
+  assert.match(source, /#\/maquinas_detalle\?new=1/);
 });
 
 test("la página ofrece una acción explícita para crear una máquina sin mostrar IDs técnicos", () => {
-  assert.match(source, /data-action=\"machine-modal-new\"/);
+  assert.match(source, /href=\"#\/maquinas_detalle\?new=1\"/);
   assert.match(source, /Crear nueva máquina/);
   assert.doesNotMatch(source, />ID maquina</);
   assert.doesNotMatch(source, />operation_id</);

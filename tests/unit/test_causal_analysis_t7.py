@@ -1,6 +1,7 @@
 import unittest
 
 from uc_bib_solv.modules.rca_tree.domain.analyses.entities import AnalysisResult, normalize_state, validate_evaluation
+from uc_bib_solv.modules.rca_tree.domain.exceptions import CausalTreeStateError
 from uc_bib_solv.modules.rca_tree.infrastructure.analysis_wiring import build_rca_tree_analysis_application
 
 
@@ -36,6 +37,11 @@ class CausalAnalysisT7Tests(unittest.TestCase):
         self.assertEqual(created["id"], 9)
         self.assertEqual(created["participants"], ["Ana"])
         self.assertEqual(service.update(9, {"status": "cerrado"})["status"], "cerrado")
+        fake.get = lambda analysis_id: {"id": analysis_id, "estado": "cerrado"}
+        with self.assertRaises(CausalTreeStateError):
+            service.save_result(9, {"element_type": "causa", "cause_id": 3, "evidence": "attempt after close"})
+        fake.get = lambda analysis_id: {"id": analysis_id, "estado": "abierto"}
+        self.assertEqual(service.update(9, {"status": "abierto"})["status"], "abierto")
         self.assertEqual(service.save_result(9, {"element_type": "causa", "cause_id": 3})["id"], 4)
 
     def test_canonical_analysis_application_is_the_only_service_boundary(self):

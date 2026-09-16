@@ -1,0 +1,1199 @@
+{
+  "database": "solve_ishikawa",
+  "target": {
+    "operation_id": "bcb6016f-5352-5d63-9559-82434215e1c3",
+    "process_id": "abfead18-386d-4f27-9957-4b24da26716d",
+    "machine_ids": [
+      13,
+      14
+    ]
+  },
+  "machine_operation_configuration": [
+    [
+      11,
+      13,
+      "bcb6016f-5352-5d63-9559-82434215e1c3",
+      "abfead18-386d-4f27-9957-4b24da26716d",
+      6,
+      "Recibe la BU liberada por la soldadura y la evacua por el circuito correspondiente hacia el robot y el cajón metálico, manteniendo la secuencia del convoy.",
+      [],
+      [],
+      [],
+      [],
+      "draft",
+      null,
+      null,
+      "2026-08-02 13:57:16.239660+02:00",
+      "2026-08-29 12:42:06.707238+02:00"
+    ],
+    [
+      12,
+      14,
+      "bcb6016f-5352-5d63-9559-82434215e1c3",
+      "abfead18-386d-4f27-9957-4b24da26716d",
+      6,
+      "Recibe la BU liberada por la soldadura y la evacua por el circuito correspondiente hacia el robot y el cajón metálico, manteniendo la secuencia del convoy.",
+      [],
+      [],
+      [],
+      [],
+      "draft",
+      null,
+      null,
+      "2026-08-02 13:57:16.239660+02:00",
+      "2026-08-29 12:42:06.707238+02:00"
+    ]
+  ],
+  "pm_process_node_metadata": [
+    [
+      "2291bd84-71db-5522-b06b-7d33995ce211",
+      {
+        "data": {
+          "name": "Cajón metálico de salida",
+          "inputs": [],
+          "mission": "Representar el recurso y su papel en el flujo de fabricación descrito en el fixture.",
+          "outputs": [],
+          "purpose": null,
+          "equipment": [],
+          "materials": [],
+          "objective": null,
+          "indicators": [
+            "tiempo_de_ciclo",
+            "defectos",
+            "paradas"
+          ],
+          "parameters": [],
+          "description": "Etapa de entrada/salida del proceso descrito en §6.2.",
+          "fixture_key": "CAJON",
+          "canonical_ids": {
+            "proceso_id": 2
+          },
+          "open_questions": [],
+          "fixture_section": "§6.2",
+          "quality_controls": [],
+          "declarative_contract": "La operación conserva su descripción funcional y sus particularidades de ejecución; los KPI se calculan bajo demanda y Databricks/PI-AVEVA son solo procedencia futura.",
+          "operation_description": "Etapa de entrada/salida del proceso descrito en §6.2.",
+          "operation_machine_assignments": []
+        },
+        "family": "industrial_process_fixture",
+        "source": {
+          "system": "fixture",
+          "section": "§6.2",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
+        },
+        "context_id": "2291bd84-71db-5522-b06b-7d33995ce211",
+        "provenance": {
+          "seed": "R12_BU_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-01"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-08-01 23:31:36.126980+02:00"
+    ],
+    [
+      "3683d3c0-6d3e-4789-9e68-735693926618",
+      {
+        "inputs": [
+          "Mezcla enfriada",
+          "Azufre vulcanizante",
+          "Receta de fabricación"
+        ],
+        "outputs": [
+          "Mezcla con azufre para HF"
+        ],
+        "purpose": "Aprovisionar el azufre previsto en la receta antes de la homogeneización final.",
+        "summary": "Aprovisionar el azufre previsto en la receta antes de la homogeneización final.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "SULFUR",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_FABRICACION"
+        },
+        "quality_controls": [
+          "Referencia de azufre",
+          "Cantidad dosificada",
+          "Lote y caducidad"
+        ],
+        "acceptance_criteria": [],
+        "method_of_operation": "Identificar el azufre, verificar la cantidad requerida y añadirlo a la mezcla enfriada conforme a la receta y a las reglas de trazabilidad de materiales.",
+        "detailed_description": "Elemento operativo SULFUR — Aprovisionamiento de azufre. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 14:26:56.584733+02:00"
+    ],
+    [
+      "503d9be4-5516-477d-ad93-c48c5859732a",
+      {
+        "inputs": [
+          "Mezcla con azufre"
+        ],
+        "outputs": [
+          "Mezcla preparada para pesado final"
+        ],
+        "purpose": "Homogeneizar el azufre con el resto de productos y aportar el trabajo necesario para alcanzar los valores de fluidez.",
+        "summary": "Homogeneizar el azufre con el resto de productos y aportar el trabajo necesario para alcanzar los valores de fluidez.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "HF",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_FABRICACION"
+        },
+        "quality_controls": [
+          "Fluidez",
+          "Temperatura",
+          "Tiempo de ciclo",
+          "Trabajo aplicado"
+        ],
+        "acceptance_criteria": [],
+        "method_of_operation": "Aplicar el ciclo de HF definido en la marcha mecánica y verificar que el trabajo, tiempo y temperatura quedan dentro de las tolerancias de la receta.",
+        "detailed_description": "Elemento operativo HF — Homogeneización en HF. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 14:26:56.584733+02:00"
+    ],
+    [
+      "5d8cb2f4-4886-45f6-9c00-99989368b85c",
+      {
+        "inputs": [],
+        "outputs": [],
+        "purpose": "Pendiente de completar con el objetivo industrial de la operación.",
+        "summary": "Operación Toneles de blocaje del proceso PROC_MEZCLAS_CAUCHO_PREPARACION.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "BLOC_TONELES",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_PREPARACION"
+        },
+        "quality_controls": [],
+        "acceptance_criteria": [],
+        "method_of_operation": "Describir paso a paso cómo se ejecuta la operación, su orden, condiciones de inicio y fin, y la respuesta ante desviaciones.",
+        "detailed_description": "Elemento operativo BLOC_TONELES — Toneles de blocaje. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 14:26:56.584733+02:00"
+    ],
+    [
+      "73d0512b-076c-4bf7-ba51-bdc7017f50f1",
+      {
+        "inputs": [],
+        "outputs": [],
+        "purpose": "Pendiente de completar con el objetivo industrial de la operación.",
+        "summary": "Operación Aprovisionamiento de cajones a RPS del proceso PROC_MEZCLAS_CAUCHO_PREPARACION.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "RPS_APROV",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_PREPARACION"
+        },
+        "quality_controls": [],
+        "acceptance_criteria": [],
+        "method_of_operation": "Describir paso a paso cómo se ejecuta la operación, su orden, condiciones de inicio y fin, y la respuesta ante desviaciones.",
+        "detailed_description": "Elemento operativo RPS_APROV — Aprovisionamiento de cajones a RPS. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 14:26:56.584733+02:00"
+    ],
+    [
+      "75915be5-4791-4486-a183-3b9c5ca59e85",
+      {
+        "inputs": [
+          "Mezcla conforme",
+          "Tinta de marcado",
+          "Anticolante"
+        ],
+        "outputs": [
+          "Lámina identificada y acondicionada",
+          "Paleta de producto"
+        ],
+        "purpose": "Extruir la mezcla en una lámina continua, identificarla y acondicionarla para su apilado.",
+        "summary": "Extruir la mezcla en una lámina continua, identificarla y acondicionarla para su apilado.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "PUESTA_FORMA",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_FABRICACION"
+        },
+        "quality_controls": [
+          "Perfil y espesor",
+          "Marcado legible",
+          "Temperatura de salida",
+          "Secado del anticolante"
+        ],
+        "acceptance_criteria": [],
+        "method_of_operation": "Pasar la mezcla por la máquina de perfilado, marcar la información del producto, aplicar anticolante, refrigerar y secar antes de apilar en paletas.",
+        "detailed_description": "Elemento operativo PUESTA_FORMA — Puesta en forma. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 14:26:56.584733+02:00"
+    ],
+    [
+      "8c780c03-b11f-41f5-9ade-bcc8df840027",
+      {
+        "inputs": [],
+        "outputs": [],
+        "purpose": "Pendiente de completar con el objetivo industrial de la operación.",
+        "summary": "Operación Dosificación de productos por NIP del proceso PROC_MEZCLAS_CAUCHO_PREPARACION.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "DOSIF_NIP",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_PREPARACION"
+        },
+        "quality_controls": [],
+        "acceptance_criteria": [],
+        "method_of_operation": "Describir paso a paso cómo se ejecuta la operación, su orden, condiciones de inicio y fin, y la respuesta ante desviaciones.",
+        "detailed_description": "Elemento operativo DOSIF_NIP — Dosificación de productos por NIP. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 14:26:56.584733+02:00"
+    ],
+    [
+      "8f9c5d05-47b6-51d6-a11e-b408376503b4",
+      {
+        "data": {
+          "name": "Marcado de bolsa",
+          "inputs": [
+            "Bolsa dosificada"
+          ],
+          "mission": "Identificar la bolsa antes de su cierre y evacuación.",
+          "outputs": [
+            "Bolsa marcada"
+          ],
+          "purpose": "Identificar la bolsa antes de su cierre y evacuación.",
+          "equipment": [],
+          "materials": [],
+          "objective": "Identificar la bolsa antes de su cierre y evacuación.",
+          "indicators": [
+            "tiempo_de_ciclo",
+            "defectos",
+            "paradas"
+          ],
+          "parameters": [],
+          "description": "Marca las bolsas después de la dosificación y antes de la soldadura de cierre; el fixture confirma la etapa, pero no determina todavía la tecnología, posición ni validación registrada.",
+          "fixture_key": "MARCADO",
+          "canonical_ids": {
+            "proceso_id": 2,
+            "contrato_id": 4,
+            "maquina_ids": []
+          },
+          "open_questions": [
+            "Tecnología, contenido, posición y evidencia de validación"
+          ],
+          "fixture_section": "§6.1",
+          "quality_controls": [],
+          "declarative_contract": "La operación conserva su descripción funcional y sus particularidades de ejecución; los KPI se calculan bajo demanda y Databricks/PI-AVEVA son solo procedencia futura.",
+          "operation_description": "Marca las bolsas después de la dosificación y antes de la soldadura de cierre; el fixture confirma la etapa, pero no determina todavía la tecnología, posición ni validación registrada.",
+          "operation_machine_assignments": []
+        },
+        "family": "industrial_process_fixture",
+        "source": {
+          "system": "fixture",
+          "section": "§6.1",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
+        },
+        "context_id": "8f9c5d05-47b6-51d6-a11e-b408376503b4",
+        "provenance": {
+          "seed": "R12_BU_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-01"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-08-01 23:31:36.126980+02:00"
+    ],
+    [
+      "90700c86-402b-5d2f-89b0-5611e395e2d5",
+      {
+        "data": {
+          "name": "Robot de transferencia",
+          "inputs": [
+            "BU evacuada"
+          ],
+          "mission": "Depositar la BU fabricada en el contenedor de salida.",
+          "outputs": [
+            "BU depositada en cajón"
+          ],
+          "purpose": "Depositar la BU fabricada en el contenedor de salida.",
+          "equipment": [
+            "ROBOT"
+          ],
+          "materials": [],
+          "objective": "Depositar la BU fabricada en el contenedor de salida.",
+          "indicators": [
+            "tiempo_de_ciclo",
+            "defectos",
+            "paradas"
+          ],
+          "parameters": [],
+          "description": "Transfiere la BU evacuada al cajón metálico de salida; el fixture identifica el equipo y la operación, pero deja pendiente el detalle de cazo, cajón y capacidad exacta.",
+          "fixture_key": "ROBOT",
+          "canonical_ids": {
+            "proceso_id": 2,
+            "contrato_id": 7,
+            "maquina_ids": [
+              15
+            ]
+          },
+          "open_questions": [
+            "Cazo, cajón y capacidad exacta"
+          ],
+          "fixture_section": "§6.2",
+          "quality_controls": [],
+          "declarative_contract": "La operación conserva su descripción funcional y sus particularidades de ejecución; los KPI se calculan bajo demanda y Databricks/PI-AVEVA son solo procedencia futura.",
+          "operation_description": "Transfiere la BU evacuada al cajón metálico de salida; el fixture identifica el equipo y la operación, pero deja pendiente el detalle de cazo, cajón y capacidad exacta.",
+          "operation_machine_assignments": [
+            {
+              "description": "Equipo que transfiere la BU evacuada al cajón metálico de salida.",
+              "machine_ref": "ROBOT"
+            }
+          ]
+        },
+        "family": "industrial_process_fixture",
+        "source": {
+          "system": "fixture",
+          "section": "§6.2",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
+        },
+        "context_id": "90700c86-402b-5d2f-89b0-5611e395e2d5",
+        "provenance": {
+          "seed": "R12_BU_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-01"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-08-01 23:31:36.126980+02:00"
+    ],
+    [
+      "92f58b06-f82e-453b-8301-238e9f33f9ee",
+      {
+        "inputs": [],
+        "outputs": [],
+        "purpose": "Pendiente de completar con el objetivo industrial de la operación.",
+        "summary": "Operación Troceado y talcado del proceso PROC_MEZCLAS_CAUCHO_PREPARACION.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "PREVIEROS",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_PREPARACION"
+        },
+        "quality_controls": [],
+        "acceptance_criteria": [],
+        "method_of_operation": "Describir paso a paso cómo se ejecuta la operación, su orden, condiciones de inicio y fin, y la respuesta ante desviaciones.",
+        "detailed_description": "Elemento operativo PREVIEROS — Troceado y talcado. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 14:26:56.584733+02:00"
+    ],
+    [
+      "95c1034f-54ba-4a09-b80f-9de1261c51f7",
+      {
+        "data": {},
+        "family": "general",
+        "inputs": [
+          "Productos entrantes verificados",
+          "Receta cuantitativa y cualitativa",
+          "Marcha mecánica"
+        ],
+        "source": {},
+        "outputs": [
+          "Mezcla homogeneizada para HA"
+        ],
+        "purpose": "Homogeneizar cauchos, cargas y productos químicos respetando la receta de fabricación.",
+        "summary": "Homogeneizar cauchos, cargas y productos químicos respetando la receta de fabricación.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "context_id": "95c1034f-54ba-4a09-b80f-9de1261c51f7",
+        "parameters": [
+          {
+            "name": "temperatura_objetivo",
+            "description": "1000"
+          },
+          {
+            "name": "cerraje",
+            "description": "2mm"
+          }
+        ],
+        "provenance": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "context_type": "node",
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "MEZCLADOR",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_FABRICACION"
+        },
+        "quality_controls": [],
+        "acceptance_criteria": [],
+        "method_of_operation": "Introducir los productos en el mezclador en el orden definido por la marcha mecánica y aplicar el ciclo de trabajo, temperatura y tiempo establecidos para la mezcla.",
+        "detailed_description": "Elemento operativo MEZCLADOR — Mezclador y homogeneización. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-09-13 10:17:45.126573+02:00"
+    ],
+    [
+      "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+      {
+        "data": {
+          "name": "Dosificación Cargas PLC",
+          "inputs": [
+            "Negro de humo",
+            "Sílice",
+            "Receta",
+            "Demanda del MI"
+          ],
+          "outputs": [
+            "Cargas reforzantes pesadas y descargadas en la tolva de introducción del MI"
+          ],
+          "equipment": [
+            "BN11",
+            "BN12",
+            "BN21",
+            "BN22",
+            "BN31",
+            "BN32",
+            "BN41",
+            "BN42"
+          ],
+          "objective": "Dosificar las cargas reforzantes requeridas por la receta dentro de tolerancia y del tiempo de ciclo del MI.",
+          "parameters": [
+            "Gran caudal",
+            "Regulación",
+            "Velocidad mínima",
+            "K",
+            "Retardo",
+            "Media móvil de 5 ciclos"
+          ],
+          "description": "Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+          "fixture_key": "CARGAS_DOSIF",
+          "canonical_ids": {
+            "proceso_id": 65,
+            "contrato_id": 99,
+            "maquina_ids": [
+              322,
+              323,
+              324,
+              325,
+              326,
+              327,
+              328,
+              329
+            ]
+          },
+          "quality_controls": [
+            "Cero inicial",
+            "Peso estable",
+            "Corrección por defecto mediante impulsos",
+            "Retirada manual por exceso",
+            "Cero final y producto retenido"
+          ]
+        },
+        "family": "industrial_process",
+        "source": {
+          "system": "client_process_description",
+          "section": "dosificacion",
+          "reference": "requerimientos_cliente/descripciones del proceso/test_dosificacion_cargas"
+        },
+        "context_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "provenance": {
+          "migration": "consolidate_duplicate_ml_process_v1",
+          "source_fixture": "R12_ML_FIXTURE_V1",
+          "copied_from_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-09-09 22:40:08.169061+02:00"
+    ],
+    [
+      "9b50c025-51ef-5b7b-b803-7a76678dff35",
+      {
+        "data": {
+          "name": "Soldadura de cierre",
+          "inputs": [
+            "Bolsa marcada",
+            "Trolley",
+            "Parámetros de altura, tiempo, intensidad y temperatura"
+          ],
+          "mission": "Cerrar la bolsa sin apertura, quemado, desalineación ni tensión que provoque rotura.",
+          "outputs": [
+            "BU cerrada",
+            "Resultado de inspección",
+            "Defecto/parada si aplica"
+          ],
+          "purpose": "Cerrar la bolsa sin apertura, quemado, desalineación ni tensión que provoque rotura.",
+          "equipment": [
+            "SO1",
+            "SO2"
+          ],
+          "materials": [],
+          "objective": "Cerrar la bolsa sin apertura, quemado, desalineación ni tensión que provoque rotura.",
+          "indicators": [
+            "tiempo_de_ciclo",
+            "defectos",
+            "paradas"
+          ],
+          "parameters": [
+            "Altura de mesa",
+            "Tiempo",
+            "Intensidad",
+            "Temperatura",
+            "Geometría +/-2 mm"
+          ],
+          "description": "Sujeta la bolsa, la posiciona con la mesa elevadora y ejecuta dos soldaduras laterales para cerrar el envase; después libera la bolsa al tapiz de evacuación. El ciclo conjunto descrito es de 22 cmin.",
+          "fixture_key": "SOLDADURA",
+          "canonical_ids": {
+            "proceso_id": 2,
+            "contrato_id": 5,
+            "maquina_ids": [
+              11,
+              12
+            ]
+          },
+          "open_questions": [
+            "Payload de defectos y verificaciones geométricas"
+          ],
+          "fixture_section": "§6.2-§6.4",
+          "quality_controls": [
+            "Alineamiento de mordazas",
+            "Uniformidad de soldadura",
+            "Membrana, boquilla y pulsador",
+            "Tensión de fajas"
+          ],
+          "declarative_contract": "La operación conserva su descripción funcional y sus particularidades de ejecución; los KPI se calculan bajo demanda y Databricks/PI-AVEVA son solo procedencia futura.",
+          "operation_description": "Sujeta la bolsa, la posiciona con la mesa elevadora y ejecuta dos soldaduras laterales para cerrar el envase; después libera la bolsa al tapiz de evacuación. El ciclo conjunto descrito es de 22 cmin.",
+          "operation_machine_assignments": [
+            {
+              "description": "Primer circuito de soldadura de cierre con mesa elevadora, fajas neumáticas y dos elementos de soldadura.",
+              "machine_ref": "SO1"
+            },
+            {
+              "description": "Segundo circuito de soldadura de cierre con mesa elevadora, fajas neumáticas y dos elementos de soldadura.",
+              "machine_ref": "SO2"
+            }
+          ]
+        },
+        "family": "industrial_process_fixture",
+        "source": {
+          "system": "fixture",
+          "section": "§6.2-§6.4",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
+        },
+        "context_id": "9b50c025-51ef-5b7b-b803-7a76678dff35",
+        "provenance": {
+          "seed": "R12_BU_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-01"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-08-01 23:31:36.126980+02:00"
+    ],
+    [
+      "bcb6016f-5352-5d63-9559-82434215e1c3",
+      {
+        "data": {
+          "name": "Evacuación",
+          "inputs": [
+            "BU cerrada",
+            "Trolley liberado"
+          ],
+          "mission": "Trasladar la BU cerrada al almacenamiento de salida sin perder la trazabilidad del trolley y la receta.",
+          "outputs": [
+            "BU en cajón metálico"
+          ],
+          "purpose": "Trasladar la BU cerrada al almacenamiento de salida sin perder la trazabilidad del trolley y la receta.",
+          "equipment": [
+            "EV01"
+          ],
+          "materials": [],
+          "objective": "Trasladar la BU cerrada al almacenamiento de salida sin perder la trazabilidad del trolley y la receta.",
+          "indicators": [
+            "tiempo_de_ciclo",
+            "defectos",
+            "paradas"
+          ],
+          "parameters": [
+            "Circuito EV01/EV02",
+            "Capacidad del cajón de 40–60 BU"
+          ],
+          "description": "Recibe la BU liberada por la soldadura y la evacua por el circuito correspondiente hacia el robot y el cajón metálico, manteniendo la secuencia del convoy.",
+          "fixture_key": "EVACUACION",
+          "canonical_ids": {
+            "proceso_id": 2,
+            "contrato_id": 6,
+            "maquina_ids": [
+              13,
+              14
+            ]
+          },
+          "open_questions": [
+            "Identidad y capacidad exacta del robot/cajón"
+          ],
+          "fixture_section": "§6.2",
+          "quality_controls": [
+            "Secuencia del convoy"
+          ],
+          "declarative_contract": "La operación conserva su descripción funcional y sus particularidades de ejecución; los KPI se calculan bajo demanda y Databricks/PI-AVEVA son solo procedencia futura.",
+          "operation_description": "Recibe la BU liberada por la soldadura y la evacua por el circuito correspondiente hacia el robot y el cajón metálico, manteniendo la secuencia del convoy.",
+          "operation_machine_assignments": [
+            {
+              "description": "Primer circuito de evacuación de la BU después de la soldadura.",
+              "machine_ref": "EV01"
+            },
+            {
+              "description": "Segundo circuito de evacuación de la BU después de la soldadura.",
+              "machine_ref": "EV02"
+            }
+          ]
+        },
+        "family": "industrial_process_fixture",
+        "source": {
+          "system": "fixture",
+          "section": "§6.2",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
+        },
+        "context_id": "bcb6016f-5352-5d63-9559-82434215e1c3",
+        "provenance": {
+          "seed": "R12_BU_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-01"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-09-13 13:52:21.259076+02:00"
+    ],
+    [
+      "bcde0169-fa01-4392-9613-98d8e840dcfc",
+      {
+        "inputs": [
+          "Productos dosificados",
+          "Receta de fabricación",
+          "Tolerancias de peso y referencia"
+        ],
+        "outputs": [
+          "Carga conforme para el mezclador",
+          "Incidencia de producto no conforme"
+        ],
+        "purpose": "Confirmar que los productos dosificados que entran en fabricación corresponden con la referencia y el peso esperados.",
+        "summary": "Confirmar que los productos dosificados que entran en fabricación corresponden con la referencia y el peso esperados.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "VERIF_ENT",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_FABRICACION"
+        },
+        "quality_controls": [
+          "Referencia de cada NIP",
+          "Peso individual y peso total",
+          "Trazabilidad de lote"
+        ],
+        "acceptance_criteria": [],
+        "method_of_operation": "Recibir la carga, identificar cada producto y contrastar referencia y peso con la receta de fabricación. Separar y registrar cualquier discrepancia antes de alimentar el mezclador.",
+        "detailed_description": "Elemento operativo VERIF_ENT — Verificación de entrantes. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 15:42:10.848354+02:00"
+    ],
+    [
+      "c4b73333-2e4e-47ad-bca9-1d385af5f18e",
+      {
+        "inputs": [
+          "Mezcla terminada"
+        ],
+        "outputs": [
+          "Mezcla pesada conforme",
+          "Producto no conforme"
+        ],
+        "purpose": "Verificar el peso de la mezcla final antes de ponerla en forma.",
+        "summary": "Verificar el peso de la mezcla final antes de ponerla en forma.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "PESO_FINAL",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_FABRICACION"
+        },
+        "quality_controls": [
+          "Peso final dentro de tolerancia",
+          "Identificación del batch"
+        ],
+        "acceptance_criteria": [],
+        "method_of_operation": "Pesar el batch terminado, comparar con el intervalo de tolerancia y marcar el resultado como conforme o no conforme.",
+        "detailed_description": "Elemento operativo PESO_FINAL — Pesado final. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 14:26:56.584733+02:00"
+    ],
+    [
+      "c5160c36-2e05-5fbd-ba9b-61b89a7928bc",
+      {
+        "data": {
+          "name": "Dosificación",
+          "inputs": [
+            "Producto químico en bigbag y tolva",
+            "Receta y peso objetivo",
+            "Bolsa procedente de PSA"
+          ],
+          "mission": "Alcanzar el peso objetivo de la receta dentro de la tolerancia del 1 % y con el menor tiempo de ciclo posible.",
+          "outputs": [
+            "Bolsa dosificada",
+            "Peso medido",
+            "Hecho de fuera de tolerancia si aplica"
+          ],
+          "purpose": "Alcanzar el peso objetivo de la receta dentro de la tolerancia del 1 % y con el menor tiempo de ciclo posible.",
+          "equipment": [
+            "BA01",
+            "BA02",
+            "BA03",
+            "BA04",
+            "BA05",
+            "BA06",
+            {
+              "name": "dddd",
+              "description": ""
+            }
+          ],
+          "materials": [],
+          "objective": "Alcanzar el peso objetivo de la receta dentro de la tolerancia del 1 % y con el menor tiempo de ciclo posible.",
+          "indicators": [
+            "tiempo_de_ciclo",
+            "defectos",
+            "paradas"
+          ],
+          "parameters": [
+            "vmax",
+            "vmin",
+            "K",
+            "Retardo",
+            "Columna de caída",
+            "Tolerancia del 1 %",
+            "Régimen 1/2/3"
+          ],
+          "description": "Dosifica los productos químicos en la bolsa mientras avanza por la báscula; cada puesto puede trabajar individualmente o en modo maestro-esclavo si ambos circuitos tienen el mismo producto.",
+          "fixture_key": "DOSIFICACION",
+          "canonical_ids": {
+            "proceso_id": 2,
+            "contrato_id": 3,
+            "maquina_ids": [
+              5,
+              6,
+              7,
+              8,
+              9,
+              10
+            ]
+          },
+          "open_questions": [
+            "Identidad final de bigbag, lote y stock residual",
+            "Captura conectada de pesos y señales"
+          ],
+          "fixture_section": "§4",
+          "quality_controls": [
+            "Lectura de producto y puesto",
+            "Limpieza y validación de Calidad al cambiar posición",
+            "Maestro-esclavo solo con el mismo producto"
+          ],
+          "declarative_contract": "La operación conserva su descripción funcional y sus particularidades de ejecución; los KPI se calculan bajo demanda y Databricks/PI-AVEVA son solo procedencia futura.",
+          "operation_description": "Dosifica los productos químicos en la bolsa mientras avanza por la báscula; cada puesto puede trabajar individualmente o en modo maestro-esclavo si ambos circuitos tienen el mismo producto.",
+          "operation_machine_assignments": [
+            {
+              "description": "Primera báscula de la serie; dispone de cuatro puestos de dosificación y puede trabajar en modo individual o maestro-esclavo.",
+              "machine_ref": "BA01"
+            },
+            {
+              "description": "Segunda báscula de la serie; dispone de cuatro puestos de dosificación y puede trabajar en modo individual o maestro-esclavo.",
+              "machine_ref": "BA02"
+            },
+            {
+              "description": "Tercera báscula de la serie; dispone de cuatro puestos de dosificación y puede trabajar en modo individual o maestro-esclavo.",
+              "machine_ref": "BA03"
+            },
+            {
+              "description": "Cuarta báscula de la serie; dispone de cuatro puestos de dosificación y puede trabajar en modo individual o maestro-esclavo.",
+              "machine_ref": "BA04"
+            },
+            {
+              "description": "Quinta báscula de la serie; dispone de cuatro puestos de dosificación y puede trabajar en modo individual o maestro-esclavo.",
+              "machine_ref": "BA05"
+            },
+            {
+              "description": "Sexta báscula de la serie; dispone de cuatro puestos de dosificación y puede trabajar en modo individual o maestro-esclavo.",
+              "machine_ref": "BA06"
+            }
+          ]
+        },
+        "family": "industrial_process_fixture",
+        "source": {
+          "system": "fixture",
+          "section": "§4",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
+        },
+        "context_id": "c5160c36-2e05-5fbd-ba9b-61b89a7928bc",
+        "provenance": {
+          "seed": "R12_BU_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-01"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-09-13 10:29:04.095714+02:00"
+    ],
+    [
+      "cb94dd6f-ea39-5adf-acf6-59114a072ade",
+      {
+        "data": {
+          "name": "BU fabricada",
+          "inputs": [],
+          "mission": "Representar el recurso y su papel en el flujo de fabricación descrito en el fixture.",
+          "outputs": [],
+          "purpose": null,
+          "equipment": [],
+          "materials": [],
+          "objective": null,
+          "indicators": [
+            "tiempo_de_ciclo",
+            "defectos",
+            "paradas"
+          ],
+          "parameters": [],
+          "description": "Etapa de entrada/salida del proceso descrito en §1-§2.",
+          "fixture_key": "OUTPUT",
+          "canonical_ids": {
+            "proceso_id": 2
+          },
+          "open_questions": [],
+          "fixture_section": "§1-§2",
+          "quality_controls": [],
+          "declarative_contract": "La operación conserva su descripción funcional y sus particularidades de ejecución; los KPI se calculan bajo demanda y Databricks/PI-AVEVA son solo procedencia futura.",
+          "operation_description": "Etapa de entrada/salida del proceso descrito en §1-§2.",
+          "operation_machine_assignments": []
+        },
+        "family": "industrial_process_fixture",
+        "source": {
+          "system": "fixture",
+          "section": "§1-§2",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
+        },
+        "context_id": "cb94dd6f-ea39-5adf-acf6-59114a072ade",
+        "provenance": {
+          "seed": "R12_BU_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-01"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-08-01 23:31:36.126980+02:00"
+    ],
+    [
+      "db7aadfe-2c72-4107-a4f5-98440474948d",
+      {
+        "inputs": [],
+        "outputs": [],
+        "purpose": "Pendiente de completar con el objetivo industrial de la operación.",
+        "summary": "Operación RPS fabricación de batch del proceso PROC_MEZCLAS_CAUCHO_PREPARACION.",
+        "equipment": [],
+        "materials": [],
+        "personnel": [],
+        "parameters": {},
+        "references": [
+          "requeriments_spec_driven_development/requerimiento_10/test_descripcion_procesos.md",
+          "OMG BPMN Introduction to BPMN — annotations and activity documentation",
+          "ISA-95 / IEC 62264 — material, equipment, personnel and operations context"
+        ],
+        "safety_notes": [],
+        "failure_modes": [],
+        "open_questions": [
+          "Completar valores objetivo, tolerancias, equipo concreto y procedimiento de reacción ante no conformidad."
+        ],
+        "schema_version": "1.0",
+        "source_context": {
+          "node_code": "RPS_BATCH",
+          "example_seed": true,
+          "process_code": "PROC_MEZCLAS_CAUCHO_PREPARACION"
+        },
+        "quality_controls": [],
+        "acceptance_criteria": [],
+        "method_of_operation": "Describir paso a paso cómo se ejecuta la operación, su orden, condiciones de inicio y fin, y la respuesta ante desviaciones.",
+        "detailed_description": "Elemento operativo RPS_BATCH — RPS fabricación de batch. Este contenido inicial es una base de contexto para agentes y debe enriquecerse con la ficha de proceso, la receta y los valores validados."
+      },
+      "2026-07-27 14:26:56.584733+02:00"
+    ],
+    [
+      "e3971f3a-7fba-5c2f-b335-be00e0887efd",
+      {
+        "data": {
+          "name": "PSA — fabricación de bolsa",
+          "inputs": [
+            "Rollo de polietileno",
+            "Trolley vacío",
+            "Receta de bolsa"
+          ],
+          "mission": "Obtener una bolsa correctamente formada y cerrada para iniciar la dosificación.",
+          "outputs": [
+            "Bolsa de polietileno colocada en trolley"
+          ],
+          "purpose": "Obtener una bolsa correctamente formada y cerrada para iniciar la dosificación.",
+          "equipment": [
+            "PSA1",
+            "PSA2"
+          ],
+          "materials": [
+            "producto_quimico",
+            "bolsa_polietileno"
+          ],
+          "objective": "Obtener una bolsa correctamente formada y cerrada para iniciar la dosificación.",
+          "indicators": [
+            "tiempo_de_ciclo",
+            "defectos",
+            "paradas"
+          ],
+          "parameters": [
+            "Tensión del compensador",
+            "Solapamiento",
+            "Presión",
+            "Tiempo y temperatura de soldadura",
+            "Intensidad",
+            "Número de ciclos"
+          ],
+          "description": "Fabrica la bolsa de polietileno desde el rollo, forma y suelda el cilindro, realiza el cierre y el corte horizontal y coloca la bolsa en el trolley; el conjunto PSA1/PSA2 entrega un trolley con bolsa cada 20 cmin.",
+          "fixture_key": "PSA",
+          "canonical_ids": {
+            "proceso_id": 2,
+            "contrato_id": 2,
+            "maquina_ids": [
+              3,
+              4
+            ]
+          },
+          "open_questions": [
+            "Identidad, lote y consumo del rollo",
+            "Señales del detector y del compensador"
+          ],
+          "fixture_section": "§3",
+          "quality_controls": [
+            "Alineamiento del plástico",
+            "Verticalidad de la soldadura",
+            "Estado del teflón"
+          ],
+          "declarative_contract": "La operación conserva su descripción funcional y sus particularidades de ejecución; los KPI se calculan bajo demanda y Databricks/PI-AVEVA son solo procedencia futura.",
+          "operation_description": "Fabrica la bolsa de polietileno desde el rollo, forma y suelda el cilindro, realiza el cierre y el corte horizontal y coloca la bolsa en el trolley; el conjunto PSA1/PSA2 entrega un trolley con bolsa cada 20 cmin.",
+          "operation_machine_assignments": [
+            {
+              "description": "Primera máquina automática en serie que fabrica la bolsa desde el rollo de polietileno.",
+              "machine_ref": "PSA1"
+            },
+            {
+              "description": "Segunda máquina automática en serie que completa la fabricación y coloca una bolsa en el trolley vacío.",
+              "machine_ref": "PSA2"
+            }
+          ]
+        },
+        "family": "industrial_process_fixture",
+        "source": {
+          "system": "fixture",
+          "section": "§3",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
+        },
+        "context_id": "e3971f3a-7fba-5c2f-b335-be00e0887efd",
+        "provenance": {
+          "seed": "R12_BU_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-01"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-08-01 23:31:36.126980+02:00"
+    ],
+    [
+      "f4d821f6-a4bf-5251-9390-4682c5a3481f",
+      {
+        "data": {
+          "name": "Entrada de contexto BU/MACBU",
+          "inputs": [],
+          "mission": "Representar el recurso y su papel en el flujo de fabricación descrito en el fixture.",
+          "outputs": [],
+          "purpose": null,
+          "equipment": [],
+          "materials": [],
+          "objective": null,
+          "indicators": [
+            "tiempo_de_ciclo",
+            "defectos",
+            "paradas"
+          ],
+          "parameters": [],
+          "description": "Etapa de entrada/salida del proceso descrito en §1-§2.",
+          "fixture_key": "INPUT",
+          "canonical_ids": {
+            "proceso_id": 2
+          },
+          "open_questions": [],
+          "fixture_section": "§1-§2",
+          "quality_controls": [],
+          "declarative_contract": "La operación conserva su descripción funcional y sus particularidades de ejecución; los KPI se calculan bajo demanda y Databricks/PI-AVEVA son solo procedencia futura.",
+          "operation_description": "Etapa de entrada/salida del proceso descrito en §1-§2.",
+          "operation_machine_assignments": []
+        },
+        "family": "industrial_process_fixture",
+        "source": {
+          "system": "fixture",
+          "section": "§1-§2",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_BU_estructurado.md"
+        },
+        "context_id": "f4d821f6-a4bf-5251-9390-4682c5a3481f",
+        "provenance": {
+          "seed": "R12_BU_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-01"
+        },
+        "context_type": "node",
+        "schema_version": "1.0"
+      },
+      "2026-08-01 23:31:36.126980+02:00"
+    ]
+  ]
+}

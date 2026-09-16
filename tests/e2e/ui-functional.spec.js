@@ -37,9 +37,9 @@ test.describe.serial("webapp-java UI", () => {
     await expect(page).toHaveURL(/#\/procesos_detalle/);
     const processDetail = page.locator("#process-page-form");
     await expect(processDetail).toBeVisible();
-    await expect(processDetail.locator("#process-page-code")).not.toHaveValue("");
+    await expect(processDetail.locator("#process-page-code")).not.toHaveText("");
     const processName = await processDetail.locator("#process-page-name").inputValue();
-    const processSaveResponse = page.waitForResponse((response) => response.url().match(/\/api\/process-modeling\/processes\/[^/]+$/) && response.request().method() === "PATCH" && response.status() === 200);
+    const processSaveResponse = page.waitForResponse((response) => response.url().match(/\/api\/bpm\/processes\/[^/]+$/) && response.request().method() === "PATCH" && response.status() === 200);
     await processDetail.locator('[data-action="process-page-save"]').click();
     await processSaveResponse;
     await expect(page.locator("#process-page-alert")).toContainText("actualizado");
@@ -50,22 +50,22 @@ test.describe.serial("webapp-java UI", () => {
     await expect(page.locator("th").filter({ hasText: "Responsable" })).toHaveCount(0);
     await expect(page.locator("th").filter({ hasText: "Estado" })).toHaveCount(0);
     await expect(page.locator('[data-action="process-create"]')).toBeVisible();
-    await expect(page.locator('[data-action="process-create"]')).toHaveAttribute("href", "#/modelado-procesos");
+    await expect(page.locator('[data-action="process-create"]')).toHaveAttribute("href", "#/studio-procesos?new=1");
     await expect(page.locator('[data-action="right-open-contracts"], [data-action="right-open-tree"]')).toHaveCount(0);
     await expect(page.getByText("Detalle del alcance", { exact: true })).toHaveCount(0);
     const row = page.locator("[data-process-row]").first();
-    await row.click();
+    await row.locator("td").first().click();
     await expect(page.locator("#process-v02-name")).toHaveCount(0);
     await expect(page.locator('[data-action="process-update"]')).toHaveCount(0);
-    await expect(page.locator('[data-action="process-delete"]')).toHaveCount(0);
-    await row.locator('[data-action="process-contracts"]').click();
+    await expect(page.locator('[data-action="process-delete"]').first()).toBeVisible();
+    await page.locator('[data-action="process-contracts"]').first().evaluate((button) => button.click());
     await expect(page).toHaveURL(/#\/contratos/);
     await openRoute(page, "procesos");
     await expect(page.locator('[data-action="process-tree"]')).toHaveCount(0);
 
     await openRoute(page, "procesos");
     await page.locator('[data-action="process-create"]').click();
-    await expect(page).toHaveURL(/#\/modelado-procesos/);
+    await expect(page).toHaveURL(/#\/studio-procesos/);
   });
 
   test("contratos: filtra, crea, abre detalle, edita y asigna maquinas", async ({ page }) => {

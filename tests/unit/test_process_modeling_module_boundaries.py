@@ -9,6 +9,7 @@ from uc_bib_solv.modules.bpm.application.use_cases.processes import ListProcesse
 from uc_bib_solv.modules.bpm.application.ports.process_ports import (
     NodeRepositoryPort as NodePort,
     OperationRepositoryPort as OperationPort,
+    ProcessLayoutRepositoryPort as LayoutPort,
     ProcessRepositoryPort as ProcessPort,
     TransitionRepositoryPort as TransitionPort,
 )
@@ -38,7 +39,7 @@ class ProcessModelingModuleBoundaryTests(unittest.TestCase):
         self.assertFalse(hasattr(process_modeling_port, "BpmProcessModelingApplication"))
 
     def test_ports_are_runtime_replaceable_contracts(self):
-        self.assertTrue(all(port is not None for port in (NodePort, OperationPort, ProcessPort, TransitionPort)))
+        self.assertTrue(all(port is not None for port in (NodePort, OperationPort, LayoutPort, ProcessPort, TransitionPort)))
 
     def test_wiring_injects_repository_instances(self):
         wired = build_process_modeling(lambda: object())
@@ -46,8 +47,8 @@ class ProcessModelingModuleBoundaryTests(unittest.TestCase):
         self.assertTrue(hasattr(wired, "list_processes"))
 
     def test_application_accepts_injected_bpm_ports(self):
-        fake = SimpleNamespace(processes="p", nodes="n", transitions="t")
-        application = ProcessModelingApplication(fake.processes, fake.nodes, fake.transitions)
+        fake = SimpleNamespace(processes="p", nodes="n", transitions="t", layouts="l")
+        application = ProcessModelingApplication(fake.processes, fake.nodes, fake.transitions, fake.layouts)
         self.assertIsInstance(application._list_processes, ListProcesses)
         self.assertEqual("p", application._list_processes.dependencies.processes)
         self.assertTrue(hasattr(application, "_get_process"))

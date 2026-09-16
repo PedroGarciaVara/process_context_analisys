@@ -1,4 +1,6 @@
 import unittest
+import subprocess
+import sys
 from pathlib import Path
 
 from scripts.seed_req12_ml_fixture import (
@@ -7,7 +9,10 @@ from scripts.seed_req12_ml_fixture import (
     PROCESS_CODE,
     RESOURCE_CODES,
     TRANSITIONS,
+    CANONICAL_LOAD_PROCESS_ID,
+    DEPRECATION_MESSAGE,
     contract_snapshot,
+    load,
 )
 
 
@@ -47,6 +52,23 @@ class Req12MlFixtureContractTests(unittest.TestCase):
         self.assertIn("persisted_as_metadata_or_projection", snapshot)
         self.assertIn("declarations, one execution fact and one fixture evidence record",
                       snapshot["persisted_as_metadata_or_projection"])
+
+    def test_mutating_loader_is_disabled_after_canonical_consolidation(self):
+        with self.assertRaisesRegex(RuntimeError, "consolidado y eliminado"):
+            load(None)
+        self.assertEqual(CANONICAL_LOAD_PROCESS_ID, "f247eee0-cfa1-4ea5-b4e6-fa4598a061b5")
+        self.assertIn("sólo --contract", DEPRECATION_MESSAGE)
+
+    def test_cli_rejects_every_database_mode_before_connecting(self):
+        for arguments in ([], ["--dry-run"], ["--json"], ["--dry-run", "--json"]):
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).parents[2] / "scripts" / "seed_req12_ml_fixture.py"), *arguments],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("Carga ML deprecada", result.stderr)
 
 
 if __name__ == "__main__":

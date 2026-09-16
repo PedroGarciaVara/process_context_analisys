@@ -1,5 +1,12 @@
 # Fixture/estructuración del proceso ML de Fabricación de Mezclas de Caucho — cobertura y desglose BPM para requerimiento_12
 
+> **Nota de supersesión — 2026-09-09:** este documento se conserva como
+> evidencia histórica de cobertura. El proceso runtime
+> `PROCESO_ML_FABRICACION` fue identificado como duplicado, su información útil
+> de dosificación se consolidó en `Preparación de cargas reforzantes`
+> (`f247eee0-cfa1-4ea5-b4e6-fa4598a061b5`) y el duplicado fue eliminado. El
+> script asociado ya no permite cargas mutantes; sólo mantiene `--contract`.
+
 > **Clasificación obligatoria:** este documento es una estructuración formal del proceso de fabricación de mezclas de caucho (`proceso_ML.md`) para validar la cobertura del contexto estructurado generalista de `requerimiento_12`. **NO sustituye el esquema generalista relacional ni crea un bounded context o tablas exclusivas de ML.** Sus conceptos y nodos se mapean directamente al BPM relacional (`bpm_process`, `pm_process_version`, `pm_process_node`, `pm_process_transition`) y al detalle JSON/JSONB generalista compartido por todos los procesos del sistema.
 
 ---

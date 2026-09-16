@@ -73,6 +73,37 @@ Este archivo mantiene un registro de los requerimientos identificados y procesad
 
 - **requerimiento_16**: Estado: `implementado_pendiente_validacion` tras la corrección E2E del 2026-08-20. Se corrigieron selectores de sidebar, navegación de vistas standalone y la interacción guiada/fallback de `nominal_capacity`; la suite E2E-16-01…E2E-16-12 conserva su cobertura. La validación Playwright permanece bloqueada porque Chromium no puede iniciar (`sandbox_host_linux.cc:41`, `Operation not permitted`), con evidencia en `requeriments_spec_driven_development/requerimiento_16/documentacion.md`; no se declara pasada. Provenance degradada preservada por la contingencia de runtime.
 
+- **requerimiento_20**: Estado: `implementado_pendiente_validacion`. Requerimiento nuevo para insertar operaciones en transiciones existentes, eliminar operaciones con reconexión opcional y permitir convergencia de varias operaciones hacia una operación destino. La especificación y el plan fueron escritos en modo degradado autorizado y validados por el programador humano el 2026-09-03. Se aprobó reconexión solo para cardinalidad 1→1, copia de metadatos al dividir y convergencia `sequence` entre operaciones. AMD-20-01 implementa generación automática backend de códigos de proceso/nodo, códigos inmutables y eliminación de entradas manuales en UI. Implementación completada; Python 27/27, contratos JS 12/12 y E2E 9/9; pendiente Gate 3 humano.
+
+- **requerimiento_21**: Iniciado 2026-09-13. Estado global: `implementado_pendiente_validacion` para la implementación AMD-21-002, con Gate 3 global pendiente. NC-005, de causa raíz `implementation` y reentrada `execute-agent`, fue resuelta por aprobación humana explícita («sí») en Gate 3 el 2026-09-13, sobre el run `2026-09-13_16-45-10-req21-nc5` (Playwright 1/1; AC-21-02/13..17 6/6; relación canónica de `R12_BU_EVACUACION` solo EV01/id13; cero duplicados y rechazos inválidos sin mutación). AMD-21-002 implementa el selector desplegable alimentado por catálogo, botón “Seleccionar máquina”, selección múltiple acumulativa, recuadro separado de asociadas, eliminación/re-agregado, estado vacío y exclusión de seleccionadas, sin cambiar la fuente de verdad canónica. Gate 1 y Gate 2 de AMD-21-002 fueron aprobados explícitamente el 2026-09-13 («sí» y «aprobar»). T21-T25 completadas con evidencia técnica; T26-T28 quedan pendientes del flujo Playwright, consulta directa y validación humana. NC-001..NC-004-PERSIST siguen abiertas/en corrección; el requerimiento no se marca `done`. No se ha hecho commit/push.
+
+### Actualización Gates 1 y 2 — AMD-21-001
+
+El programador humano validó explícitamente con «sí» la enmienda Type B y con
+«validar» el `task_plan.md` actualizado, ambos el 2026-09-13. Estado vigente de
+`requerimiento_21`: `en_correccion`; la transición `en_enmienda` →
+`spec_pendiente_validacion` → `spec_validada` queda cerrada y Gate 2 queda
+aprobado. Tras la detección de NC-005, el estado operativo vigente es
+`en_correccion`. El programador humano aprobó con «sí» el Gate 3 acotado de
+NC-005 el 2026-09-13, que queda `resolved`. El requisito 21 global permanece
+`en_correccion` exclusivamente por NC-001, NC-002, NC-003, NC-004 y
+NC-004-PERSIST, todas pendientes de corrección/validación mediante
+`execute-agent`; no se declara completado ni aprobado el Gate 3 global.
+
+### AMD-21-002 — Gate 1 aprobado
+
+El 2026-09-13 se recibe una corrección humana posterior al cierre de NC-005.
+Se clasifica como Type B porque amplía los criterios funcionales y técnicos de
+UX de FR-21-02 sin contradecir la implementación canónica ya validada: exige
+selector desplegable, alta explícita acumulativa, recuadro de asociadas,
+eliminación/re-agregado y escalabilidad con más de 100 máquinas. El
+`requirements-agent` actualizó `spec.md` con AC-21-18..23 y dejó su estado en
+`spec_validada`; el Gate 1 fue aprobado explícitamente con «sí» por el
+programador humano el 2026-09-13. El `plan-task-agent` actualizó `task_plan.md`
+con T21-T28 y el Gate 2 fue aprobado explícitamente con «aprobar» el 2026-09-13.
+El siguiente paso es `execute-task`; no se ha modificado código. Las NC previas
+siguen abiertas y el Gate 3 global continúa pendiente.
+
 ## Reinicio administrativo
 
 El 2026-08-20, los requisitos iniciales pendientes se cierran como `vencido` por caducidad y reformulación. Sus especificaciones, planes y evidencias se conservan únicamente como historial. El trabajo futuro comienza desde el estado actual del proyecto mediante nuevos requisitos reformulados; no se reactivan automáticamente estos flujos.

@@ -30,7 +30,7 @@ test.describe("Requerimiento 16 · Máquina, JSON estructurado y cleanup", () =>
   test.afterAll(() => fs.writeFileSync(path.join(artifactDir, "ac-results.json"), JSON.stringify(acResults, null, 2)));
 
   test("E2E-16-01 menú lateral autorizado", async ({ page }) => {
-    await expect(sidebarRoute(page, "modelado-procesos")).toBeVisible();
+    await expect(sidebarRoute(page, "studio-procesos")).toBeVisible();
     await expect(sidebarRoute(page, "contexto")).toBeVisible();
   });
   test("E2E-16-02 retorno conserva selección", async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe("Requerimiento 16 · Máquina, JSON estructurado y cleanup", () =>
     }
     await row.click();
     const id = await row.getAttribute("data-machine-row");
-    await sidebarRoute(page, "modelado-procesos").click();
+    await sidebarRoute(page, "studio-procesos").click();
     await page.goBack();
     await expect(page).toHaveURL(/#\/maquinas$/);
     await expect(page.locator(`[data-machine-row="${id}"]`)).toHaveClass(/border-l-primary|bg-secondary/, { timeout: 15000 });
@@ -95,8 +95,8 @@ test.describe("Requerimiento 16 · Máquina, JSON estructurado y cleanup", () =>
     await expect(specificParameters.locator("[data-json-guided]")).toBeVisible();
   });
   test("E2E-16-08 metadatos PM conservan tipos", async ({ page }) => {
-    await sidebarRoute(page, "modelado-procesos").click();
-    await expect(page).toHaveURL(/#\/modelado-procesos/);
+    await sidebarRoute(page, "studio-procesos").click();
+    await expect(page).toHaveURL(/#\/studio-procesos/);
   });
   test("E2E-16-09 contexto solo lectura", async ({ page }) => {
     await sidebarRoute(page, "contexto").click();

@@ -8,11 +8,11 @@
 | `uc_bib_solv/local_server.py` | Punto de entrada Flask y servicio de la SPA. |
 | `uc_bib_solv/webapp/index.html` | Entrada HTML, estilos, tipografías y carga del frontend. |
 | `uc_bib_solv/webapp/js/core/router.js` y `views/index.js` | Rutas reales de la SPA y nombres de las vistas disponibles. |
-| `uc_bib_solv/webapp/js/views/nodes/process-modeling.js` | Interfaz real del modelado: selector, paleta, nodos, transiciones, metadatos y validación. |
-| `uc_bib_solv/webapp/js/components/process-modeling/graph.js` y controladores de `process-modeling/` | Representación gráfica, expansión, viewport y acciones del editor. |
+| `uc_bib_solv/webapp/js/bpm-studio.js` | Interfaz real del modelado: selector, paleta, nodos, transiciones, metadatos y validación. |
+| `uc_bib_solv/webapp/js/bpm-studio.js` y controladores de `process-modeling/` | Representación gráfica, expansión, viewport y acciones del editor. |
 | `uc_bib_solv/webapp/js/views/inicio/inicio.js`, vistas BPM, RCA, máquinas y contexto | Comprobación de que esas pantallas existen, sin presentarlas como capturadas. |
 | `db_management/schema.sql` | Tablas y relaciones persistentes del modelo causal, operativo y BPM. |
-| `tests/e2e/process-modeling.spec.js` | Rutas/interacciones E2E y selectores del flujo de modelado. |
+| `tests/e2e/bpm-studio-parity.spec.js` | Rutas/interacciones E2E y selectores del flujo de modelado. |
 | `requeriments_spec_driven_development/requerimiento_10/task_plan.md` | Procedencia de las capturas, cobertura de la evidencia y estado de validación documentado. |
 | `requeriments_spec_driven_development/requerimiento_12/spec.md` | Alcance de contexto estructurado y orientación generalista. |
 | `proyecto_master.md` y `entorno.md` | Contexto del proyecto y configuración/operación documentadas. |
@@ -21,7 +21,7 @@
 ## Hechos verificados
 
 - La entrada actual es una SPA HTML/CSS/JavaScript servida por Flask; el README indica que Dash está retirado del arranque actual.
-- El router declara las vistas `inicio`, `procesos`, `contratos`, `maquinas`, `arboles`, `analisis_causas`, `modelado-procesos` y `contexto`, además de detalles BPM/RCA.
+- El router declara las vistas `inicio`, `procesos`, `contratos`, `maquinas`, `arboles`, `analisis_causas`, `studio-procesos` y `contexto`, además de detalles BPM/RCA.
 - El modelado BPM muestra los tipos de nodo `input`, `output`, `operation`, `subprocess`, `decision` y `stock` en el código de la vista.
 - El esquema PostgreSQL contiene `bpm_process`, `pm_process_node` y `pm_process_transition`, además de tablas causales y operativas.
 - Las cuatro imágenes incluidas son capturas PNG existentes en la evidencia de `requerimiento_10`; sus contenidos corresponden visualmente al frontend de modelado BPM.

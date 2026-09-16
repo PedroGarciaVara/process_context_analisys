@@ -1,0 +1,5322 @@
+{
+  "format": "uc-bib-logical-backup-v1",
+  "migration": "consolidate_duplicate_ml_process_v1",
+  "created_at": "2026-09-09T20:19:36.077231+00:00",
+  "source_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+  "target_process_id": "f247eee0-cfa1-4ea5-b4e6-fa4598a061b5",
+  "restore_order": [
+    "node",
+    "bpm_process",
+    "proceso",
+    "maquina",
+    "registro_maquina",
+    "pm_process_node",
+    "pm_process_node_metadata",
+    "pm_process_transition",
+    "contrato",
+    "contrato_maquina",
+    "machine_operation_configuration",
+    "causa",
+    "hipotesis",
+    "hypothesis_required_data",
+    "hypothesis_expected_evidence",
+    "analisis_causas",
+    "analisis_resultado",
+    "analisis_causas_detalle",
+    "relationship",
+    "pm_context_record"
+  ],
+  "sha256": "602ba6a211d47e0c44f4bc44c4b2529f886903a7ecefd83fadf4265f1e904f80",
+  "tables": {
+    "bpm_process": [
+      {
+        "process_id": "f247eee0-cfa1-4ea5-b4e6-fa4598a061b5",
+        "process_code": "PROC_MEZCLAS_CAUCHO_CARGAS",
+        "name": "Preparación de cargas reforzantes",
+        "description": "Subproceso independiente identificado en tests/test_descripcion_procesos.md. Detalle operativo pendiente de enriquecimiento.",
+        "abstraction_level": 0,
+        "parent_process_id": "06757b45-a08d-4493-8012-db03325399c8",
+        "status": "draft",
+        "created_at": "2026-07-20T21:12:45.448730+02:00",
+        "updated_at": "2026-07-20T21:12:45.448730+02:00"
+      },
+      {
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "process_code": "PROCESO_ML_FABRICACION",
+        "name": "PROCESO_ML_FABRICACION",
+        "description": "Proceso generalista de fabricación de mezclas de caucho para neumáticos, estructurado desde las secciones §1-§14 del fixture ML.",
+        "abstraction_level": 0,
+        "parent_process_id": null,
+        "status": "draft",
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      }
+    ],
+    "proceso": [
+      {
+        "id": 65,
+        "nombre": "Preparación de cargas reforzantes",
+        "bpm_process_id": "f247eee0-cfa1-4ea5-b4e6-fa4598a061b5",
+        "node_id": 1599
+      },
+      {
+        "id": 78,
+        "nombre": "PROCESO_ML_FABRICACION",
+        "bpm_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "node_id": 1574
+      }
+    ],
+    "pm_process_node": [
+      {
+        "node_id": "bb897fda-7352-52d2-a998-148ef132d03d",
+        "node_code": "ACEITE_DOSIF",
+        "node_type": "operation",
+        "name": "Dosificación Aceites 60°C",
+        "description": "Inyección MDM o dosificación en circuito cerrado con picaje automático por exceso.",
+        "child_process_id": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§6.2/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "fixture": true,
+          "external_key": "R12_ML_FIXTURE_V1:node:ACEITE_DOSIF",
+          "canonical_ids": {
+            "process_id": 78,
+            "contract_id": 161,
+            "machine_ids": [
+              309,
+              310,
+              311,
+              312
+            ]
+          }
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "output_role": null,
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "node_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "node_code": "BU_APROV",
+        "node_type": "operation",
+        "name": "Aprovisionamiento de BUs",
+        "description": "Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "child_process_id": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§3/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "fixture": true,
+          "external_key": "R12_ML_FIXTURE_V1:node:BU_APROV",
+          "canonical_ids": {
+            "process_id": 78,
+            "contract_id": 157,
+            "machine_ids": [
+              313,
+              314,
+              315,
+              316,
+              317,
+              318,
+              319,
+              320,
+              321
+            ]
+          }
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "output_role": null,
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "node_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "node_code": "CARGAS_DOSIF",
+        "node_type": "operation",
+        "name": "Dosificación Cargas PLC",
+        "description": "Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+        "child_process_id": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§5/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "fixture": true,
+          "external_key": "R12_ML_FIXTURE_V1:node:CARGAS_DOSIF",
+          "canonical_ids": {
+            "process_id": 78,
+            "contract_id": 159,
+            "machine_ids": [
+              322,
+              323,
+              324,
+              325,
+              326,
+              327,
+              328,
+              329
+            ]
+          }
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "output_role": null,
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "node_id": "9a3d04b7-c4e3-5db5-a0eb-b3303f4ab7bd",
+        "node_code": "CAUCHO_APROV",
+        "node_type": "operation",
+        "name": "Aprovisionamiento de Caucho",
+        "description": "Recepción en balancelas y verificación en tolva-báscula, incluida la opción fraccionada de Línea 4.",
+        "child_process_id": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§4/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "fixture": true,
+          "external_key": "R12_ML_FIXTURE_V1:node:CAUCHO_APROV",
+          "canonical_ids": {
+            "process_id": 78,
+            "contract_id": 158,
+            "machine_ids": [
+              309,
+              310,
+              311,
+              312
+            ]
+          }
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "output_role": null,
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "node_id": "f1003a4c-2788-5841-9a9a-768c9249a93b",
+        "node_code": "GOULOTTE_ESPERA",
+        "node_type": "stock",
+        "name": "Intermedia Goulotte",
+        "description": "Intermedia Goulotte",
+        "child_process_id": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§7/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "fixture": true,
+          "external_key": "R12_ML_FIXTURE_V1:node:GOULOTTE_ESPERA",
+          "canonical_ids": {
+            "process_id": 78
+          }
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "output_role": null,
+        "stock_capacity": 20,
+        "stock_initial_quantity": 0,
+        "stock_unit": "cmin",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "node_id": "11072fdb-6376-5949-a244-bfdb0512abe8",
+        "node_code": "HA_HOMOALIMENTADOR",
+        "node_type": "operation",
+        "name": "Homogeneizado HA",
+        "description": "Mezclado secundario y adición final después de la descarga de la Goulotte.",
+        "child_process_id": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§2/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "fixture": true,
+          "external_key": "R12_ML_FIXTURE_V1:node:HA_HOMOALIMENTADOR",
+          "canonical_ids": {
+            "process_id": 78,
+            "contract_id": 163,
+            "machine_ids": [
+              334
+            ]
+          }
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "output_role": null,
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "node_id": "d9013315-c284-555c-9a8f-f889844b8f5a",
+        "node_code": "INPUT_ML",
+        "node_type": "input",
+        "name": "Demanda de Receta ML",
+        "description": "Demanda de Receta ML",
+        "child_process_id": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "fixture": true,
+          "external_key": "R12_ML_FIXTURE_V1:node:INPUT_ML",
+          "canonical_ids": {
+            "process_id": 78
+          }
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "output_role": null,
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "node_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "node_code": "MI_MEZCLADO",
+        "node_type": "operation",
+        "name": "Mezclado Interno MI",
+        "description": "Mezclado interno en MI10..MI40 con paletas, comasticación, adiciones y respiros de pilón.",
+        "child_process_id": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§7/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "fixture": true,
+          "external_key": "R12_ML_FIXTURE_V1:node:MI_MEZCLADO",
+          "canonical_ids": {
+            "process_id": 78,
+            "contract_id": 162,
+            "machine_ids": [
+              309,
+              310,
+              311,
+              312
+            ]
+          }
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "output_role": null,
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "node_id": "038fab0f-cf23-5e44-bd8a-d9f99fb1c423",
+        "node_code": "SILANO_DOSIF",
+        "node_type": "operation",
+        "name": "Inyección de Silano",
+        "description": "Inyección directa en MI en SI21, SI31 y SI43 mediante MDM Coriolis.",
+        "child_process_id": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§6.1/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "fixture": true,
+          "external_key": "R12_ML_FIXTURE_V1:node:SILANO_DOSIF",
+          "canonical_ids": {
+            "process_id": 78,
+            "contract_id": 160,
+            "machine_ids": [
+              330,
+              331,
+              332
+            ]
+          }
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "output_role": null,
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "node_id": "7c68aef0-53e6-44e8-8d7d-97c0f250aa07",
+        "node_code": "IN",
+        "node_type": "input",
+        "name": "Preparación de cargas reforzantes — entrada",
+        "description": null,
+        "child_process_id": null,
+        "properties": {},
+        "created_at": "2026-07-20T21:12:45.526143+02:00",
+        "updated_at": "2026-07-20T21:12:45.526143+02:00",
+        "output_role": null,
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "f247eee0-cfa1-4ea5-b4e6-fa4598a061b5"
+      },
+      {
+        "node_id": "75191cec-35e5-451f-98f7-7ced3e08857a",
+        "node_code": "OUT",
+        "node_type": "output",
+        "name": "Preparación de cargas reforzantes — salida",
+        "description": null,
+        "child_process_id": null,
+        "properties": {},
+        "created_at": "2026-07-20T21:12:45.548590+02:00",
+        "updated_at": "2026-07-20T21:12:45.548590+02:00",
+        "output_role": "normal",
+        "stock_capacity": null,
+        "stock_initial_quantity": null,
+        "stock_unit": null,
+        "process_id": "f247eee0-cfa1-4ea5-b4e6-fa4598a061b5"
+      }
+    ],
+    "pm_process_transition": [
+      {
+        "transition_id": "002e8a5d-f182-57e3-85ab-6dae1b41b547",
+        "source_node_id": "d9013315-c284-555c-9a8f-f889844b8f5a",
+        "target_node_id": "038fab0f-cf23-5e44-bd8a-d9f99fb1c423",
+        "transition_type": "sequence",
+        "label": "Inicio orden de mezcla",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_04"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "042a899f-4822-5c5f-ab08-b268c7c566d8",
+        "source_node_id": "038fab0f-cf23-5e44-bd8a-d9f99fb1c423",
+        "target_node_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "transition_type": "sequence",
+        "label": "Silano inyectado OK",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_11"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "158ee521-d666-5e8a-b48f-601c417c1aaa",
+        "source_node_id": "d9013315-c284-555c-9a8f-f889844b8f5a",
+        "target_node_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "transition_type": "sequence",
+        "label": "Inicio orden de mezcla",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_03"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "3733c79d-b7fd-5447-8a3b-8819005c51b7",
+        "source_node_id": "bb897fda-7352-52d2-a998-148ef132d03d",
+        "target_node_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "transition_type": "sequence",
+        "label": "Aceite inyectado OK (60°C)",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_12"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "39ce81a8-cee9-5df2-bb66-927bc60a3233",
+        "source_node_id": "d9013315-c284-555c-9a8f-f889844b8f5a",
+        "target_node_id": "9a3d04b7-c4e3-5db5-a0eb-b3303f4ab7bd",
+        "transition_type": "sequence",
+        "label": "Inicio orden de mezcla",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_02"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "3ec65a76-7be9-51af-8c61-3e13bd62f616",
+        "source_node_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "target_node_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "transition_type": "sequence",
+        "label": "Cargas pesadas OK",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_10"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "63b38a15-aec9-5423-9d02-828b2ce39865",
+        "source_node_id": "d9013315-c284-555c-9a8f-f889844b8f5a",
+        "target_node_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "transition_type": "sequence",
+        "label": "Inicio orden de mezcla",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_01"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "6e072bc7-2121-5d81-ba9f-bcf8d75d4f80",
+        "source_node_id": "f1003a4c-2788-5841-9a9a-768c9249a93b",
+        "target_node_id": "11072fdb-6376-5949-a244-bfdb0512abe8",
+        "transition_type": "sequence",
+        "label": "Descarga a HA (0-2 cmin)",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_14"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "702159b2-a12c-4fa4-b383-6d4d75d772a9",
+        "source_node_id": "7c68aef0-53e6-44e8-8d7d-97c0f250aa07",
+        "target_node_id": "75191cec-35e5-451f-98f7-7ced3e08857a",
+        "transition_type": "sequence",
+        "label": null,
+        "condition": null,
+        "properties": {},
+        "created_at": "2026-07-20T21:12:45.589445+02:00",
+        "updated_at": "2026-07-20T21:12:45.589445+02:00",
+        "process_id": "f247eee0-cfa1-4ea5-b4e6-fa4598a061b5"
+      },
+      {
+        "transition_id": "7c9c61e8-bee8-5834-910b-7c38a3af3a7c",
+        "source_node_id": "d9013315-c284-555c-9a8f-f889844b8f5a",
+        "target_node_id": "bb897fda-7352-52d2-a998-148ef132d03d",
+        "transition_type": "sequence",
+        "label": "Inicio orden de mezcla",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_05"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "911bdbff-975e-5f0d-b526-f375866de448",
+        "source_node_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "target_node_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "transition_type": "sequence",
+        "label": "BU pesada OK",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_06"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "ceb7b548-f0a9-511c-8264-8a2857f81a13",
+        "source_node_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "target_node_id": "f1003a4c-2788-5841-9a9a-768c9249a93b",
+        "transition_type": "sequence",
+        "label": "Evacuación por silla",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_13"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "transition_id": "ddb4738f-f636-51b0-9fc3-04335c380f41",
+        "source_node_id": "9a3d04b7-c4e3-5db5-a0eb-b3303f4ab7bd",
+        "target_node_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "transition_type": "sequence",
+        "label": "Caucho pesado OK",
+        "condition": null,
+        "properties": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "source": {
+            "section": "§8.2",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "external_key": "R12_ML_FIXTURE_V1:transition:TR_08"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      }
+    ],
+    "pm_process_node_metadata": [
+      {
+        "metadata_id": "e74e6c57-51b4-47b5-a9b5-a0fbd02a0156",
+        "node_id": "038fab0f-cf23-5e44-bd8a-d9f99fb1c423",
+        "metadata": {
+          "data": {
+            "name": "Inyección de Silano",
+            "inputs": [
+              "Silano"
+            ],
+            "outputs": [
+              "Silano inyectado"
+            ],
+            "equipment": [
+              "SI21",
+              "SI31",
+              "SI43"
+            ],
+            "objective": "Inyectar silano medido para recetas con sílice.",
+            "parameters": [
+              "MDM Coriolis",
+              "Tres regímenes",
+              "Optimización ±3%"
+            ],
+            "description": "Inyección directa en MI en SI21, SI31 y SI43 mediante MDM Coriolis.",
+            "fixture_key": "SILANO_DOSIF",
+            "canonical_ids": {
+              "process_id": 78,
+              "contract_id": 160,
+              "machine_ids": [
+                330,
+                331,
+                332
+              ]
+            },
+            "open_questions": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "quality_controls": [
+              "Caudal y masa"
+            ]
+          },
+          "family": "industrial_process_fixture",
+          "source": {
+            "system": "fixture",
+            "section": "§6.1/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "038fab0f-cf23-5e44-bd8a-d9f99fb1c423",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "node",
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "metadata_id": "72e51770-cbf2-4265-ac06-c142362c935f",
+        "node_id": "11072fdb-6376-5949-a244-bfdb0512abe8",
+        "metadata": {
+          "data": {
+            "name": "Homogeneizado HA",
+            "inputs": [
+              "Mezcla desde Goulotte"
+            ],
+            "outputs": [
+              "Mezcla homogeneizada"
+            ],
+            "equipment": [
+              "HA"
+            ],
+            "objective": "Homogeneizar y acondicionar la mezcla para la etapa posterior.",
+            "parameters": [
+              "Descarga Goulotte 0-2 cmin"
+            ],
+            "description": "Mezclado secundario y adición final después de la descarga de la Goulotte.",
+            "fixture_key": "HA_HOMOALIMENTADOR",
+            "canonical_ids": {
+              "process_id": 78,
+              "contract_id": 163,
+              "machine_ids": [
+                334
+              ]
+            },
+            "open_questions": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "quality_controls": [
+              "Disponibilidad de HA"
+            ]
+          },
+          "family": "industrial_process_fixture",
+          "source": {
+            "system": "fixture",
+            "section": "§2/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "11072fdb-6376-5949-a244-bfdb0512abe8",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "node",
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "metadata_id": "94a60a28-c0fe-42d3-a032-85b3301e3a28",
+        "node_id": "9a3d04b7-c4e3-5db5-a0eb-b3303f4ab7bd",
+        "metadata": {
+          "data": {
+            "name": "Aprovisionamiento de Caucho",
+            "inputs": [
+              "Balancelas de caucho"
+            ],
+            "outputs": [
+              "Caucho OK",
+              "Desecho por marcha atrás"
+            ],
+            "equipment": [
+              "MI10",
+              "MI20",
+              "MI30",
+              "MI40"
+            ],
+            "objective": "Aprovisionar caucho pesado para la mezcla.",
+            "parameters": [
+              "Buffer 17-20 balancelas",
+              "2 balancelas y 2 tapices en Línea 4"
+            ],
+            "description": "Recepción en balancelas y verificación en tolva-báscula, incluida la opción fraccionada de Línea 4.",
+            "fixture_key": "CAUCHO_APROV",
+            "canonical_ids": {
+              "process_id": 78,
+              "contract_id": 158,
+              "machine_ids": [
+                309,
+                310,
+                311,
+                312
+              ]
+            },
+            "open_questions": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "quality_controls": [
+              "Peso OK",
+              "Introducción única por MI"
+            ]
+          },
+          "family": "industrial_process_fixture",
+          "source": {
+            "system": "fixture",
+            "section": "§4/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "9a3d04b7-c4e3-5db5-a0eb-b3303f4ab7bd",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "node",
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "metadata_id": "13efcebf-9aa1-418d-bfe3-19a5d4f406c5",
+        "node_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "metadata": {
+          "data": {
+            "name": "Dosificación Cargas PLC",
+            "inputs": [
+              "Negro de humo",
+              "Sílice",
+              "Receta"
+            ],
+            "outputs": [
+              "Cargas pesadas"
+            ],
+            "equipment": [
+              "BN11",
+              "BN12",
+              "BN21",
+              "BN22",
+              "BN31",
+              "BN32",
+              "BN41",
+              "BN42"
+            ],
+            "objective": "Completar la receta de cargas dentro de tolerancia.",
+            "parameters": [
+              "Tres regímenes PLC",
+              "K",
+              "Retardo",
+              "Media móvil de 5 ciclos",
+              "Cpk > 1.3 (>50 kg), Cpk > 1.0 (<50 kg)"
+            ],
+            "description": "Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+            "fixture_key": "CARGAS_DOSIF",
+            "canonical_ids": {
+              "process_id": 78,
+              "contract_id": 159,
+              "machine_ids": [
+                322,
+                323,
+                324,
+                325,
+                326,
+                327,
+                328,
+                329
+              ]
+            },
+            "open_questions": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "quality_controls": [
+              "Peso",
+              "Impulsos por defecto",
+              "Retirada manual por exceso"
+            ]
+          },
+          "family": "industrial_process_fixture",
+          "source": {
+            "system": "fixture",
+            "section": "§5/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "node",
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "metadata_id": "617f0b30-216e-4a61-930b-e4114f99d186",
+        "node_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "metadata": {
+          "data": {
+            "name": "Mezclado Interno MI",
+            "inputs": [
+              "BUs",
+              "Caucho",
+              "Cargas",
+              "Silano",
+              "Aceites"
+            ],
+            "outputs": [
+              "Mezcla evacuada"
+            ],
+            "equipment": [
+              "MI10",
+              "MI20",
+              "MI30",
+              "MI40"
+            ],
+            "objective": "Fabricar la mezcla conforme a receta.",
+            "parameters": [
+              "Tiempo, temperatura o energía",
+              "3-6 respiros de pilón",
+              "Aditivo de aceite con masa presente"
+            ],
+            "description": "Mezclado interno en MI10..MI40 con paletas, comasticación, adiciones y respiros de pilón.",
+            "fixture_key": "MI_MEZCLADO",
+            "canonical_ids": {
+              "process_id": 78,
+              "contract_id": 162,
+              "machine_ids": [
+                309,
+                310,
+                311,
+                312
+              ]
+            },
+            "open_questions": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "quality_controls": [
+              "Silla",
+              "Aceleración de paletas",
+              "Retención de caucho"
+            ]
+          },
+          "family": "industrial_process_fixture",
+          "source": {
+            "system": "fixture",
+            "section": "§7/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "node",
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "metadata_id": "d6ad3c00-52f7-40f2-a3ec-85d8b799f628",
+        "node_id": "bb897fda-7352-52d2-a998-148ef132d03d",
+        "metadata": {
+          "data": {
+            "name": "Dosificación Aceites 60°C",
+            "inputs": [
+              "Aceite"
+            ],
+            "outputs": [
+              "Aceite inyectado",
+              "Defecto de cero si aplica"
+            ],
+            "equipment": [
+              "MI10",
+              "MI20",
+              "MI30",
+              "MI40"
+            ],
+            "objective": "Dosificar aceite manteniendo fluidez y tara correcta.",
+            "parameters": [
+              "60 °C",
+              "MDM o tolva-báscula",
+              "Apertura de válvula",
+              "Tres regímenes"
+            ],
+            "description": "Inyección MDM o dosificación en circuito cerrado con picaje automático por exceso.",
+            "fixture_key": "ACEITE_DOSIF",
+            "canonical_ids": {
+              "process_id": 78,
+              "contract_id": 161,
+              "machine_ids": [
+                309,
+                310,
+                311,
+                312
+              ]
+            },
+            "open_questions": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "quality_controls": [
+              "Picaje de desecho",
+              "Temperatura estricta a 60 °C"
+            ]
+          },
+          "family": "industrial_process_fixture",
+          "source": {
+            "system": "fixture",
+            "section": "§6.2/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "bb897fda-7352-52d2-a998-148ef132d03d",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "node",
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "metadata_id": "adffaa37-8e7d-4ccf-bcb2-f370bbb08b11",
+        "node_id": "d9013315-c284-555c-9a8f-f889844b8f5a",
+        "metadata": {
+          "data": {
+            "name": "Demanda de Receta ML",
+            "inputs": [],
+            "outputs": [],
+            "equipment": [],
+            "objective": null,
+            "parameters": [],
+            "description": "Demanda de Receta ML",
+            "fixture_key": "INPUT_ML",
+            "canonical_ids": {
+              "process_id": 78
+            },
+            "open_questions": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "quality_controls": []
+          },
+          "family": "industrial_process_fixture",
+          "source": {
+            "system": "fixture",
+            "section": "§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "d9013315-c284-555c-9a8f-f889844b8f5a",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "node",
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "metadata_id": "7a35684c-2566-473d-8daf-28889ccbe093",
+        "node_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "metadata": {
+          "data": {
+            "name": "Aprovisionamiento de BUs",
+            "inputs": [
+              "BUs",
+              "Receta"
+            ],
+            "outputs": [
+              "BUs listas",
+              "Rechazo"
+            ],
+            "equipment": [
+              "BU11",
+              "BU12",
+              "BU21",
+              "BU22",
+              "BU23",
+              "BU31",
+              "BU32",
+              "BU41",
+              "BU42"
+            ],
+            "objective": "Aprovisionar BUs verificadas por peso.",
+            "parameters": [
+              "40-60 BUs por cajón",
+              "6-10 pasos por tapiz"
+            ],
+            "description": "Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+            "fixture_key": "BU_APROV",
+            "canonical_ids": {
+              "process_id": 78,
+              "contract_id": 157,
+              "machine_ids": [
+                313,
+                314,
+                315,
+                316,
+                317,
+                318,
+                319,
+                320,
+                321
+              ]
+            },
+            "open_questions": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "quality_controls": [
+              "Peso OK",
+              "Retirada manual en Línea 4"
+            ]
+          },
+          "family": "industrial_process_fixture",
+          "source": {
+            "system": "fixture",
+            "section": "§3/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "node",
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "metadata_id": "fe1f2ac7-21e1-4d44-800e-a05d69e746df",
+        "node_id": "f1003a4c-2788-5841-9a9a-768c9249a93b",
+        "metadata": {
+          "data": {
+            "name": "Intermedia Goulotte",
+            "inputs": [],
+            "outputs": [],
+            "equipment": [],
+            "objective": null,
+            "parameters": [],
+            "description": "Intermedia Goulotte",
+            "fixture_key": "GOULOTTE_ESPERA",
+            "canonical_ids": {
+              "process_id": 78
+            },
+            "open_questions": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "quality_controls": []
+          },
+          "family": "industrial_process_fixture",
+          "source": {
+            "system": "fixture",
+            "section": "§7/§8.1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "f1003a4c-2788-5841-9a9a-768c9249a93b",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "node",
+          "schema_version": "1.0"
+        },
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      }
+    ],
+    "pm_context_record": [
+      {
+        "record_id": "094124f0-8f4a-5e4f-afee-7b2321ec5060",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BU21).",
+            "placeholder": true,
+            "external_key": "BU21",
+            "canonical_machine_id": 315
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "68b2e2b5-db94-53a8-89e1-ba2eb6d407cb",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "0ae32f89-27cd-5e28-ab48-c84f4845d255",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BN21).",
+            "placeholder": true,
+            "external_key": "BN21",
+            "canonical_machine_id": 324
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "4df9ed9b-04d8-56a8-b5f5-92e5ae2a9b60",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "0e87e968-3c86-518c-b8fe-fb40c354fe0d",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BN11).",
+            "placeholder": true,
+            "external_key": "BN11",
+            "canonical_machine_id": 322
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "feffb1af-33ac-515a-9328-353734f849b5",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "11019ac4-afc5-584e-a289-7adfab3c3b94",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BN31).",
+            "placeholder": true,
+            "external_key": "BN31",
+            "canonical_machine_id": 326
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "551d0115-3d4e-5d60-a3b2-40e8114277c1",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "16d6e8c9-f42a-5a4f-aae4-3ffb415a8428",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BN42).",
+            "placeholder": true,
+            "external_key": "BN42",
+            "canonical_machine_id": 329
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "0f5b611c-826e-54f0-b748-b598207a14d0",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "1c69524a-d4a1-5ad9-a07c-55f6b46037d2",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BU41).",
+            "placeholder": true,
+            "external_key": "BU41",
+            "canonical_machine_id": 320
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "111c731d-f4df-5b35-a3dd-88cc80165bc4",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "2bafa06d-4071-559f-a687-24df3f117539",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (SI43).",
+            "placeholder": true,
+            "external_key": "SI43",
+            "canonical_machine_id": 332
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "ee63813f-a269-559c-a280-fc1d872b4aa2",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "2d939338-e493-5000-924f-17d7780055e9",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BU22).",
+            "placeholder": true,
+            "external_key": "BU22",
+            "canonical_machine_id": 316
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "569d9c26-3396-5a53-a090-8d04f6a2da57",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "2e2c6b4c-ae57-5743-ba47-b39f7fd0f27b",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "gaps": [
+              {
+                "id": "ML-N-001",
+                "section": "§3-§6",
+                "description": "No existe contrato de identidad y trazabilidad de lotes para caucho, negro, sílice, aceites y BUs."
+              },
+              {
+                "id": "ML-N-002",
+                "section": "§3.2",
+                "description": "No se registra ni alerta la retención manual de BUs en Línea 4."
+              },
+              {
+                "id": "ML-N-003",
+                "section": "§4.2",
+                "description": "El modo fraccionado de Línea 4 queda como declaración, sin configuración operacional especializada."
+              },
+              {
+                "id": "ML-N-004",
+                "section": "§5.3-§5.4",
+                "description": "No hay histórico PLC de K, retardo, columna ni media móvil."
+              },
+              {
+                "id": "ML-N-005",
+                "section": "§6.2",
+                "description": "No se ingieren temperaturas continuas ni eventos de defecto de cero."
+              },
+              {
+                "id": "ML-N-006",
+                "section": "§7",
+                "description": "No se registran curvas de respiros de pilón ni correlación con energía/temperatura."
+              },
+              {
+                "id": "ML-N-007",
+                "section": "§7",
+                "description": "No se captura telemetría de aceleración de paletas ni verificación de retención en silla."
+              },
+              {
+                "id": "ML-LOAD-001",
+                "section": "§9",
+                "description": "PLC, MES/SCADA y PI-AVEVA quedan registrados solo como procedencia declarada; no se inventan conectores ni hechos."
+              },
+              {
+                "id": "ML-N-008",
+                "section": "§2.1",
+                "description": "La secuencia posterior HA-HomoFinalizador-báscula-calandra-refrigerador-apilador se conserva como descripción de salida, pero no como nodos/equipos operativos independientes."
+              },
+              {
+                "id": "ML-N-009",
+                "section": "§1/§5",
+                "description": "No se persisten recetas, proporciones, tolerancias ni trazabilidad de lotes; solo se conserva su necesidad declarada en el detalle del proceso."
+              },
+              {
+                "id": "ML-N-010",
+                "section": "§5.3-§5.4/§6",
+                "description": "Las fórmulas, umbrales Cpk, ajustes ±3% y media móvil se conservan como metadata declarativa; no se persisten muestras, curvas ni resultados calculados."
+              },
+              {
+                "id": "ML-N-011",
+                "section": "§3.2/§4.2/§6.2/§7",
+                "description": "Las reglas de intervención manual, fraccionado, defecto de cero, aceleración de paletas y retención se proyectan como controles/labels, sin hechos industriales ni alertas operativas."
+              }
+            ]
+          },
+          "family": "fixture_gaps",
+          "source": {
+            "system": "fixture",
+            "section": "§11-§13",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "process",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§11-§13",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "36e90c6c-7086-50ca-af3c-81c223901b4e",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BU11).",
+            "placeholder": true,
+            "external_key": "BU11",
+            "canonical_machine_id": 313
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "94b69b88-5c43-5bbc-893a-3c0c27e397d7",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "384514f5-763a-5bf3-953d-fb8ed8f69582",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (MI40).",
+            "placeholder": true,
+            "external_key": "MI40",
+            "canonical_machine_id": 312
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "eb42f701-3008-5c0c-ad6d-a2773d107e54",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "446eb1c7-89f5-5806-9a39-106f06cfa6e4",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (GOULOTTE).",
+            "placeholder": true,
+            "external_key": "GOULOTTE",
+            "canonical_machine_id": 333
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "56f66b47-c0e2-560f-98dc-4d6036ae434c",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "48840c7e-d1c1-5093-864a-cec468ee9307",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BU31).",
+            "placeholder": true,
+            "external_key": "BU31",
+            "canonical_machine_id": 318
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "5ba9c099-bd8a-5000-8b95-3e56d43895a1",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "6ca097c3-6389-5710-9587-218450bee52c",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (HA).",
+            "placeholder": true,
+            "external_key": "HA",
+            "canonical_machine_id": 334
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "16f3fbc3-82aa-5fa7-9f2b-279a06b2009f",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "71c8d41f-ac92-56ed-926c-0bd598160c6d",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BN41).",
+            "placeholder": true,
+            "external_key": "BN41",
+            "canonical_machine_id": 328
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "600a540c-59ff-5862-b56b-3e06e269092e",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "73d82caa-1e8a-5c87-9eee-5b01e4e3a9f4",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BU32).",
+            "placeholder": true,
+            "external_key": "BU32",
+            "canonical_machine_id": 319
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "5fab3baf-06e3-5aa4-b3ee-8a4e80be8366",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "943b4ff2-d1b3-5198-9d34-50ea7d7668a0",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (SI21).",
+            "placeholder": true,
+            "external_key": "SI21",
+            "canonical_machine_id": 330
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "b12d6a6e-e18b-50e6-9587-98577919ef98",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "a33bd407-c660-5491-9c3a-867d9d1f733c",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (MI20).",
+            "placeholder": true,
+            "external_key": "MI20",
+            "canonical_machine_id": 310
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "aafb136a-18f8-58fa-b87a-b4542ef1dd13",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "a3958cd3-e519-55d4-84d8-2b3ecf72297a",
+        "node_id": null,
+        "record_type": "fact",
+        "payload": {
+          "data": {
+            "event": "fixture_loaded",
+            "node_count": 12,
+            "telemetry_ingested": false
+          },
+          "family": "execution",
+          "source": {
+            "system": "fixture",
+            "section": "§9",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "process",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§9",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": "R12_ML_FIXTURE_V1:execution:1",
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "a8b9bf73-7d30-5876-b2bf-a159ed756ffd",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BU23).",
+            "placeholder": true,
+            "external_key": "BU23",
+            "canonical_machine_id": 317
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "b493ed1d-1cd7-5bbf-895c-a0c20d93930c",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "ab1b4c40-0da9-5c05-b1bb-1b4a462f1097",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "name": "PROCESO_ML_FABRICACION",
+            "description": "Proceso generalista de fabricación de mezclas de caucho para neumáticos, estructurado desde las secciones §1-§14 del fixture ML.",
+            "process_code": "PROCESO_ML_FABRICACION",
+            "fixture_version": "test"
+          },
+          "family": "bpm_process",
+          "source": {
+            "system": "fixture",
+            "section": "§0-§1",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "process",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§0-§1",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "b0746a27-eae3-5832-bfa4-2e5279ae747e",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BN12).",
+            "placeholder": true,
+            "external_key": "BN12",
+            "canonical_machine_id": 323
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "575f3951-c260-5f2a-a4aa-587cde48af26",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "b469bec0-b2df-57a4-a55d-14af4b62425c",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BN32).",
+            "placeholder": true,
+            "external_key": "BN32",
+            "canonical_machine_id": 327
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "0c741ae2-bcee-5e1c-84d4-042dc99755dc",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "c2480095-7d92-567d-a1fd-92c8dea058f9",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (SI31).",
+            "placeholder": true,
+            "external_key": "SI31",
+            "canonical_machine_id": 331
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "7f5f16a8-5563-5d50-b33b-02559e9fc3c4",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "c6e1a4de-6505-5bcf-99c0-b50af697d168",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (MI10).",
+            "placeholder": true,
+            "external_key": "MI10",
+            "canonical_machine_id": 309
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "a57e5c07-c47c-535d-87bd-3b1a1822d81d",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "c9c90f3e-17d2-5de1-92b6-bae653db48c9",
+        "node_id": null,
+        "record_type": "evidence",
+        "payload": {
+          "data": {
+            "path": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md",
+            "gap_ids": [
+              "ML-N-001",
+              "ML-N-002",
+              "ML-N-003",
+              "ML-N-004",
+              "ML-N-005",
+              "ML-N-006",
+              "ML-N-007",
+              "ML-LOAD-001",
+              "ML-N-008",
+              "ML-N-009",
+              "ML-N-010",
+              "ML-N-011"
+            ],
+            "sections": [
+              "§8.1",
+              "§8.2"
+            ]
+          },
+          "family": "fixture_report",
+          "source": {
+            "system": "fixture",
+            "section": "§13",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "process",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§13",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "cea49322-4840-5c36-98d0-a64ff8a0381b",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BU42).",
+            "placeholder": true,
+            "external_key": "BU42",
+            "canonical_machine_id": 321
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "0164ef53-1679-5cfa-95c8-3b808ed93419",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "cec6dcba-ae41-5e1f-9ca5-0fbe1c76d12d",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BN22).",
+            "placeholder": true,
+            "external_key": "BN22",
+            "canonical_machine_id": 325
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "2ad145b3-3c8b-506b-9c06-2109e26b0538",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "d6fa29ea-98cb-5991-8372-5895f5b7ee9e",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (BU12).",
+            "placeholder": true,
+            "external_key": "BU12",
+            "canonical_machine_id": 314
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "7166fd7f-0a60-517e-9b38-ce36a1da9a93",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "da421c4e-f9db-5e54-a591-4c5ffbc7ef77",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "levels": [
+              "PLC/Autómata",
+              "MES/SCADA",
+              "PI-AVEVA"
+            ],
+            "causal_chain": "contract -> analysis -> methodology -> cause -> hypothesis -> evidence -> conclusion",
+            "fixture_scope": "coverage_and_gap_discovery"
+          },
+          "family": "methodology",
+          "source": {
+            "system": "fixture",
+            "section": "§9-§10",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "process",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§9-§10",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      },
+      {
+        "record_id": "f6cb3696-0452-598e-ba21-222a556dd253",
+        "node_id": null,
+        "record_type": "declaration",
+        "payload": {
+          "data": {
+            "role": "equipment_or_machine",
+            "description": "Recurso declarado por el fixture ML (MI30).",
+            "placeholder": true,
+            "external_key": "MI30",
+            "canonical_machine_id": 311
+          },
+          "family": "resource",
+          "source": {
+            "system": "fixture",
+            "section": "§2-§7",
+            "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+          },
+          "context_id": "9c42050d-4ced-5b2e-97fe-0a32f390fd3f",
+          "provenance": {
+            "seed": "R12_ML_FIXTURE_V1",
+            "quality": "fixture",
+            "revision": 1,
+            "captured_at": "2026-08-04"
+          },
+          "context_type": "resource",
+          "schema_version": "1.0"
+        },
+        "source": {
+          "system": "fixture",
+          "section": "§2-§7",
+          "reference": "requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md"
+        },
+        "provenance": {
+          "seed": "R12_ML_FIXTURE_V1",
+          "quality": "fixture",
+          "revision": 1,
+          "captured_at": "2026-08-04"
+        },
+        "execution_id": null,
+        "supports": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48"
+      }
+    ],
+    "contrato": [
+      {
+        "id": 157,
+        "proceso_id": 78,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:BU_APROV",
+        "objetivo": "Aprovisionar BUs verificadas por peso.",
+        "version": 1,
+        "activo": true,
+        "bpm_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "bpm_node_id": null,
+        "node_id": 1520,
+        "kpi_description": "Pendiente de definir KPI",
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 158,
+        "proceso_id": 78,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:CAUCHO_APROV",
+        "objetivo": "Aprovisionar caucho pesado para la mezcla.",
+        "version": 1,
+        "activo": true,
+        "bpm_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "bpm_node_id": null,
+        "node_id": 1521,
+        "kpi_description": "Pendiente de definir KPI",
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 159,
+        "proceso_id": 78,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:CARGAS_DOSIF",
+        "objetivo": "Completar la receta de cargas dentro de tolerancia.",
+        "version": 1,
+        "activo": true,
+        "bpm_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "bpm_node_id": null,
+        "node_id": 1522,
+        "kpi_description": "Pendiente de definir KPI",
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 160,
+        "proceso_id": 78,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:SILANO_DOSIF",
+        "objetivo": "Inyectar silano medido para recetas con sílice.",
+        "version": 1,
+        "activo": true,
+        "bpm_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "bpm_node_id": null,
+        "node_id": 1523,
+        "kpi_description": "Pendiente de definir KPI",
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 161,
+        "proceso_id": 78,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:ACEITE_DOSIF",
+        "objetivo": "Dosificar aceite manteniendo fluidez y tara correcta.",
+        "version": 1,
+        "activo": true,
+        "bpm_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "bpm_node_id": null,
+        "node_id": 1524,
+        "kpi_description": "Pendiente de definir KPI",
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 162,
+        "proceso_id": 78,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:MI_MEZCLADO",
+        "objetivo": "Fabricar la mezcla conforme a receta.",
+        "version": 1,
+        "activo": true,
+        "bpm_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "bpm_node_id": null,
+        "node_id": 1525,
+        "kpi_description": "Pendiente de definir KPI",
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 163,
+        "proceso_id": 78,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:HA_HOMOALIMENTADOR",
+        "objetivo": "Homogeneizar y acondicionar la mezcla para la etapa posterior.",
+        "version": 1,
+        "activo": true,
+        "bpm_process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "bpm_node_id": null,
+        "node_id": 1526,
+        "kpi_description": "Pendiente de definir KPI",
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 99,
+        "proceso_id": 65,
+        "nombre": "impacto en TRSP",
+        "objetivo": "TRSP por dosificacion fuera de tolerancia <1%",
+        "version": 1,
+        "activo": true,
+        "bpm_process_id": "f247eee0-cfa1-4ea5-b4e6-fa4598a061b5",
+        "bpm_node_id": null,
+        "node_id": 1496,
+        "kpi_description": "TRSP",
+        "kpi_args": "",
+        "kpi_function": ""
+      }
+    ],
+    "contrato_maquina": [
+      {
+        "contrato_id": 157,
+        "maquina_id": 313
+      },
+      {
+        "contrato_id": 157,
+        "maquina_id": 314
+      },
+      {
+        "contrato_id": 157,
+        "maquina_id": 315
+      },
+      {
+        "contrato_id": 157,
+        "maquina_id": 316
+      },
+      {
+        "contrato_id": 157,
+        "maquina_id": 317
+      },
+      {
+        "contrato_id": 157,
+        "maquina_id": 318
+      },
+      {
+        "contrato_id": 157,
+        "maquina_id": 319
+      },
+      {
+        "contrato_id": 157,
+        "maquina_id": 320
+      },
+      {
+        "contrato_id": 157,
+        "maquina_id": 321
+      },
+      {
+        "contrato_id": 158,
+        "maquina_id": 309
+      },
+      {
+        "contrato_id": 158,
+        "maquina_id": 310
+      },
+      {
+        "contrato_id": 158,
+        "maquina_id": 311
+      },
+      {
+        "contrato_id": 158,
+        "maquina_id": 312
+      },
+      {
+        "contrato_id": 159,
+        "maquina_id": 322
+      },
+      {
+        "contrato_id": 159,
+        "maquina_id": 323
+      },
+      {
+        "contrato_id": 159,
+        "maquina_id": 324
+      },
+      {
+        "contrato_id": 159,
+        "maquina_id": 325
+      },
+      {
+        "contrato_id": 159,
+        "maquina_id": 326
+      },
+      {
+        "contrato_id": 159,
+        "maquina_id": 327
+      },
+      {
+        "contrato_id": 159,
+        "maquina_id": 328
+      },
+      {
+        "contrato_id": 159,
+        "maquina_id": 329
+      },
+      {
+        "contrato_id": 160,
+        "maquina_id": 330
+      },
+      {
+        "contrato_id": 160,
+        "maquina_id": 331
+      },
+      {
+        "contrato_id": 160,
+        "maquina_id": 332
+      },
+      {
+        "contrato_id": 161,
+        "maquina_id": 309
+      },
+      {
+        "contrato_id": 161,
+        "maquina_id": 310
+      },
+      {
+        "contrato_id": 161,
+        "maquina_id": 311
+      },
+      {
+        "contrato_id": 161,
+        "maquina_id": 312
+      },
+      {
+        "contrato_id": 162,
+        "maquina_id": 309
+      },
+      {
+        "contrato_id": 162,
+        "maquina_id": 310
+      },
+      {
+        "contrato_id": 162,
+        "maquina_id": 311
+      },
+      {
+        "contrato_id": 162,
+        "maquina_id": 312
+      },
+      {
+        "contrato_id": 163,
+        "maquina_id": 334
+      }
+    ],
+    "machine_operation_configuration": [
+      {
+        "id": 80,
+        "machine_id": 313,
+        "operation_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 157,
+        "specific_description": "R12_ML_FIXTURE_V1: Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "additional_inputs": [
+          "BUs",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Retirada manual en Línea 4"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 81,
+        "machine_id": 314,
+        "operation_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 157,
+        "specific_description": "R12_ML_FIXTURE_V1: Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "additional_inputs": [
+          "BUs",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Retirada manual en Línea 4"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 82,
+        "machine_id": 315,
+        "operation_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 157,
+        "specific_description": "R12_ML_FIXTURE_V1: Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "additional_inputs": [
+          "BUs",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Retirada manual en Línea 4"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 83,
+        "machine_id": 316,
+        "operation_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 157,
+        "specific_description": "R12_ML_FIXTURE_V1: Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "additional_inputs": [
+          "BUs",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Retirada manual en Línea 4"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 84,
+        "machine_id": 317,
+        "operation_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 157,
+        "specific_description": "R12_ML_FIXTURE_V1: Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "additional_inputs": [
+          "BUs",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Retirada manual en Línea 4"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 85,
+        "machine_id": 318,
+        "operation_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 157,
+        "specific_description": "R12_ML_FIXTURE_V1: Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "additional_inputs": [
+          "BUs",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Retirada manual en Línea 4"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 86,
+        "machine_id": 319,
+        "operation_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 157,
+        "specific_description": "R12_ML_FIXTURE_V1: Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "additional_inputs": [
+          "BUs",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Retirada manual en Línea 4"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 87,
+        "machine_id": 320,
+        "operation_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 157,
+        "specific_description": "R12_ML_FIXTURE_V1: Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "additional_inputs": [
+          "BUs",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Retirada manual en Línea 4"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 88,
+        "machine_id": 321,
+        "operation_id": "e55785b8-8ed7-5548-b5b9-8a1ccda0b52e",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 157,
+        "specific_description": "R12_ML_FIXTURE_V1: Verificación en báscula y avance por tapiz de pasos de los circuitos BU11..BU42.",
+        "additional_inputs": [
+          "BUs",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Retirada manual en Línea 4"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 89,
+        "machine_id": 309,
+        "operation_id": "9a3d04b7-c4e3-5db5-a0eb-b3303f4ab7bd",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 158,
+        "specific_description": "R12_ML_FIXTURE_V1: Recepción en balancelas y verificación en tolva-báscula, incluida la opción fraccionada de Línea 4.",
+        "additional_inputs": [
+          "Balancelas de caucho"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Introducción única por MI"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 90,
+        "machine_id": 310,
+        "operation_id": "9a3d04b7-c4e3-5db5-a0eb-b3303f4ab7bd",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 158,
+        "specific_description": "R12_ML_FIXTURE_V1: Recepción en balancelas y verificación en tolva-báscula, incluida la opción fraccionada de Línea 4.",
+        "additional_inputs": [
+          "Balancelas de caucho"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Introducción única por MI"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 91,
+        "machine_id": 311,
+        "operation_id": "9a3d04b7-c4e3-5db5-a0eb-b3303f4ab7bd",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 158,
+        "specific_description": "R12_ML_FIXTURE_V1: Recepción en balancelas y verificación en tolva-báscula, incluida la opción fraccionada de Línea 4.",
+        "additional_inputs": [
+          "Balancelas de caucho"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Introducción única por MI"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 92,
+        "machine_id": 312,
+        "operation_id": "9a3d04b7-c4e3-5db5-a0eb-b3303f4ab7bd",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 158,
+        "specific_description": "R12_ML_FIXTURE_V1: Recepción en balancelas y verificación en tolva-báscula, incluida la opción fraccionada de Línea 4.",
+        "additional_inputs": [
+          "Balancelas de caucho"
+        ],
+        "specific_controls": [
+          "Peso OK",
+          "Introducción única por MI"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 93,
+        "machine_id": 322,
+        "operation_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 159,
+        "specific_description": "R12_ML_FIXTURE_V1: Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+        "additional_inputs": [
+          "Negro de humo",
+          "Sílice",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso",
+          "Impulsos por defecto",
+          "Retirada manual por exceso"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 94,
+        "machine_id": 323,
+        "operation_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 159,
+        "specific_description": "R12_ML_FIXTURE_V1: Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+        "additional_inputs": [
+          "Negro de humo",
+          "Sílice",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso",
+          "Impulsos por defecto",
+          "Retirada manual por exceso"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 95,
+        "machine_id": 324,
+        "operation_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 159,
+        "specific_description": "R12_ML_FIXTURE_V1: Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+        "additional_inputs": [
+          "Negro de humo",
+          "Sílice",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso",
+          "Impulsos por defecto",
+          "Retirada manual por exceso"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 96,
+        "machine_id": 325,
+        "operation_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 159,
+        "specific_description": "R12_ML_FIXTURE_V1: Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+        "additional_inputs": [
+          "Negro de humo",
+          "Sílice",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso",
+          "Impulsos por defecto",
+          "Retirada manual por exceso"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 97,
+        "machine_id": 326,
+        "operation_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 159,
+        "specific_description": "R12_ML_FIXTURE_V1: Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+        "additional_inputs": [
+          "Negro de humo",
+          "Sílice",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso",
+          "Impulsos por defecto",
+          "Retirada manual por exceso"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 98,
+        "machine_id": 327,
+        "operation_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 159,
+        "specific_description": "R12_ML_FIXTURE_V1: Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+        "additional_inputs": [
+          "Negro de humo",
+          "Sílice",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso",
+          "Impulsos por defecto",
+          "Retirada manual por exceso"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 99,
+        "machine_id": 328,
+        "operation_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 159,
+        "specific_description": "R12_ML_FIXTURE_V1: Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+        "additional_inputs": [
+          "Negro de humo",
+          "Sílice",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso",
+          "Impulsos por defecto",
+          "Retirada manual por exceso"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 100,
+        "machine_id": 329,
+        "operation_id": "9a8b4bed-6cf2-56a7-8457-b2d5ddf0bfff",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 159,
+        "specific_description": "R12_ML_FIXTURE_V1: Dosificación en BN11..BN42 con tecnologías de dos vis, vis único o tapiz único.",
+        "additional_inputs": [
+          "Negro de humo",
+          "Sílice",
+          "Receta"
+        ],
+        "specific_controls": [
+          "Peso",
+          "Impulsos por defecto",
+          "Retirada manual por exceso"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 101,
+        "machine_id": 330,
+        "operation_id": "038fab0f-cf23-5e44-bd8a-d9f99fb1c423",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 160,
+        "specific_description": "R12_ML_FIXTURE_V1: Inyección directa en MI en SI21, SI31 y SI43 mediante MDM Coriolis.",
+        "additional_inputs": [
+          "Silano"
+        ],
+        "specific_controls": [
+          "Caudal y masa"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 102,
+        "machine_id": 331,
+        "operation_id": "038fab0f-cf23-5e44-bd8a-d9f99fb1c423",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 160,
+        "specific_description": "R12_ML_FIXTURE_V1: Inyección directa en MI en SI21, SI31 y SI43 mediante MDM Coriolis.",
+        "additional_inputs": [
+          "Silano"
+        ],
+        "specific_controls": [
+          "Caudal y masa"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 103,
+        "machine_id": 332,
+        "operation_id": "038fab0f-cf23-5e44-bd8a-d9f99fb1c423",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 160,
+        "specific_description": "R12_ML_FIXTURE_V1: Inyección directa en MI en SI21, SI31 y SI43 mediante MDM Coriolis.",
+        "additional_inputs": [
+          "Silano"
+        ],
+        "specific_controls": [
+          "Caudal y masa"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 104,
+        "machine_id": 309,
+        "operation_id": "bb897fda-7352-52d2-a998-148ef132d03d",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 161,
+        "specific_description": "R12_ML_FIXTURE_V1: Inyección MDM o dosificación en circuito cerrado con picaje automático por exceso.",
+        "additional_inputs": [
+          "Aceite"
+        ],
+        "specific_controls": [
+          "Picaje de desecho",
+          "Temperatura estricta a 60 °C"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 105,
+        "machine_id": 310,
+        "operation_id": "bb897fda-7352-52d2-a998-148ef132d03d",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 161,
+        "specific_description": "R12_ML_FIXTURE_V1: Inyección MDM o dosificación en circuito cerrado con picaje automático por exceso.",
+        "additional_inputs": [
+          "Aceite"
+        ],
+        "specific_controls": [
+          "Picaje de desecho",
+          "Temperatura estricta a 60 °C"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 106,
+        "machine_id": 311,
+        "operation_id": "bb897fda-7352-52d2-a998-148ef132d03d",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 161,
+        "specific_description": "R12_ML_FIXTURE_V1: Inyección MDM o dosificación en circuito cerrado con picaje automático por exceso.",
+        "additional_inputs": [
+          "Aceite"
+        ],
+        "specific_controls": [
+          "Picaje de desecho",
+          "Temperatura estricta a 60 °C"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 107,
+        "machine_id": 312,
+        "operation_id": "bb897fda-7352-52d2-a998-148ef132d03d",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 161,
+        "specific_description": "R12_ML_FIXTURE_V1: Inyección MDM o dosificación en circuito cerrado con picaje automático por exceso.",
+        "additional_inputs": [
+          "Aceite"
+        ],
+        "specific_controls": [
+          "Picaje de desecho",
+          "Temperatura estricta a 60 °C"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 108,
+        "machine_id": 309,
+        "operation_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 162,
+        "specific_description": "R12_ML_FIXTURE_V1: Mezclado interno en MI10..MI40 con paletas, comasticación, adiciones y respiros de pilón.",
+        "additional_inputs": [
+          "BUs",
+          "Caucho",
+          "Cargas",
+          "Silano",
+          "Aceites"
+        ],
+        "specific_controls": [
+          "Silla",
+          "Aceleración de paletas",
+          "Retención de caucho"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 109,
+        "machine_id": 310,
+        "operation_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 162,
+        "specific_description": "R12_ML_FIXTURE_V1: Mezclado interno en MI10..MI40 con paletas, comasticación, adiciones y respiros de pilón.",
+        "additional_inputs": [
+          "BUs",
+          "Caucho",
+          "Cargas",
+          "Silano",
+          "Aceites"
+        ],
+        "specific_controls": [
+          "Silla",
+          "Aceleración de paletas",
+          "Retención de caucho"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 110,
+        "machine_id": 311,
+        "operation_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 162,
+        "specific_description": "R12_ML_FIXTURE_V1: Mezclado interno en MI10..MI40 con paletas, comasticación, adiciones y respiros de pilón.",
+        "additional_inputs": [
+          "BUs",
+          "Caucho",
+          "Cargas",
+          "Silano",
+          "Aceites"
+        ],
+        "specific_controls": [
+          "Silla",
+          "Aceleración de paletas",
+          "Retención de caucho"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 111,
+        "machine_id": 312,
+        "operation_id": "9c0f0123-dc12-54d9-9779-9f5bb2199674",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 162,
+        "specific_description": "R12_ML_FIXTURE_V1: Mezclado interno en MI10..MI40 con paletas, comasticación, adiciones y respiros de pilón.",
+        "additional_inputs": [
+          "BUs",
+          "Caucho",
+          "Cargas",
+          "Silano",
+          "Aceites"
+        ],
+        "specific_controls": [
+          "Silla",
+          "Aceleración de paletas",
+          "Retención de caucho"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      },
+      {
+        "id": 112,
+        "machine_id": 334,
+        "operation_id": "11072fdb-6376-5949-a244-bfdb0512abe8",
+        "process_id": "d320e817-5601-5fe4-937a-cefda5b5dd48",
+        "contract_id": 163,
+        "specific_description": "R12_ML_FIXTURE_V1: Mezclado secundario y adición final después de la descarga de la Goulotte.",
+        "additional_inputs": [
+          "Mezcla desde Goulotte"
+        ],
+        "specific_controls": [
+          "Disponibilidad de HA"
+        ],
+        "available_measurements": [
+          "peso",
+          "temperatura",
+          "energía"
+        ],
+        "specific_safety_rules": [],
+        "validation_status": "draft",
+        "valid_from": null,
+        "valid_to": null,
+        "created_at": "2026-08-29T13:06:52.429836+02:00",
+        "updated_at": "2026-08-29T13:06:52.429836+02:00"
+      }
+    ],
+    "causa": [
+      {
+        "id": 340,
+        "contrato_id": 157,
+        "parent_id": null,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:BU_APROV",
+        "descripcion": "Aprovisionar BUs verificadas por peso.",
+        "tipo": "causa",
+        "categoria": null,
+        "justificacion_raiz": null,
+        "node_id": 1756,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "is_initial_template": true
+      },
+      {
+        "id": 341,
+        "contrato_id": 158,
+        "parent_id": null,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:CAUCHO_APROV",
+        "descripcion": "Aprovisionar caucho pesado para la mezcla.",
+        "tipo": "causa",
+        "categoria": null,
+        "justificacion_raiz": null,
+        "node_id": 1758,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "is_initial_template": true
+      },
+      {
+        "id": 342,
+        "contrato_id": 159,
+        "parent_id": null,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:CARGAS_DOSIF",
+        "descripcion": "Completar la receta de cargas dentro de tolerancia.",
+        "tipo": "causa",
+        "categoria": null,
+        "justificacion_raiz": null,
+        "node_id": 1760,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "is_initial_template": true
+      },
+      {
+        "id": 343,
+        "contrato_id": 160,
+        "parent_id": null,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:SILANO_DOSIF",
+        "descripcion": "Inyectar silano medido para recetas con sílice.",
+        "tipo": "causa",
+        "categoria": null,
+        "justificacion_raiz": null,
+        "node_id": 1762,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "is_initial_template": true
+      },
+      {
+        "id": 344,
+        "contrato_id": 161,
+        "parent_id": null,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:ACEITE_DOSIF",
+        "descripcion": "Dosificar aceite manteniendo fluidez y tara correcta.",
+        "tipo": "causa",
+        "categoria": null,
+        "justificacion_raiz": null,
+        "node_id": 1764,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "is_initial_template": true
+      },
+      {
+        "id": 345,
+        "contrato_id": 162,
+        "parent_id": null,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:MI_MEZCLADO",
+        "descripcion": "Fabricar la mezcla conforme a receta.",
+        "tipo": "causa",
+        "categoria": null,
+        "justificacion_raiz": null,
+        "node_id": 1766,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "is_initial_template": true
+      },
+      {
+        "id": 346,
+        "contrato_id": 163,
+        "parent_id": null,
+        "nombre": "BPM:R12_ML_FIXTURE_V1:HA_HOMOALIMENTADOR",
+        "descripcion": "Homogeneizar y acondicionar la mezcla para la etapa posterior.",
+        "tipo": "causa",
+        "categoria": null,
+        "justificacion_raiz": null,
+        "node_id": 1768,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "is_initial_template": true
+      }
+    ],
+    "hipotesis": [
+      {
+        "id": 233,
+        "causa_id": 340,
+        "descripcion": "Pendiente de definir KPI",
+        "tipo": "aceptacion",
+        "criterio_validacion": null,
+        "estado": "pendiente",
+        "node_id": 1757,
+        "business_reason": null,
+        "analysis_method": null,
+        "expected_result": null,
+        "industrial_process": null,
+        "industrial_machine": null,
+        "industrial_asset": null,
+        "analysis_window": null,
+        "decision_rule": null,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "nombre": "Pendiente de definir KPI",
+        "is_initial_template": true,
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 234,
+        "causa_id": 341,
+        "descripcion": "Pendiente de definir KPI",
+        "tipo": "aceptacion",
+        "criterio_validacion": null,
+        "estado": "pendiente",
+        "node_id": 1759,
+        "business_reason": null,
+        "analysis_method": null,
+        "expected_result": null,
+        "industrial_process": null,
+        "industrial_machine": null,
+        "industrial_asset": null,
+        "analysis_window": null,
+        "decision_rule": null,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "nombre": "Pendiente de definir KPI",
+        "is_initial_template": true,
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 235,
+        "causa_id": 342,
+        "descripcion": "Pendiente de definir KPI",
+        "tipo": "aceptacion",
+        "criterio_validacion": null,
+        "estado": "pendiente",
+        "node_id": 1761,
+        "business_reason": null,
+        "analysis_method": null,
+        "expected_result": null,
+        "industrial_process": null,
+        "industrial_machine": null,
+        "industrial_asset": null,
+        "analysis_window": null,
+        "decision_rule": null,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "nombre": "Pendiente de definir KPI",
+        "is_initial_template": true,
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 236,
+        "causa_id": 343,
+        "descripcion": "Pendiente de definir KPI",
+        "tipo": "aceptacion",
+        "criterio_validacion": null,
+        "estado": "pendiente",
+        "node_id": 1763,
+        "business_reason": null,
+        "analysis_method": null,
+        "expected_result": null,
+        "industrial_process": null,
+        "industrial_machine": null,
+        "industrial_asset": null,
+        "analysis_window": null,
+        "decision_rule": null,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "nombre": "Pendiente de definir KPI",
+        "is_initial_template": true,
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 237,
+        "causa_id": 344,
+        "descripcion": "Pendiente de definir KPI",
+        "tipo": "aceptacion",
+        "criterio_validacion": null,
+        "estado": "pendiente",
+        "node_id": 1765,
+        "business_reason": null,
+        "analysis_method": null,
+        "expected_result": null,
+        "industrial_process": null,
+        "industrial_machine": null,
+        "industrial_asset": null,
+        "analysis_window": null,
+        "decision_rule": null,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "nombre": "Pendiente de definir KPI",
+        "is_initial_template": true,
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 238,
+        "causa_id": 345,
+        "descripcion": "Pendiente de definir KPI",
+        "tipo": "aceptacion",
+        "criterio_validacion": null,
+        "estado": "pendiente",
+        "node_id": 1767,
+        "business_reason": null,
+        "analysis_method": null,
+        "expected_result": null,
+        "industrial_process": null,
+        "industrial_machine": null,
+        "industrial_asset": null,
+        "analysis_window": null,
+        "decision_rule": null,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "nombre": "Pendiente de definir KPI",
+        "is_initial_template": true,
+        "kpi_args": "",
+        "kpi_function": ""
+      },
+      {
+        "id": 239,
+        "causa_id": 346,
+        "descripcion": "Pendiente de definir KPI",
+        "tipo": "aceptacion",
+        "criterio_validacion": null,
+        "estado": "pendiente",
+        "node_id": 1769,
+        "business_reason": null,
+        "analysis_method": null,
+        "expected_result": null,
+        "industrial_process": null,
+        "industrial_machine": null,
+        "industrial_asset": null,
+        "analysis_window": null,
+        "decision_rule": null,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068",
+        "nombre": "Pendiente de definir KPI",
+        "is_initial_template": true,
+        "kpi_args": "",
+        "kpi_function": ""
+      }
+    ],
+    "hypothesis_required_data": [],
+    "hypothesis_expected_evidence": [],
+    "analisis_causas": [],
+    "analisis_resultado": [],
+    "analisis_causas_detalle": [],
+    "maquina": [
+      {
+        "id": 309,
+        "nombre": "MI10",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1527
+      },
+      {
+        "id": 310,
+        "nombre": "MI20",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1528
+      },
+      {
+        "id": 311,
+        "nombre": "MI30",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1529
+      },
+      {
+        "id": 312,
+        "nombre": "MI40",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1530
+      },
+      {
+        "id": 313,
+        "nombre": "BU11",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1531
+      },
+      {
+        "id": 314,
+        "nombre": "BU12",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1532
+      },
+      {
+        "id": 315,
+        "nombre": "BU21",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1533
+      },
+      {
+        "id": 316,
+        "nombre": "BU22",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1534
+      },
+      {
+        "id": 317,
+        "nombre": "BU23",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1535
+      },
+      {
+        "id": 318,
+        "nombre": "BU31",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1536
+      },
+      {
+        "id": 319,
+        "nombre": "BU32",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1537
+      },
+      {
+        "id": 320,
+        "nombre": "BU41",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1538
+      },
+      {
+        "id": 321,
+        "nombre": "BU42",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1539
+      },
+      {
+        "id": 322,
+        "nombre": "BN11",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1540
+      },
+      {
+        "id": 323,
+        "nombre": "BN12",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1541
+      },
+      {
+        "id": 324,
+        "nombre": "BN21",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1542
+      },
+      {
+        "id": 325,
+        "nombre": "BN22",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1543
+      },
+      {
+        "id": 326,
+        "nombre": "BN31",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1544
+      },
+      {
+        "id": 327,
+        "nombre": "BN32",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1545
+      },
+      {
+        "id": 328,
+        "nombre": "BN41",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1546
+      },
+      {
+        "id": 329,
+        "nombre": "BN42",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1547
+      },
+      {
+        "id": 330,
+        "nombre": "SI21",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1548
+      },
+      {
+        "id": 331,
+        "nombre": "SI31",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1549
+      },
+      {
+        "id": 332,
+        "nombre": "SI43",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1550
+      },
+      {
+        "id": 334,
+        "nombre": "HA",
+        "maquinas_tipo_id": null,
+        "parent_maquina_id": null,
+        "activo": true,
+        "specific_description": null,
+        "specific_characteristics": null,
+        "specific_parameters": null,
+        "specific_operating_ranges": null,
+        "specific_limitations": null,
+        "specific_instructions": null,
+        "differences_from_machine_type": null,
+        "contract_id": null,
+        "node_id": 1552
+      }
+    ],
+    "registro_maquina": [],
+    "node": [
+      {
+        "id": 1520,
+        "node_type": "CONTRACT",
+        "code": "CONTRACT:157",
+        "name": "BPM:R12_ML_FIXTURE_V1:BU_APROV",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1521,
+        "node_type": "CONTRACT",
+        "code": "CONTRACT:158",
+        "name": "BPM:R12_ML_FIXTURE_V1:CAUCHO_APROV",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1522,
+        "node_type": "CONTRACT",
+        "code": "CONTRACT:159",
+        "name": "BPM:R12_ML_FIXTURE_V1:CARGAS_DOSIF",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1523,
+        "node_type": "CONTRACT",
+        "code": "CONTRACT:160",
+        "name": "BPM:R12_ML_FIXTURE_V1:SILANO_DOSIF",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1524,
+        "node_type": "CONTRACT",
+        "code": "CONTRACT:161",
+        "name": "BPM:R12_ML_FIXTURE_V1:ACEITE_DOSIF",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1525,
+        "node_type": "CONTRACT",
+        "code": "CONTRACT:162",
+        "name": "BPM:R12_ML_FIXTURE_V1:MI_MEZCLADO",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1526,
+        "node_type": "CONTRACT",
+        "code": "CONTRACT:163",
+        "name": "BPM:R12_ML_FIXTURE_V1:HA_HOMOALIMENTADOR",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1527,
+        "node_type": "MACHINE",
+        "code": "MACHINE:309",
+        "name": "MI10",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1528,
+        "node_type": "MACHINE",
+        "code": "MACHINE:310",
+        "name": "MI20",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1529,
+        "node_type": "MACHINE",
+        "code": "MACHINE:311",
+        "name": "MI30",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1530,
+        "node_type": "MACHINE",
+        "code": "MACHINE:312",
+        "name": "MI40",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1531,
+        "node_type": "MACHINE",
+        "code": "MACHINE:313",
+        "name": "BU11",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1532,
+        "node_type": "MACHINE",
+        "code": "MACHINE:314",
+        "name": "BU12",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1533,
+        "node_type": "MACHINE",
+        "code": "MACHINE:315",
+        "name": "BU21",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1534,
+        "node_type": "MACHINE",
+        "code": "MACHINE:316",
+        "name": "BU22",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1535,
+        "node_type": "MACHINE",
+        "code": "MACHINE:317",
+        "name": "BU23",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1536,
+        "node_type": "MACHINE",
+        "code": "MACHINE:318",
+        "name": "BU31",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1537,
+        "node_type": "MACHINE",
+        "code": "MACHINE:319",
+        "name": "BU32",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1538,
+        "node_type": "MACHINE",
+        "code": "MACHINE:320",
+        "name": "BU41",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1539,
+        "node_type": "MACHINE",
+        "code": "MACHINE:321",
+        "name": "BU42",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1540,
+        "node_type": "MACHINE",
+        "code": "MACHINE:322",
+        "name": "BN11",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1541,
+        "node_type": "MACHINE",
+        "code": "MACHINE:323",
+        "name": "BN12",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1542,
+        "node_type": "MACHINE",
+        "code": "MACHINE:324",
+        "name": "BN21",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1543,
+        "node_type": "MACHINE",
+        "code": "MACHINE:325",
+        "name": "BN22",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1544,
+        "node_type": "MACHINE",
+        "code": "MACHINE:326",
+        "name": "BN31",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1545,
+        "node_type": "MACHINE",
+        "code": "MACHINE:327",
+        "name": "BN32",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1546,
+        "node_type": "MACHINE",
+        "code": "MACHINE:328",
+        "name": "BN41",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1547,
+        "node_type": "MACHINE",
+        "code": "MACHINE:329",
+        "name": "BN42",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1548,
+        "node_type": "MACHINE",
+        "code": "MACHINE:330",
+        "name": "SI21",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1549,
+        "node_type": "MACHINE",
+        "code": "MACHINE:331",
+        "name": "SI31",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1550,
+        "node_type": "MACHINE",
+        "code": "MACHINE:332",
+        "name": "SI43",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1552,
+        "node_type": "MACHINE",
+        "code": "MACHINE:334",
+        "name": "HA",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:01:09.181808",
+        "updated_at": "2026-08-29T17:01:09.181808"
+      },
+      {
+        "id": 1574,
+        "node_type": "PROCESS",
+        "code": "PROCESS:78",
+        "name": "PROCESO_ML_FABRICACION",
+        "description": null,
+        "status": "active",
+        "metadata": {},
+        "created_at": "2026-08-29T17:04:56.097653",
+        "updated_at": "2026-08-29T17:04:56.097653"
+      },
+      {
+        "id": 1756,
+        "node_type": "CAUSE",
+        "code": "CAUSE:TEMPLATE:157",
+        "name": "BPM:R12_ML_FIXTURE_V1:BU_APROV",
+        "description": "Aprovisionar BUs verificadas por peso.",
+        "status": null,
+        "metadata": {
+          "contract_id": 157,
+          "template_role": "initial_cause"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1757,
+        "node_type": "HYPOTHESIS",
+        "code": "HYPOTHESIS:TEMPLATE:157",
+        "name": "Pendiente de definir KPI",
+        "description": "Pendiente de definir KPI",
+        "status": null,
+        "metadata": {
+          "contract_id": 157,
+          "template_role": "initial_hypothesis"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1758,
+        "node_type": "CAUSE",
+        "code": "CAUSE:TEMPLATE:158",
+        "name": "BPM:R12_ML_FIXTURE_V1:CAUCHO_APROV",
+        "description": "Aprovisionar caucho pesado para la mezcla.",
+        "status": null,
+        "metadata": {
+          "contract_id": 158,
+          "template_role": "initial_cause"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1759,
+        "node_type": "HYPOTHESIS",
+        "code": "HYPOTHESIS:TEMPLATE:158",
+        "name": "Pendiente de definir KPI",
+        "description": "Pendiente de definir KPI",
+        "status": null,
+        "metadata": {
+          "contract_id": 158,
+          "template_role": "initial_hypothesis"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1760,
+        "node_type": "CAUSE",
+        "code": "CAUSE:TEMPLATE:159",
+        "name": "BPM:R12_ML_FIXTURE_V1:CARGAS_DOSIF",
+        "description": "Completar la receta de cargas dentro de tolerancia.",
+        "status": null,
+        "metadata": {
+          "contract_id": 159,
+          "template_role": "initial_cause"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1761,
+        "node_type": "HYPOTHESIS",
+        "code": "HYPOTHESIS:TEMPLATE:159",
+        "name": "Pendiente de definir KPI",
+        "description": "Pendiente de definir KPI",
+        "status": null,
+        "metadata": {
+          "contract_id": 159,
+          "template_role": "initial_hypothesis"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1762,
+        "node_type": "CAUSE",
+        "code": "CAUSE:TEMPLATE:160",
+        "name": "BPM:R12_ML_FIXTURE_V1:SILANO_DOSIF",
+        "description": "Inyectar silano medido para recetas con sílice.",
+        "status": null,
+        "metadata": {
+          "contract_id": 160,
+          "template_role": "initial_cause"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1763,
+        "node_type": "HYPOTHESIS",
+        "code": "HYPOTHESIS:TEMPLATE:160",
+        "name": "Pendiente de definir KPI",
+        "description": "Pendiente de definir KPI",
+        "status": null,
+        "metadata": {
+          "contract_id": 160,
+          "template_role": "initial_hypothesis"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1764,
+        "node_type": "CAUSE",
+        "code": "CAUSE:TEMPLATE:161",
+        "name": "BPM:R12_ML_FIXTURE_V1:ACEITE_DOSIF",
+        "description": "Dosificar aceite manteniendo fluidez y tara correcta.",
+        "status": null,
+        "metadata": {
+          "contract_id": 161,
+          "template_role": "initial_cause"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1765,
+        "node_type": "HYPOTHESIS",
+        "code": "HYPOTHESIS:TEMPLATE:161",
+        "name": "Pendiente de definir KPI",
+        "description": "Pendiente de definir KPI",
+        "status": null,
+        "metadata": {
+          "contract_id": 161,
+          "template_role": "initial_hypothesis"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1766,
+        "node_type": "CAUSE",
+        "code": "CAUSE:TEMPLATE:162",
+        "name": "BPM:R12_ML_FIXTURE_V1:MI_MEZCLADO",
+        "description": "Fabricar la mezcla conforme a receta.",
+        "status": null,
+        "metadata": {
+          "contract_id": 162,
+          "template_role": "initial_cause"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1767,
+        "node_type": "HYPOTHESIS",
+        "code": "HYPOTHESIS:TEMPLATE:162",
+        "name": "Pendiente de definir KPI",
+        "description": "Pendiente de definir KPI",
+        "status": null,
+        "metadata": {
+          "contract_id": 162,
+          "template_role": "initial_hypothesis"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1768,
+        "node_type": "CAUSE",
+        "code": "CAUSE:TEMPLATE:163",
+        "name": "BPM:R12_ML_FIXTURE_V1:HA_HOMOALIMENTADOR",
+        "description": "Homogeneizar y acondicionar la mezcla para la etapa posterior.",
+        "status": null,
+        "metadata": {
+          "contract_id": 163,
+          "template_role": "initial_cause"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 1769,
+        "node_type": "HYPOTHESIS",
+        "code": "HYPOTHESIS:TEMPLATE:163",
+        "name": "Pendiente de definir KPI",
+        "description": "Pendiente de definir KPI",
+        "status": null,
+        "metadata": {
+          "contract_id": 163,
+          "template_role": "initial_hypothesis"
+        },
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      }
+    ],
+    "relationship": [
+      {
+        "id": 6102,
+        "parent_node_id": 1520,
+        "child_node_id": 1756,
+        "relationship_type": "CAUSES",
+        "metadata": {
+          "template": true,
+          "contract_id": 157
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6103,
+        "parent_node_id": 1756,
+        "child_node_id": 1757,
+        "relationship_type": "HAS_HYPOTHESIS",
+        "metadata": {
+          "template": true,
+          "contract_id": 157
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6104,
+        "parent_node_id": 1521,
+        "child_node_id": 1758,
+        "relationship_type": "CAUSES",
+        "metadata": {
+          "template": true,
+          "contract_id": 158
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6105,
+        "parent_node_id": 1758,
+        "child_node_id": 1759,
+        "relationship_type": "HAS_HYPOTHESIS",
+        "metadata": {
+          "template": true,
+          "contract_id": 158
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6106,
+        "parent_node_id": 1522,
+        "child_node_id": 1760,
+        "relationship_type": "CAUSES",
+        "metadata": {
+          "template": true,
+          "contract_id": 159
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6107,
+        "parent_node_id": 1760,
+        "child_node_id": 1761,
+        "relationship_type": "HAS_HYPOTHESIS",
+        "metadata": {
+          "template": true,
+          "contract_id": 159
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6108,
+        "parent_node_id": 1523,
+        "child_node_id": 1762,
+        "relationship_type": "CAUSES",
+        "metadata": {
+          "template": true,
+          "contract_id": 160
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6109,
+        "parent_node_id": 1762,
+        "child_node_id": 1763,
+        "relationship_type": "HAS_HYPOTHESIS",
+        "metadata": {
+          "template": true,
+          "contract_id": 160
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6110,
+        "parent_node_id": 1524,
+        "child_node_id": 1764,
+        "relationship_type": "CAUSES",
+        "metadata": {
+          "template": true,
+          "contract_id": 161
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6111,
+        "parent_node_id": 1764,
+        "child_node_id": 1765,
+        "relationship_type": "HAS_HYPOTHESIS",
+        "metadata": {
+          "template": true,
+          "contract_id": 161
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6114,
+        "parent_node_id": 1526,
+        "child_node_id": 1768,
+        "relationship_type": "CAUSES",
+        "metadata": {
+          "template": true,
+          "contract_id": 163
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6115,
+        "parent_node_id": 1768,
+        "child_node_id": 1769,
+        "relationship_type": "HAS_HYPOTHESIS",
+        "metadata": {
+          "template": true,
+          "contract_id": 163
+        },
+        "is_primary": true,
+        "created_at": "2026-08-30T15:27:21.875068",
+        "updated_at": "2026-08-30T15:27:21.875068"
+      },
+      {
+        "id": 6685,
+        "parent_node_id": 1525,
+        "child_node_id": 1766,
+        "relationship_type": "CAUSES",
+        "metadata": {
+          "source": "graph_sync"
+        },
+        "is_primary": true,
+        "created_at": "2026-09-03T18:15:32.142363",
+        "updated_at": "2026-09-03T18:15:32.142363"
+      },
+      {
+        "id": 6686,
+        "parent_node_id": 1766,
+        "child_node_id": 1767,
+        "relationship_type": "HAS_HYPOTHESIS",
+        "metadata": {
+          "source": "graph_sync"
+        },
+        "is_primary": true,
+        "created_at": "2026-09-03T18:15:32.170583",
+        "updated_at": "2026-09-03T18:15:32.170583"
+      }
+    ]
+  }
+}

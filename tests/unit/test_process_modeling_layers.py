@@ -20,8 +20,8 @@ class ProcessModelingLayerTests(unittest.TestCase):
         self.assertFalse(result["valid"])
 
     def test_persistence_adapter_requires_canonical_ports(self):
-        adapter = BpmPostgresPersistenceAdapter(processes="p", nodes="n", transitions="t")
-        self.assertEqual(("p", "n", "t"), (adapter.processes, adapter.nodes, adapter.transitions))
+        adapter = BpmPostgresPersistenceAdapter(processes="p", nodes="n", transitions="t", layouts="l")
+        self.assertEqual(("p", "n", "t", "l"), (adapter.processes, adapter.nodes, adapter.transitions, adapter.layouts))
 
 
 if __name__ == "__main__":

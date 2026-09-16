@@ -31,6 +31,28 @@ class ProcessModelingApiTests(unittest.TestCase):
         self.assertEqual(response.get_json()["code"], "invalid_uuid")
         self.assertEqual(response.get_json()["message"], "process_id debe ser un UUID válido")
 
+    @patch(
+        "uc_bib_solv.modules.bpm.application.process_modeling_application.ProcessModelingApplication.get_process_layout",
+        return_value={"process_id": "p-1", "strategy": "manual_overrides", "positions": []},
+    )
+    def test_layout_get_uses_stable_envelope(self, get_layout):
+        process_id = str(uuid4())
+        response = create_app().test_client().get(f"/api/bpm/processes/{process_id}/layout")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual("manual_overrides", response.get_json()["data"]["strategy"])
+        get_layout.assert_called_once_with(process_id)
+
+    @patch(
+        "uc_bib_solv.modules.bpm.application.process_modeling_application.ProcessModelingApplication.replace_process_layout",
+        return_value={"process_id": "p-1", "strategy": "manual_overrides", "positions": []},
+    )
+    def test_layout_put_forwards_replacement_payload(self, replace_layout):
+        process_id = str(uuid4())
+        payload = {"positions": []}
+        response = create_app().test_client().put(f"/api/bpm/processes/{process_id}/layout", json=payload)
+        self.assertEqual(response.status_code, 200)
+        replace_layout.assert_called_once_with(process_id, payload)
+
     def test_deprecated_process_operations_post_is_removed(self):
         process_id = str(uuid4())
         response = create_app().test_client().post(
@@ -99,6 +121,18 @@ class ProcessModelingApiTests(unittest.TestCase):
         response = create_app().test_client().post(f"/api/bpm/processes/{process_id}/nodes-with-transition", json=payload)
         self.assertEqual(response.status_code, 201)
         create_node_with_transition.assert_called_once_with(process_id, payload)
+
+    @patch(
+        "uc_bib_solv.modules.bpm.application.process_modeling_application.ProcessModelingApplication.update_transition",
+        return_value={"transition_id": "edge-1", "label": "Conforme"},
+    )
+    def test_transition_patch_forwards_semantic_edits(self, update_transition):
+        transition_id = str(uuid4())
+        payload = {"label": "Conforme", "transition_type": "branch"}
+        response = create_app().test_client().patch(f"/api/bpm/transitions/{transition_id}", json=payload)
+        self.assertEqual(response.status_code, 200)
+        update_transition.assert_called_once_with(transition_id, payload)
+
 
 
 if __name__ == "__main__":

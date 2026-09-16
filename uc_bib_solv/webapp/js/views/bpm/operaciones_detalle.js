@@ -22,15 +22,37 @@ async function saveOperation(operation, form) {
   await updateNode(operation.node_id, { name: data.name, description: data.description });
   await updateNodeMetadata(operation.node_id, data.metadata);
   await updateOperationStages(operation.node_id, operation.process_id, data.stages);
-  await replaceOperationMachines(operation.node_id, operation.process_id, [...form.querySelectorAll("input[data-operation-machine]:checked")].map((input) => Number(input.value)));
+  await replaceOperationMachines(operation.node_id, operation.process_id, [...(form._operationMachineState?.selectedIds || new Set())]);
 }
 
 async function mountOperationMachines(form, operation) {
   const target = form.querySelector("[data-operation-machines]");
+  if (!target) return;
+  target.innerHTML = '<p class="text-secondary" data-operation-machines-status>Cargando catálogo…</p>';
   const result = await getOperationMachines(operation.node_id, operation.process_id);
-  const selected = new Set((result?.data?.machineIds || result?.machineIds || []).map(Number));
-  const machines = result?.data?.catalog || result?.catalog || [];
-  target.innerHTML = machines.length ? machines.map((machine) => `<label class="flex items-center gap-sm"><input type="checkbox" data-operation-machine value="${Number(machine.id)}"${selected.has(Number(machine.id)) ? " checked" : ""}><span>${escapeHtml(machine.name || `Máquina ${machine.id}`)}</span></label>`).join("") : '<p class="text-secondary">No hay máquinas en el catálogo.</p>';
+  const selectedIds = new Set((result?.data?.machineIds || result?.machineIds || []).map(Number));
+  const machines = (result?.data?.catalog || result?.catalog || []).filter((machine) => Number.isFinite(Number(machine.id)));
+  const byId = new Map(machines.map((machine) => [Number(machine.id), machine]));
+  form._operationMachineState = { selectedIds, machines, byId };
+  const render = () => {
+    const state = form._operationMachineState;
+    const selected = [...state.selectedIds].map((id) => state.byId.get(id)).filter(Boolean);
+    target.innerHTML = `<div class="space-y-md"><label class="block space-y-xs" for="operation-machine-select"><span class="font-label-md text-label-md text-secondary">Catálogo de máquinas</span><select id="operation-machine-select" data-operation-machine-select class="w-full border border-outline rounded-lg p-sm bg-surface-container-low font-body-sm"><option value="">Selecciona una máquina…</option>${state.machines.map((machine) => { const id = Number(machine.id); return `<option value="${id}"${state.selectedIds.has(id) ? " disabled" : ""}>${escapeHtml(machine.name || `Máquina ${id}`)}</option>`; }).join("")}</select></label><button type="button" data-operation-machine-add class="inline-flex px-md py-sm bg-primary text-on-primary rounded text-label-md" aria-label="Seleccionar máquina">Seleccionar máquina</button><section class="border border-outline-variant rounded-lg p-md space-y-sm" data-operation-machine-selected aria-live="polite"><h3 class="font-label-md text-label-md text-secondary">Máquinas seleccionadas</h3>${selected.length ? `<ul class="space-y-xs">${selected.map((machine) => `<li class="flex items-center justify-between gap-sm" data-operation-machine-member="${Number(machine.id)}"><span>${escapeHtml(machine.name || `Máquina ${machine.id}`)}</span><button type="button" data-operation-machine-remove="${Number(machine.id)}" class="text-primary underline" aria-label="Eliminar ${escapeHtml(machine.name || `Máquina ${machine.id}`)}">Eliminar</button></li>`).join("")}</ul>` : '<p class="text-secondary" data-operation-machine-empty>No hay máquinas seleccionadas.</p>'}</section><span class="sr-only" data-operation-machine-live aria-live="polite"></span></div>`;
+    const select = target.querySelector("[data-operation-machine-select]");
+    target.querySelector("[data-operation-machine-add]")?.addEventListener("click", () => {
+      const id = Number(select?.value);
+      if (!state.byId.has(id) || state.selectedIds.has(id)) return;
+      state.selectedIds.add(id);
+      render();
+      target.querySelector("[data-operation-machine-live]").textContent = "Máquina añadida.";
+    });
+    target.querySelectorAll("[data-operation-machine-remove]").forEach((button) => button.addEventListener("click", () => {
+      state.selectedIds.delete(Number(button.dataset.operationMachineRemove));
+      render();
+      target.querySelector("[data-operation-machine-live]").textContent = "Máquina eliminada.";
+    }));
+  };
+  render();
 }
 
 export function renderOperacionesDetalle(state, bus) {
@@ -56,7 +78,7 @@ export function renderOperacionesDetalle(state, bus) {
       const form = mountRoot.querySelector("#operation-detail-form");
       const alert = mountRoot.querySelector("#operation-detail-alert");
       mountOperationForm(form, operation);
-      mountOperationMachines(form, operation).catch((error) => { const target = form.querySelector("[data-operation-machines]"); if (target) target.innerHTML = `<p class="text-red-700">${escapeHtml(error.message)}</p>`; });
+      mountOperationMachines(form, operation).catch((error) => { const target = form.querySelector("[data-operation-machines]"); if (target) target.innerHTML = `<p class="text-red-700" role="alert">No se pudo cargar el catálogo de máquinas: ${escapeHtml(error.message)}</p>`; });
       form?.addEventListener("submit", async (event) => { event.preventDefault(); if (!form.reportValidity()) return; const save = mountRoot.querySelector("#operation-detail-save"); try { save.disabled = true; save.textContent = "Guardando…"; await saveOperation(operation, form); alert.textContent = "Operación actualizada."; alert.className = "rounded-lg border px-md py-sm text-[12px] border-green-200 bg-green-50 text-green-700"; save.disabled = false; save.textContent = "Guardar cambios"; } catch (error) { alert.textContent = error.message; alert.className = "rounded-lg border px-md py-sm text-[12px] border-red-200 bg-red-50 text-red-700"; save.disabled = false; save.textContent = "Guardar cambios"; } });
     }).catch((error) => { if (main) main.innerHTML = `<div class="max-w-5xl mx-auto"><p class="text-red-700">${escapeHtml(error.message)}</p></div>`; });
   } };

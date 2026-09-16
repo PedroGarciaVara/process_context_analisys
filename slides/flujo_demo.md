@@ -4,8 +4,8 @@ Ejecución real contra Flask en `http://127.0.0.1:8051` y PostgreSQL local el 30
 
 | Fase | Pantalla/ruta | Resultado | Entidades / IDs |
 |---:|---|---|---|
-| 1 | `#/modelado-procesos` | Proceso creado desde la UI. El proceso vacío exigía un nodo padre para crear operaciones desde la UI. | Proceso BPM `4cda3697-8024-41ce-aaeb-a0988eff073a`. |
-| 2 | `#/modelado-procesos` | Las operaciones se crearon mediante API Playwright por la limitación anterior. | `OP-001` / `c5a14f21-db32-4bef-b7b1-0bf7c285e404`: “Preparar materia prima”; `OP-002` / `53142d7f-3e99-49da-a5fe-232fb8f39d7f`: “Procesar lote”; `OP-003` / `c597b72d-6c60-4d66-ad9e-2d66fd77124b`: descripción no demostrada en las fuentes conservadas. |
+| 1 | `#/studio-procesos` | Proceso creado desde la UI. El proceso vacío exigía un nodo padre para crear operaciones desde la UI. | Proceso BPM `4cda3697-8024-41ce-aaeb-a0988eff073a`. |
+| 2 | `#/studio-procesos` | Las operaciones se crearon mediante API Playwright por la limitación anterior. | `OP-001` / `c5a14f21-db32-4bef-b7b1-0bf7c285e404`: “Preparar materia prima”; `OP-002` / `53142d7f-3e99-49da-a5fe-232fb8f39d7f`: “Procesar lote”; `OP-003` / `c597b72d-6c60-4d66-ad9e-2d66fd77124b`: descripción no demostrada en las fuentes conservadas. |
 | 3 | `#/maquinas` | Máquina creada con descripción y contrato; las tres configuraciones máquina–operación devolvieron HTTP 409. | Máquina `TFM_DEMO_1788104782421 Máquina A`, ID `352`; tipo `5`; contrato `216`. Las asociaciones quedaron no persistidas. |
 | 4 | `#/contratos` | Contrato BPM creado con KPI y objetivo. | `TFM_DEMO_1788104782421 Contrato RCA`, ID `216`, proceso operativo `281`, estado `review`. |
 | 5 | `#/arboles` | Causa raíz e hipótesis creadas para usar el contrato como template RCA. | Causa raíz `TFM_DEMO_1788104782421 Causa raíz` (`362`/`363` según el intento); hipótesis `255`. |

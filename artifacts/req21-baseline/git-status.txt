@@ -1,0 +1,228 @@
+ M .codebase-memory/artifact.json
+ M .codebase-memory/graph.db.zst
+ M context.md
+ M db_management/schema.sql
+ M requeriments_spec_driven_development/requerimiento_12/proceso_ML_estructurado.md
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 10-29-50.png"
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 10-39-08.png"
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 10-52-02.png"
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 11-16-21.png"
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 11-35-49.png"
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 11-41-38.png"
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 11-46-02.png"
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 11-55-36.png"
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 12-08-03.png"
+ D "requerimientos_cliente/requerimiento_03/Captura desde 2026-05-30 12-25-11.png"
+ D "requerimientos_cliente/requerimiento_03/Imagen pegada.png"
+ D requerimientos_cliente/requerimiento_03/html_analisis_causas_v2.md
+ M requerimientos_cliente/traza_requerimiento.md
+ M scripts/seed_req12_ml_fixture.py
+ D slides/capturas/01-bpm-proceso-operaciones.png
+ D slides/capturas/02-bpm-descripciones.png
+ D slides/capturas/03-maquinas.png
+ D slides/capturas/04-contrato.png
+ D slides/capturas/05-template-rca.png
+ D slides/capturas/06-analisis-rca.png
+ D slides/capturas/modelado_bpm_decision_ramas.png
+ D slides/capturas/modelado_bpm_panel_metadatos.png
+ D slides/capturas/modelado_bpm_subprocesos_expandido.png
+ D slides/capturas/modelado_bpm_vista_completa.png
+ D slides/capturas/ui-layout-contratos-final.png
+ D slides/capturas/ui-layout-maquinas-final.png
+ D slides/capturas/ui-layout-operaciones-final.png
+ D slides/capturas/ui-layout-procesos-final.png
+ M slides/flujo_demo.md
+ M slides/fuentes.md
+ M slides/guion_presentacion.md
+ M slides/inventario_capturas.md
+ M slides/presentacion_tfm.md
+ M tests/architecture/test_t9_boundaries.py
+ D tests/e2e/bpm-ml-generated-validation.spec.js
+ D tests/e2e/process-modeling.spec.js
+ M tests/e2e/requerimiento-16.spec.js
+ M tests/e2e/ui-functional.spec.js
+ M tests/req12_fixture_coverage.md
+ M tests/unit/maquinas-modal-contract.test.mjs
+ M tests/unit/operaciones-detalle-contract.test.mjs
+ M tests/unit/procesos-detalle-contract.test.mjs
+ M tests/unit/process-delete-modal.test.mjs
+ M tests/unit/process-modeling-api.test.mjs
+ D tests/unit/process-modeling-graph.test.mjs
+ D tests/unit/process-modeling-layout.test.mjs
+ D tests/unit/process-modeling-metadata.test.mjs
+ M tests/unit/test_bpm_persistence_ports.py
+ M tests/unit/test_causal_analysis_t7.py
+ M tests/unit/test_process_modeling_api.py
+ M tests/unit/test_process_modeling_domain.py
+ M tests/unit/test_process_modeling_layers.py
+ M tests/unit/test_process_modeling_module_boundaries.py
+ M tests/unit/test_process_modeling_service.py
+ M tests/unit/test_process_node_with_transition.py
+ M tests/unit/test_process_validation_use_case.py
+ M tests/unit/test_rca_tree_analysis_ports.py
+ M tests/unit/test_req12_ml_fixture.py
+ M tests/unit/tree-display-contract.test.mjs
+ M uc_bib_solv/modules/bpm/adapters/inbound/http/process_modeling.py
+ M uc_bib_solv/modules/bpm/adapters/outbound/bpm_persistence.py
+ M uc_bib_solv/modules/bpm/adapters/outbound/postgres/operational_repository.py
+ M uc_bib_solv/modules/bpm/adapters/outbound/postgres/pm_process_repo.py
+ M uc_bib_solv/modules/bpm/application/ports/__init__.py
+ M uc_bib_solv/modules/bpm/application/ports/process_modeling.py
+ M uc_bib_solv/modules/bpm/application/ports/process_ports.py
+ M uc_bib_solv/modules/bpm/application/process_modeling_application.py
+ M uc_bib_solv/modules/bpm/application/use_cases/process_modeling_dependencies.py
+ M uc_bib_solv/modules/bpm/domain/processes/context.py
+ M uc_bib_solv/modules/bpm/infrastructure/process_modeling_wiring.py
+ M uc_bib_solv/modules/bpm/infrastructure/wiring.py
+ M uc_bib_solv/modules/rca_tree/adapters/inbound/http/routes.py
+ M uc_bib_solv/modules/rca_tree/adapters/outbound/postgres/causa_repo.py
+ M uc_bib_solv/modules/rca_tree/adapters/outbound/postgres/graph_query_repo.py
+ M uc_bib_solv/modules/rca_tree/adapters/outbound/postgres/hipotesis_repo.py
+ M uc_bib_solv/modules/rca_tree/adapters/outbound/postgres/relationship_repo.py
+ M uc_bib_solv/modules/rca_tree/application/ports/outbound/__init__.py
+ M uc_bib_solv/modules/rca_tree/application/ports/outbound/analysis.py
+ M uc_bib_solv/modules/rca_tree/application/ports/outbound/causal_repositories.py
+ M uc_bib_solv/modules/rca_tree/application/use_cases/analyses/save_analysis_result.py
+ M uc_bib_solv/modules/rca_tree/application/use_cases/causes/__init__.py
+ M uc_bib_solv/modules/rca_tree/application/use_cases/hypotheses/create_hypothesis.py
+ M uc_bib_solv/modules/rca_tree/application/use_cases/hypotheses/update_hypothesis.py
+ M uc_bib_solv/modules/rca_tree/application/use_cases/tree/get_cause_detail.py
+ M uc_bib_solv/modules/rca_tree/domain/analyses/entities.py
+ M uc_bib_solv/modules/rca_tree/domain/causal_graph/rules.py
+ M uc_bib_solv/modules/rca_tree/domain/exceptions.py
+ M uc_bib_solv/modules/rca_tree/infrastructure/analysis_application.py
+ M uc_bib_solv/modules/rca_tree/infrastructure/analysis_wiring.py
+ M uc_bib_solv/modules/rca_tree/infrastructure/application.py
+ M uc_bib_solv/modules/rca_tree/infrastructure/wiring.py
+ M uc_bib_solv/webapp/bpm-studio.html
+ M uc_bib_solv/webapp/css/app.css
+ M uc_bib_solv/webapp/css/bpm-studio.css
+ M uc_bib_solv/webapp/css/forms.css
+ M uc_bib_solv/webapp/css/layout.css
+ M uc_bib_solv/webapp/css/modal.css
+ M uc_bib_solv/webapp/index.html
+ M uc_bib_solv/webapp/js/api/analysis.js
+ M uc_bib_solv/webapp/js/api/causas.js
+ M uc_bib_solv/webapp/js/api/client.js
+ M uc_bib_solv/webapp/js/api/process-modeling.js
+ M uc_bib_solv/webapp/js/app.js
+ M uc_bib_solv/webapp/js/bpm-studio.js
+ M uc_bib_solv/webapp/js/components/bpm-page.js
+ M uc_bib_solv/webapp/js/components/causa-detail/editor-card.js
+ M uc_bib_solv/webapp/js/components/causa-detail/hypothesis-card.js
+ M uc_bib_solv/webapp/js/components/detail-panels.js
+ M uc_bib_solv/webapp/js/components/json-editor.js
+ M uc_bib_solv/webapp/js/components/machine-stages.js
+ D uc_bib_solv/webapp/js/components/process-modeling/graph.js
+ D uc_bib_solv/webapp/js/components/process-modeling/layout.js
+ D uc_bib_solv/webapp/js/components/process-modeling/list.js
+ D uc_bib_solv/webapp/js/components/process-modeling/measurement.js
+ M uc_bib_solv/webapp/js/components/tree-data.js
+ M uc_bib_solv/webapp/js/components/tree-render.js
+ M uc_bib_solv/webapp/js/components/tree-shell.js
+ M uc_bib_solv/webapp/js/controllers/causa-detail-cause-actions.js
+ M uc_bib_solv/webapp/js/controllers/causa-detail-editor.js
+ M uc_bib_solv/webapp/js/controllers/causa-detail-hypotheses.js
+ D uc_bib_solv/webapp/js/controllers/process-modeling/expansion.js
+ D uc_bib_solv/webapp/js/controllers/process-modeling/node-actions.js
+ D uc_bib_solv/webapp/js/controllers/process-modeling/viewport.js
+ D uc_bib_solv/webapp/js/core/process-modeling-state.js
+ M uc_bib_solv/webapp/js/core/router.js
+ M uc_bib_solv/webapp/js/views/bpm/contratos.js
+ M uc_bib_solv/webapp/js/views/bpm/operacion_form.js
+ M uc_bib_solv/webapp/js/views/bpm/operaciones.js
+ M uc_bib_solv/webapp/js/views/bpm/operaciones_detalle.js
+ M uc_bib_solv/webapp/js/views/bpm/procesos.js
+ M uc_bib_solv/webapp/js/views/bpm/procesos_detalle.js
+ M uc_bib_solv/webapp/js/views/bpm/shell.js
+ M uc_bib_solv/webapp/js/views/contexto/contexto.js
+ M uc_bib_solv/webapp/js/views/index.js
+ M uc_bib_solv/webapp/js/views/inicio/inicio.js
+ M uc_bib_solv/webapp/js/views/maquinas/maquinas.js
+ M uc_bib_solv/webapp/js/views/maquinas/maquinas_detalle.js
+ D uc_bib_solv/webapp/js/views/nodes/process-modeling.js
+ M uc_bib_solv/webapp/js/views/rca/analisis_causas.js
+ M uc_bib_solv/webapp/js/views/rca/arboles.js
+ M uc_bib_solv/webapp/js/views/rca/causa_detalle.js
+?? BPM_STUDIO_DATABASE_VERIFICATION.md
+?? BPM_UX_EVALUATION.md
+?? artifacts/
+?? db_management/migrate_process_layout.sql
+?? db_management/migrations/
+?? docs/
+?? plan.md
+?? requeriments_spec_driven_development/requerimiento_20/
+?? requeriments_spec_driven_development/requerimiento_21/
+?? requerimientos_cliente/.~lock.solucionar_problemas_encontrados.odt#
+?? "requerimientos_cliente/descripciones del proceso/test_dosificacion_cargas"
+?? requerimientos_cliente/solucionar_problemas_encontrados.odt
+?? requerimientos_cliente/solucionar_problemas_encontrados_02.odt
+?? scripts/consolidate_duplicate_ml_process.py
+?? scripts/verify_bpm_studio_database.py
+?? "slides/capturas/bpm-panel de elementos.png"
+?? slides/capturas/bpm_abrir_sub_proceso.png
+?? slides/capturas/bpm_editar_ficha.png
+?? slides/capturas/bpm_elementos_contexto.png
+?? slides/capturas/bpm_general_procesos.png
+?? "slides/capturas/bpm_opciones alineacion.png"
+?? slides/capturas/bpm_operacion_contexto.png
+?? slides/capturas/causa_detalle.png
+?? slides/capturas/contratos_listados.png
+?? slides/capturas/creacion_arbol_causas.png
+?? slides/capturas/hitpotesis_detalle.png
+?? slides/capturas/maquinas_listados_detalle.png
+?? slides/capturas/mover_causa_arbol_template.png
+?? slides/capturas/operaciones_listados.png
+?? slides/capturas/proceso_listados.png
+?? tests/e2e/bpm-preparacion-cargas-canonical-ui.spec.js
+?? tests/e2e/bpm-studio-context-alignment.spec.js
+?? tests/e2e/bpm-studio-decision-branches.spec.js
+?? tests/e2e/bpm-studio-layout-degradation.spec.js
+?? tests/e2e/bpm-studio-layout-persistence.spec.js
+?? tests/e2e/bpm-studio-parity.spec.js
+?? tests/e2e/causa-307-removal.spec.js
+?? tests/e2e/causa-detail-mode-tabs.spec.js
+?? tests/e2e/contract-scope-search.spec.js
+?? tests/e2e/creation-inline-feedback.spec.js
+?? tests/e2e/hypothesis-template-clean-summary.spec.js
+?? tests/e2e/inicio-analysis-filters.spec.js
+?? tests/e2e/michelin-ui-system.spec.js
+?? tests/e2e/rca-move-scientific.spec.js
+?? tests/e2e/rca-responsive-a11y.spec.js
+?? tests/e2e/structured-business-editors.spec.js
+?? tests/e2e/ui-redesign-proposals.spec.js
+?? tests/integration/test_process_layout_db_integration.py
+?? tests/integration/test_rca_reparenting_integration.py
+?? tests/unit/bpm-studio-contract.test.mjs
+?? tests/unit/causa-detail-creation-feedback.test.mjs
+?? tests/unit/causa-detail-mode-tabs.test.mjs
+?? tests/unit/hypothesis-template-clean.test.mjs
+?? tests/unit/inicio-analysis-contract.test.mjs
+?? tests/unit/rca-canvas-viewport-contract.test.mjs
+?? tests/unit/rca-resilience-contract.test.mjs
+?? tests/unit/rca-scientific-ui-contract.test.mjs
+?? tests/unit/rca-tree-interactions-contract.test.mjs
+?? tests/unit/structured-field-model.test.mjs
+?? tests/unit/test_consolidate_duplicate_ml_process.py
+?? tests/unit/test_context_detail_extensions.py
+?? tests/unit/test_decision_operation_branches.py
+?? tests/unit/test_process_layout_domain.py
+?? tests/unit/test_process_layout_use_cases.py
+?? tests/unit/test_process_repository_returning.py
+?? tests/unit/test_process_structure_editing.py
+?? tests/unit/test_rca_reparenting.py
+?? tests/unit/test_rca_scientific_evaluation.py
+?? uc_bib_solv/modules/bpm/adapters/outbound/postgres/pm_layout_repo.py
+?? uc_bib_solv/modules/bpm/application/use_cases/layout/
+?? uc_bib_solv/modules/bpm/domain/processes/layout.py
+?? uc_bib_solv/modules/rca_tree/adapters/outbound/postgres/transaction_postgres.py
+?? uc_bib_solv/modules/rca_tree/application/use_cases/causes/move_cause.py
+?? uc_bib_solv/modules/rca_tree/documentacion.md
+?? uc_bib_solv/webapp/assets/
+?? uc_bib_solv/webapp/css/michelin-ui.css
+?? uc_bib_solv/webapp/css/ui-redesign-proposals.css
+?? uc_bib_solv/webapp/js/components/operation-metadata-editor.js
+?? uc_bib_solv/webapp/js/components/structured-field-model.js
+?? uc_bib_solv/webapp/js/components/tree-move-dialog.js
+?? uc_bib_solv/webapp/js/ui-redesign-proposals.js
+?? uc_bib_solv/webapp/ui-redesign-proposals.html

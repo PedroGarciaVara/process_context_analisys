@@ -228,17 +228,6 @@ function buildMainContent(state) {
     </header>
     <div class="michelin-shell-body flex flex-1 overflow-hidden">
       <aside class="michelin-nav-rail flex flex-col h-full border-r border-outline-variant p-md bg-surface-container dark:bg-surface-container-low w-[280px] shrink-0">
-        <div class="michelin-nav-context mb-xl px-sm">
-          <div class="flex items-center gap-sm mb-base">
-            <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-fixed">
-              <span class="material-symbols-outlined">analytics</span>
-            </div>
-            <div>
-              <p class="font-headline-sm text-headline-sm text-primary">Investigacion activa</p>
-              <p class="font-label-md text-label-md text-secondary">INV-2023-004</p>
-            </div>
-          </div>
-        </div>
         <nav class="michelin-nav-menu flex-1 space-y-1">
           ${buildSideMenu(state)}
         </nav>

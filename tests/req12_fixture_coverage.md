@@ -18,6 +18,11 @@ Los nombres del fixture no forman invariantes del producto.
 
 ## Evidencia del fixture ML — cobertura y persistencia
 
+> **Supersedido el 2026-09-09.** `PROCESO_ML_FABRICACION` era un fixture
+> duplicado y fue consolidado en el proceso canónico `Preparación de cargas
+> reforzantes` (`f247eee0-cfa1-4ea5-b4e6-fa4598a061b5`). El script conserva
+> únicamente el contrato offline; ningún modo puede volver a cargarlo en BD.
+
 El contrato offline reproducible se obtiene con:
 
 ```text
@@ -52,17 +57,15 @@ curvas, muestras y resultados calculados; `ML-N-011` alertas/hechos de
 intervención manual. Los puntos declarativos permanecen en JSONB o labels;
 no se convierten en tablas ni modelos ML específicos.
 
-La carga real y la segunda ejecución deben verificarse con:
+Los antiguos comandos de carga están deprecados y deben abortar sin conectarse:
 
 ```text
-python3 scripts/seed_req12_ml_fixture.py --dry-run --json
-python3 scripts/seed_req12_ml_fixture.py --json
-python3 scripts/seed_req12_ml_fixture.py --json
+python3 scripts/seed_req12_ml_fixture.py --dry-run --json  # exit 2: deprecado
+python3 scripts/seed_req12_ml_fixture.py --json            # exit 2: deprecado
 ```
 
-En esta sesión PostgreSQL no fue accesible; por tanto no se afirma ningún
-conteo runtime ni idempotencia efectiva. La evidencia offline y los tests de
-contrato sí quedaron ejecutados; la validación de BD/API/UI queda pendiente.
+La evidencia offline permanece como documentación histórica. No constituye
+una definición que deba persistirse ni una expectativa de existencia runtime.
 
 ### Repetición de carga ML — ejecución 2026-08-06
 

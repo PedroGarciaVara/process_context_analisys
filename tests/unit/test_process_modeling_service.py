@@ -11,13 +11,14 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(1, str(BACKEND))
 
 from uc_bib_solv.modules.bpm.application import ProcessModelingApplication  # noqa: E402
+from uc_bib_solv.modules.bpm.domain.processes.rules import next_process_code  # noqa: E402
 
 
 def _application(*, process=None):
     processes = SimpleNamespace(get=lambda _id: process)
     nodes = SimpleNamespace()
     transitions = SimpleNamespace()
-    return ProcessModelingApplication(processes, nodes, transitions)
+    return ProcessModelingApplication(processes, nodes, transitions, SimpleNamespace())
 
 
 def _hierarchical_application(parent, child):
@@ -25,20 +26,40 @@ def _hierarchical_application(parent, child):
         parent["process_id"]: parent,
         child["process_id"]: child,
     }.get(str(process_id)))
-    return ProcessModelingApplication(processes, SimpleNamespace(), SimpleNamespace())
+    return ProcessModelingApplication(processes, SimpleNamespace(), SimpleNamespace(), SimpleNamespace())
+
+
+def _creation_application(existing=None):
+    rows = list(existing or [])
+    def create(data):
+        created = {**data, "process_code": next_process_code(rows)}
+        rows.append(created)
+        return created
+    processes = SimpleNamespace(
+        allocates_process_codes=True,
+        list=lambda: rows,
+        get=lambda process_id: next((item for item in rows if str(item.get("process_id")) == str(process_id)), None),
+        create=create,
+    )
+    return ProcessModelingApplication(processes, SimpleNamespace(), SimpleNamespace(), SimpleNamespace())
 
 
 class ProcessModelingServiceTests(TestCase):
     def test_create_process_uses_domain_validation(self):
         service = _application()
         with self.assertRaises(ValueError):
-            service.create_process({"process_code": "", "name": "x"})
+            service.create_process({"name": ""})
 
     def test_missing_process_is_not_found(self):
         service = _application(process=None)
         with self.assertRaises(Exception) as context:
             service.get_process(str(uuid4()))
         self.assertEqual(getattr(context.exception, "code", None), "not_found")
+
+    def test_create_process_ignores_client_code_and_allocates_backend_code(self):
+        service = _creation_application([{"process_id": str(uuid4()), "process_code": "PROC-001"}])
+        created = service.create_process({"process_code": "MANUAL-CODE", "name": "Nuevo proceso"})
+        self.assertEqual(created["process_code"], "PROC-002")
 
     def test_get_process_exposes_diagram_projection_without_replacing_persisted_transitions(self):
         process = {

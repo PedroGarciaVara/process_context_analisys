@@ -14,7 +14,7 @@ test("el catálogo operativo ofrece borrado confirmado y refresca tras eliminar"
   assert.match(source, /referencias activas/);
   assert.match(source, /deleteProcess\(processToDelete, \{ cascade: true \}\)/);
   assert.match(source, /eventBus\.emit\("catalog:refresh"\)/);
-  assert.match(source, /modelado-procesos/);
+  assert.match(source, /studio-procesos/);
 });
 
 test("el borrado del catálogo usa el UUID BPM y la API de modelado canónica", () => {

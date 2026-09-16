@@ -6,6 +6,7 @@ from uc_bib_solv.modules.rca_tree.application.use_cases.analyses import (
     SaveAnalysisResult,
     UpdateAnalysis,
 )
+from uc_bib_solv.modules.rca_tree.domain.exceptions import CausalTreeStateError
 
 
 class FakeAnalysisPersistence:
@@ -13,7 +14,7 @@ class FakeAnalysisPersistence:
     def list_recent(self, *args): return list(self.items.values())
     def list_templates(self, process_id=None): return []
     def create(self, payload):
-        value = {"id": 1, **payload}; self.items[1] = value; return value
+        value = {"id": 1, "status": "abierto", **payload}; self.items[1] = value; return value
     def get(self, analysis_id): return self.items.get(int(analysis_id))
     def update(self, analysis_id, payload): self.items[int(analysis_id)].update(payload); return self.items[int(analysis_id)]
     def add(self, analysis_id, participant): return {"participante": participant}
@@ -43,7 +44,12 @@ class RcaTreeAnalysisPortsTests(unittest.TestCase):
 
     def test_update_and_result_use_explicit_ports(self):
         self.create_analysis.execute({"contract_id": 4, "process_id": 2, "indication": "Apertura"})
+        result = self.save_result.execute(1, {"element_type": "causa", "cause_id": 3})
+        self.assertEqual(3, result["cause_id"])
         self.assertEqual("cerrado", self.update_analysis.execute(1, {"status": "cerrado"})["status"])
+        with self.assertRaisesRegex(CausalTreeStateError, "solo lectura"):
+            self.save_result.execute(1, {"element_type": "causa", "cause_id": 3})
+        self.assertEqual("abierto", self.update_analysis.execute(1, {"status": "abierto"})["status"])
         result = self.save_result.execute(1, {"element_type": "causa", "cause_id": 3})
         self.assertEqual(3, result["cause_id"])
 

@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from uc_bib_solv.modules.bpm.domain.processes.entities import Process, ProcessNode, ProcessTransition
 from uc_bib_solv.modules.bpm.domain.processes.exceptions import ProcessModelingError
-from uc_bib_solv.modules.bpm.domain.processes.rules import diagram_transitions, next_node_code, validate_graph, validate_hierarchy
+from uc_bib_solv.modules.bpm.domain.processes.rules import diagram_transitions, next_node_code, next_process_code, validate_graph, validate_hierarchy
 
 
 class ProcessModelingDomainTests(unittest.TestCase):
@@ -11,6 +11,10 @@ class ProcessModelingDomainTests(unittest.TestCase):
         nodes = [{"node_code": "OP-001"}, {"node_code": "OP-003"}, {"node_code": "STOCK-001"}]
         self.assertEqual(next_node_code(nodes, "operation"), "OP-002")
         self.assertEqual(next_node_code(nodes, "stock"), "STOCK-002")
+
+    def test_next_process_code_uses_global_process_sequence(self):
+        processes = [{"process_code": "PROC-001"}, {"process_code": "PROC-003"}, {"process_code": "LEGACY-9"}]
+        self.assertEqual(next_process_code(processes), "PROC-002")
 
     def test_decision_can_be_edited_with_one_branch_but_final_validation_requires_both(self):
         nodes = [{"node_id": "decision", "node_code": "DEC", "node_type": "decision"}, {"node_id": "yes", "node_code": "OUT", "node_type": "output", "output_role": "normal"}]

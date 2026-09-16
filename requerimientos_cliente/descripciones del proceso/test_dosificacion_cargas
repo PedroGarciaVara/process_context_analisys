@@ -1,0 +1,66 @@
+# porceso de aprovisionamiento de cargas
+
+porceso que cubre la recepcion de materias primas de cargas reforzantes (negro y silice) hasta su dosificacion en bascula para aprobisionamiento en MI.
+
+# descarga de camiones
+los camiones se dan de alta a la recepcion en las aplicaciciones BSM y QMP (BSM aplicacion de gestion de stock) y QMP aplicacion de resultados de laboratorio para recepcion de materias entrantes.
+
+un operador debe tomar manualmente una muestra de cada camion y llevarla al laboratorio para que sea medida.
+una vez medida su resultado es introduce en QMP y si esta denro de las tolerancias establecidas se permite su descarga.
+
+la descarga del caion se produce en alguno de los puestos de descarga, y mediate tapices se dirige su contenido hacia alguno de los silos.
+
+los Negros tendrán un NIP (numero de producto, o referencia de producto) y un NIF (numero de identificacion del fabricante)
+
+su almacenado en los silos vendrá estableceido por normas en las cuales NUNCA se pueden almacenar NIPs diferentes en un mismo Silo, y salvo reglas de blocaje y compatibilidad tampoco distintos NIF en un mismo silo.
+
+se dispone de un conjunto de 24 silos de negro y 12 silos de silice.
+los circuitos de negro y silice son independientes.
+
+# envio a los silos de stock de los grupos
+los camiones descargan sobre los SILOS de stock general, que son de 30 Tn. y desde estos se distribuyen a los silos de stock en la cabecera de las lineas de fabricacion. estos son de 3Tn y son exclusivos para una linea de fabricacion.
+
+el envio se realiza en el momento en el que uno de los silos de stock alcanza un nivel de 'pedido' cuando estan en consumo, estos hacen un pedido señalando el NIP y el destino.
+
+en el envio se aplican las reglas de blocaje para mezclar las proporciones definidas de diferentes NIF (normalemnte 50-50 o 30-70) 
+
+la isntalacion hace el envio hasta llegar a nivel alto del silo de stock, momento en el que se deja de enviar, y se pasa a un ciclo de limpieza de 2 min, donde cada elemento debe de estar funcionando en vacio durante 2 min sin detectar producto.
+
+silos de stck, cada linea de fabricacion tiene 8 silos de stock sp-11,sp12...(sp de silo pesador + primer digito la linea, + segundo digito el numero de silo)
+
+# dosificacion
+
+la dosificacion se ejecuta en las bascualas de negro
+
+cada linea dispone de 2 básculas de dosificacion BN11 BN12 (BN bascula de negro + digito de la linea + digito de la bascual)
+
+a la demanda del MI de la linea, empieza la dosificacion de productos necesarios establecidos en la receta del producto, respetando NIP y cantidad.
+
+la dosificacion puede ser de un NIP en una bascula de dos NIP en dos basuclas o de dos NIP en la misma bascula, pudiendo llegar a 3 NIP.
+
+cada bascula esta conectada solo a 4 de los silos.
+
+un punto clave de la dosificacion es el tiempo de ciclo, el cual debe asegurar que la carga y descarga esta dentro del tiempo de ciclo del MI.
+la dosificacion de 2 NIP en la misma báscula penaliza el tiempo de ciclo, ya que requiere de hacer dos ajustes y dos capturas de peso estable.
+
+el porceso interno de la dosificacion es el siguiente:
+1. establecer cero en báscula
+2. inicio de dosificacion
+2.1. dosificacion a gran caudal (velocidad maxima)
+2.2 dosificacion en regulacion de velocidad
+2.3 dosificacion a velocidad minima
+3. bascual estable y verificacion de peso
+4. con peso OK continuar, con peso NO OK corregir y etapa 3
+5. descarga de producto
+6. verificacion de cero (peso de la bascula vacia) si OK continuar NO OK volver a etapa 5, por producto retenido
+
+
+para la dosificacion hay dos tecnologias implementadas.
+tecnologia 1: doble sinfin, los dosificadores disponen de dos sinfines de dosificacion, uno de gran diametro y otro de pequeño diametro, ambos con motores y variadores que permiten regular su velocidad
+
+los dosificadores de la linea 1, 2 (salvo el 23 y 24) son de este tipo
+
+tecnologia 2: sinfin unico. un unico sinfin con motor y variador. implementado en sp23 y 24 y en todos los de la linea 4.
+
+
+el producto dosificado y descargado, se deja en la tolva de introduccion del MI (mezclador interno) de la linea para el inicio de la sigeinte fase

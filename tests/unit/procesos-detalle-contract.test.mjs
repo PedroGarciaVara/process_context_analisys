@@ -31,3 +31,8 @@ test("la ficha BPM muestra identificación, jerarquía y estado sin versiones", 
   }
   assert.doesNotMatch(detailSource, /Versiones existentes|version_id|versionId/);
 });
+
+test("los códigos de proceso no se editan desde la ficha", () => {
+  assert.doesNotMatch(detailSource, /name="process_code"/);
+  assert.doesNotMatch(detailSource, /form\.process_code/);
+});
