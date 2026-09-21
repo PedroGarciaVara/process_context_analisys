@@ -34,7 +34,7 @@ class GetContext:
                 or (item.get("payload") or {}).get("data", {}).get("family") == family
             ]
         methodology = []
-        for name in ("promt.md", "agents.md"):
+        for name in ("promt.md", "AGENTS.md"):
             path = Path(__file__).resolve().parents[5] / name
             if path.exists():
                 methodology.append({"name": name, "version": "repository", "source": {"path": name}, "content": path.read_text(encoding="utf-8")})

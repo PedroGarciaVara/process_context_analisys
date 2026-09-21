@@ -3,7 +3,7 @@
 Add this to your Codex instructions file (e.g., `~/.codex/agents.md`). 
 (es una carpeta oculta)
 ´´´ bash
-mkdir -p ~/.codex && cp "/home/pedro/proyectos visual studio code/web-app-Dash/agents.md" ~/.codex/
+mkdir -p ~/.codex && cp AGENTS.md ~/.codex/agents.md
 ´´´
 
 ## Agent Configuration

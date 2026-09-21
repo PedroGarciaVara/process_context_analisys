@@ -99,7 +99,11 @@ test("isolated operations are deleted without requesting an impossible reconnect
   assert.match(source, /const incoming = model\.edges\.filter\(\(edge\) => edge\.target === deleting\.id\)/);
   assert.match(source, /const outgoing = model\.edges\.filter\(\(edge\) => edge\.source === deleting\.id\)/);
   assert.match(source, /const canReconnect = incoming\.length === 1 && outgoing\.length === 1/);
+  assert.match(source, /let reconnect = false;/);
+  assert.match(source, /if \(canReconnect\) \{/);
+  assert.match(source, /else if \(!window\.confirm\(.*sin reconectar/);
   assert.match(source, /body: JSON\.stringify\(\{ reconnect \}\)/);
+  assert.doesNotMatch(source, /const reconnect = canReconnect[\s\S]{0,400}if \(!reconnect\) return;/);
 });
 
 test("the industrial palette covers operational modeling semantics", async () => {

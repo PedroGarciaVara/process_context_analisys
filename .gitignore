@@ -31,8 +31,12 @@ build/
 # Playwright
 .playwright-artifacts/
 
+# Entregables audiovisuales locales
+documentacion/*.mp4
+
 # Temporal
 borrador/*.tmp
 
 # Memoria local regenerable
 .codebase-memory/
+docs/

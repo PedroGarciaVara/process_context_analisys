@@ -537,7 +537,7 @@ def load_fixture(cur) -> dict:
     for index, (source, target) in enumerate(zip(NODE_SPECS, NODE_SPECS[1:]), start=1):
         _insert_transition(cur, node_ids[source[0]], node_ids[target[0]], index)
     _insert_context(cur, "declaration", envelope("process", TARGET_PROCESS_ID, "methodology", {
-        "template": "promt.md", "instructions": "agents.md", "fixture_scope": "coverage_and_gap_discovery",
+        "template": "promt.md", "instructions": "AGENTS.md", "fixture_scope": "coverage_and_gap_discovery",
         "causal_chain": "contract -> analysis -> methodology -> cause -> hypothesis -> evidence -> conclusion",
     }, "§10"), "§10")
     _insert_context(cur, "declaration", envelope("process", TARGET_PROCESS_ID, "fixture_gaps", {"gaps": GAPS}, "§11-§14"), "§11-§14")

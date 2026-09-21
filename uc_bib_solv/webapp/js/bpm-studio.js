@@ -861,10 +861,12 @@ async function deleteSelected() {
           const outgoing = model.edges.filter((edge) => edge.source === deleting.id);
           const canReconnect = incoming.length === 1 && outgoing.length === 1
             && incoming[0].source !== outgoing[0].target;
-          const reconnect = canReconnect
-            ? window.confirm(`¿Eliminar «${node.name}» y reconectar automáticamente sus extremos?\n\nAceptar: elimina y reconecta.\nCancelar: elimina sin reconectar.`)
-            : (window.confirm(`¿Eliminar «${node.name}» sin reconectar?\n\nLa operación no tiene exactamente una entrada y una salida válidas para reconectar.`));
-          if (!reconnect) return;
+          let reconnect = false;
+          if (canReconnect) {
+            reconnect = window.confirm(`¿Eliminar «${node.name}» y reconectar automáticamente sus extremos?\n\nAceptar: elimina y reconecta.\nCancelar: elimina sin reconectar.`);
+          } else if (!window.confirm(`¿Eliminar «${node.name}» sin reconectar?\n\nLa operación no tiene exactamente una entrada y una salida válidas para reconectar.`)) {
+            return;
+          }
           await api(`/api/bpm/nodes/${encodeURIComponent(deleting.id)}/operation-delete`, { method: "POST", body: JSON.stringify({ reconnect }) });
         } else {
           if (!window.confirm(`¿Eliminar «${node?.name || "este elemento"}» del flujo?`)) return;

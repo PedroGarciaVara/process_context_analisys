@@ -120,4 +120,4 @@ When delegation is done correctly, the orchestrator should be able to state:
 - Keep `Source` paths accurate and relative to project root.
 - Update routing guidance when workflow responsibilities change.
 - If a sub-agent is deprecated, mark it explicitly and document the replacement.
-- Do not silently remove a sub-agent that is still referenced by `agents.md`, task flows, or installed skills.
+- Do not silently remove a sub-agent that is still referenced by `AGENTS.md`, task flows, or installed skills.

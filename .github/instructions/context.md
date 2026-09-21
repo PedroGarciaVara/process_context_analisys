@@ -92,7 +92,7 @@ Cada sub-agente tiene:
 ### Registries (fuentes de verdad)
 - `.atl/sub-agent-registry.md` — routing: 17 fases → 14 agentes
 - `.atl/skill-registry.md` — skills disponibles por módulo
-- `AGENTS.md` (= `agents.md`) — perfiles de todos los agentes, sincronizados
+- `AGENTS.md` — fuente canónica de las instrucciones del repositorio; se copia a `~/.codex/agents.md` para Codex
 
 ### Instrucciones del Orquestador
 - `sdd-orchestrator.instructions.md` — protocolo completo, gates, reglas de delegación
@@ -100,7 +100,7 @@ Cada sub-agente tiene:
 ### Scripts de Sincronización (verifican integridad)
 | Script | SO | Función | Versión Req |
 |--------|----|---------| ----------- |
-| `setup_copilot_cli.sh` | Linux | sync agents.md → AGENTS.md, actualizar copilot-instructions.md | req-04 |
+| `setup_copilot_cli.sh` | Linux | leer `AGENTS.md` y actualizar copilot-instructions.md | req-04 |
 | `setup_copilot_cli.ps1` | Windows | ídem (añade verificación SHA-256) | req-04 |
 | `check_codex_sync.sh` | Linux | validar 15 artefactos + 14 perfiles | req-04 |
 | `check_copilot_sync.ps1` | Windows | ídem | req-04 |
